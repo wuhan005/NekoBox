@@ -1,6 +1,6 @@
 <template>
-  <Skeleton :loading="isLoading && questionCount === 0" :count="5"></Skeleton>
-  <div v-if="!isLoading && questionCount > 0">
+  <Skeleton :loading="isInitLoading" :count="5"></Skeleton>
+  <div v-if="!isInitLoading && questionCount > 0">
     <p class="uk-text-left uk-text-muted uk-text-small">@{{ props.pageProfileName }} 以前回答过的问题 ({{
         questionCount
       }})</p>
@@ -52,6 +52,7 @@ const props = defineProps({
 const router = useRouter()
 
 const PAGE_SIZE = 20
+const isInitLoading = ref<boolean>(true)
 const isLoading = ref<boolean>(false)
 const hasMore = ref<boolean>(true)
 const questionCursor = ref<string>('')
@@ -72,6 +73,7 @@ const fetchQuestions = () => {
       })
       .finally(() => {
         isLoading.value = false
+        isInitLoading.value = false
       })
 }
 

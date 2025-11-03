@@ -1,5 +1,6 @@
 <template>
-  <Skeleton :count="3" :loading="isLoading">
+  <Skeleton :count="3" :loading="isInitLoading"></Skeleton>
+  <div v-if="!isInitLoading">
     <a v-for="(question) in questions" v-bind:key="question.id" @click="handleView(question)">
       <div>
         <hr>
@@ -10,7 +11,7 @@
         <p class="uk-text-small">{{ question.content }}</p>
       </div>
     </a>
-  </Skeleton>
+  </div>
 
   <div>
     <button v-if="hasMore" type="button" class="uk-button uk-button-default uk-width-1-1 uk-margin-small-bottom"
@@ -39,6 +40,7 @@ const router = useRouter()
 const authStore = useAuthStore()
 
 const PAGE_SIZE = 20
+const isInitLoading = ref<boolean>(true)
 const isLoading = ref<boolean>(false)
 const hasMore = ref<boolean>(true)
 const questionCursor = ref<string>('')
@@ -56,6 +58,7 @@ const fetchQuestions = () => {
       })
       .finally(() => {
         isLoading.value = false
+        isInitLoading.value = false
       })
 }
 
