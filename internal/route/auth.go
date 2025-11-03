@@ -14,12 +14,12 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/thanhpk/randstr"
 
-	"github.com/NekoWheel/NekoBox/internal/conf"
-	"github.com/NekoWheel/NekoBox/internal/context"
-	"github.com/NekoWheel/NekoBox/internal/db"
-	"github.com/NekoWheel/NekoBox/internal/form"
-	"github.com/NekoWheel/NekoBox/internal/mail"
-	"github.com/NekoWheel/NekoBox/internal/response"
+	"github.com/wuhan005/NekoBox/internal/conf"
+	"github.com/wuhan005/NekoBox/internal/context"
+	"github.com/wuhan005/NekoBox/internal/db"
+	"github.com/wuhan005/NekoBox/internal/form"
+	"github.com/wuhan005/NekoBox/internal/mail"
+	"github.com/wuhan005/NekoBox/internal/response"
 )
 
 type AuthHandler struct{}

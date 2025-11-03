@@ -3,7 +3,7 @@ package response
 import (
 	"time"
 
-	"github.com/NekoWheel/NekoBox/internal/db"
+	"github.com/wuhan005/NekoBox/internal/db"
 )
 
 type MineQuestionsItem struct {

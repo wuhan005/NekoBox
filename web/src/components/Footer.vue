@@ -3,8 +3,8 @@
     Made with ❤️ by E99p1ant. {{ icp }}
     <br>
     <a @click="router.push({name: 'pixel'})">画板</a> |
-    <a href="https://github.com/NekoWheel/NekoBox" target="_blank">GitHub</a> | <a
-      :href="`https://github.com/NekoWheel/NekoBox/commit/${commitSHA}`" target="_blank">
+    <a href="https://github.com/wuhan005/NekoBox" target="_blank">GitHub</a> | <a
+      :href="`https://github.com/wuhan005/NekoBox/commit/${commitSHA}`" target="_blank">
     {{ commitSHA.slice(0, 7) }}
   </a>
     | <a href="https://support.qq.com/products/293656" target="_blank">吐槽反馈</a>
