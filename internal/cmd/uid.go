@@ -7,8 +7,8 @@ import (
 	"github.com/rs/xid"
 	"github.com/urfave/cli/v2"
 
-	"github.com/NekoWheel/NekoBox/internal/conf"
-	"github.com/NekoWheel/NekoBox/internal/db"
+	"github.com/wuhan005/NekoBox/internal/conf"
+	"github.com/wuhan005/NekoBox/internal/db"
 )
 
 var Uid = &cli.Command{

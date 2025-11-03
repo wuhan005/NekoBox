@@ -10,7 +10,7 @@ import (
 	"github.com/flamego/flamego"
 	"github.com/flamego/session"
 
-	"github.com/NekoWheel/NekoBox/internal/db"
+	"github.com/wuhan005/NekoBox/internal/db"
 )
 
 const SessionKeyUserID = "nekobox:auth:user-id"

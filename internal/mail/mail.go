@@ -15,8 +15,8 @@ import (
 	"github.com/pkg/errors"
 	"gopkg.in/gomail.v2"
 
-	"github.com/NekoWheel/NekoBox/internal/conf"
-	"github.com/NekoWheel/NekoBox/templates"
+	"github.com/wuhan005/NekoBox/internal/conf"
+	"github.com/wuhan005/NekoBox/templates"
 )
 
 func SendNewQuestionMail(email, domain string, questionID uint, questionContent string) error {

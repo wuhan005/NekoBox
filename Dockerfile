@@ -9,7 +9,7 @@ ARG GITHUB_SHA=dev
 COPY . .
 
 RUN go mod tidy
-RUN go build -v -ldflags "-w -s -extldflags '-static' -X 'github.com/NekoWheel/NekoBox/internal/conf.BuildCommit=$GITHUB_SHA'" -o NekoBox ./cmd/
+RUN go build -v -ldflags "-w -s -extldflags '-static' -X 'github.com/wuhan005/NekoBox/internal/conf.BuildCommit=$GITHUB_SHA'" -o NekoBox ./cmd/
 
 FROM alpine:latest
 

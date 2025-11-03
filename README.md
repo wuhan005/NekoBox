@@ -8,17 +8,17 @@ NekoBox
 匿名提问箱 / Anonymous Question Box
 </p>
 <p align="center">
-<a href="https://goreportcard.com/badge/github.com/NekoWheel/NekoBox">
-    <img src="https://github.com/NekoWheel/NekoBox/workflows/Go/badge.svg" alt="Go Report Card">
+<a href="https://goreportcard.com/badge/github.com/wuhan005/NekoBox">
+    <img src="https://github.com/wuhan005/NekoBox/workflows/Go/badge.svg" alt="Go Report Card">
 </a>
-<a href="https://sourcegraph.com/github.com/NekoWheel/NekoBox">
+<a href="https://sourcegraph.com/github.com/wuhan005/NekoBox">
     <img src="https://img.shields.io/badge/view%20on-Sourcegraph-brightgreen.svg?logo=sourcegraph" alt="Sourcegraph">
 </a>
-<a href="https://deepsource.io/gh/NekoWheel/NekoBox/?ref=repository-badge">
-    <img src="https://deepsource.io/gh/NekoWheel/NekoBox.svg/?label=active+issues&token=7nuU5C-4QG3CP_5g9qFf3Bl9" alt="DeepSource">
+<a href="https://deepsource.io/gh/wuhan005/NekoBox/?ref=repository-badge">
+    <img src="https://deepsource.io/gh/wuhan005/NekoBox.svg/?label=active+issues&token=7nuU5C-4QG3CP_5g9qFf3Bl9" alt="DeepSource">
 </a>
-<a href="https://goreportcard.com/report/github.com/NekoWheel/NekoBox">
-    <img src="https://goreportcard.com/badge/github.com/NekoWheel/NekoBox" alt="Go Report Card">
+<a href="https://goreportcard.com/report/github.com/wuhan005/NekoBox">
+    <img src="https://goreportcard.com/badge/github.com/wuhan005/NekoBox" alt="Go Report Card">
 <a>
 </p>
 
@@ -41,10 +41,10 @@ referring to the comments in the file.
 
 ```bash
 # Pull the latest image
-docker pull ghcr.io/nekowheel/nekobox:master
+docker pull ghcr.io/wuhan005/nekobox:master
 
 # Start the container (listen on port 80 and mount the configuration file)
-docker run -dt --name NekoBox -p 80:80 -v $(pwd)/app.ini:/app/conf/app.ini ghcr.io/nekowheel/nekobox:master
+docker run -dt --name NekoBox -p 80:80 -v $(pwd)/app.ini:/app/conf/app.ini ghcr.io/wuhan005/nekobox:master
 ```
 
 ### Build from Source
@@ -59,7 +59,7 @@ docker run -dt --name NekoBox -p 80:80 -v $(pwd)/app.ini:/app/conf/app.ini ghcr.
 
 ```bash
 # Clone the source code
-git clone https://github.com/NekoWheel/NekoBox.git
+git clone https://github.com/wuhan005/NekoBox.git
 
 # Enter the project directory
 cd NekoBox

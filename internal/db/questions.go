@@ -15,7 +15,7 @@ import (
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
 
-	"github.com/NekoWheel/NekoBox/internal/dbutil"
+	"github.com/wuhan005/NekoBox/internal/dbutil"
 )
 
 var Questions QuestionsStore

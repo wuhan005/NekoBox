@@ -16,7 +16,7 @@ import (
 	"github.com/wuhan005/govalid"
 	"golang.org/x/text/language"
 
-	"github.com/NekoWheel/NekoBox/internal/context"
+	"github.com/wuhan005/NekoBox/internal/context"
 )
 
 func Bind(model interface{}) flamego.Handler {

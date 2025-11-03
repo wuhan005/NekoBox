@@ -16,7 +16,7 @@ import (
 )
 
 // instrumentationName is the name of this instrumentation package.
-const instrumentationName = "github.com/NekoWheel/NekoBox/internal/tracing"
+const instrumentationName = "github.com/wuhan005/NekoBox/internal/tracing"
 
 // Middleware returns a flamego Handler to trace requests to the server.
 func Middleware(service string, opts ...Option) flamego.Handler {

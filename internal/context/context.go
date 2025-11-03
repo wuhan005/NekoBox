@@ -16,9 +16,9 @@ import (
 	"go.opentelemetry.io/otel/trace"
 	"gorm.io/gorm"
 
-	"github.com/NekoWheel/NekoBox/internal/conf"
-	"github.com/NekoWheel/NekoBox/internal/db"
-	"github.com/NekoWheel/NekoBox/internal/dbutil"
+	"github.com/wuhan005/NekoBox/internal/conf"
+	"github.com/wuhan005/NekoBox/internal/db"
+	"github.com/wuhan005/NekoBox/internal/dbutil"
 )
 
 // Context represents context of a request.

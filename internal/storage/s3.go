@@ -18,7 +18,7 @@ import (
 	"github.com/thanhpk/randstr"
 	"github.com/wuhan005/gadget"
 
-	"github.com/NekoWheel/NekoBox/internal/conf"
+	"github.com/wuhan005/NekoBox/internal/conf"
 )
 
 func UploadPictureToS3(file multipart.File, fileHeader *multipart.FileHeader) (string, error) {

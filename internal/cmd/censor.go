@@ -9,9 +9,9 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli/v2"
 
-	"github.com/NekoWheel/NekoBox/internal/conf"
-	"github.com/NekoWheel/NekoBox/internal/db"
-	"github.com/NekoWheel/NekoBox/internal/security/censor"
+	"github.com/wuhan005/NekoBox/internal/conf"
+	"github.com/wuhan005/NekoBox/internal/db"
+	"github.com/wuhan005/NekoBox/internal/security/censor"
 )
 
 var Censor = &cli.Command{

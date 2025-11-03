@@ -14,7 +14,7 @@ import (
 	"github.com/thanhpk/randstr"
 	"github.com/wuhan005/gadget"
 
-	"github.com/NekoWheel/NekoBox/internal/conf"
+	"github.com/wuhan005/NekoBox/internal/conf"
 )
 
 // UploadPictureToOSS upload user's avatar or background image to OSS.

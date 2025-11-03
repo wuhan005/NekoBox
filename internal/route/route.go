@@ -19,9 +19,9 @@ import (
 	sessionRedis "github.com/flamego/session/redis"
 	"gorm.io/gorm"
 
-	"github.com/NekoWheel/NekoBox/internal/conf"
-	"github.com/NekoWheel/NekoBox/internal/context"
-	"github.com/NekoWheel/NekoBox/internal/form"
+	"github.com/wuhan005/NekoBox/internal/conf"
+	"github.com/wuhan005/NekoBox/internal/context"
+	"github.com/wuhan005/NekoBox/internal/form"
 )
 
 func New(db *gorm.DB) *flamego.Flame {
