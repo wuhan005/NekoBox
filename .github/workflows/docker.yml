@@ -47,8 +47,9 @@ jobs:
           push: true
           build-args: |
             GITHUB_SHA=${{ github.sha }}
+          # Remove '-beta' suffix for stable releases
           tags: |
-            ghcr.io/nekowheel/nekobox:${{ env.IMAGE_TAG }}
+            ghcr.io/nekowheel/nekobox:${{ env.IMAGE_TAG }}-beta
 
   build-web:
     runs-on: ubuntu-latest
