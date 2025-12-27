@@ -18,6 +18,10 @@ import (
 	"github.com/wuhan005/NekoBox/internal/context"
 )
 
+// Proxy forwards the incoming request to a configured backend based on the request path,
+// propagates tracing headers and the authenticated user ID, and writes the proxied response back to the client.
+// It returns an error when the request could not be proxied and an HTTP error response was written
+// (for example when no backend matches or when the backend URL is invalid); otherwise it returns nil.
 func Proxy(ctx context.Context) error {
 	span := trace.SpanFromContext(ctx.Request().Context())
 

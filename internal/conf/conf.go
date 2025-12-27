@@ -15,6 +15,18 @@ import (
 // File is the configuration object.
 var File *ini.File
 
+// Init loads and initializes package configuration from an INI file.
+// 
+// It reads NEKOBOX_CONFIG_PATH to determine the config file path (defaults to "conf/app.ini"),
+// parses the INI file with inline comments ignored, and maps INI sections into the package-level
+// configuration structs (App, Security, Server, Database, Redis, Recaptcha, Pixel, Upload, Mail).
+// It requires App.ExternalURL to be set and trims any trailing slash from it.
+// 
+// Service child sections under the "service" section are each mapped into a backend with
+// `prefix` and `forward_url` fields and appended to Service.Backends.
+// 
+// On success it returns nil. It returns a wrapped error if the file cannot be parsed or if any
+// section mapping (including individual service subsections) fails, or if App.ExternalURL is empty.
 func Init() error {
 	configFile := os.Getenv("NEKOBOX_CONFIG_PATH")
 	if configFile == "" {

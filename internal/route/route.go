@@ -35,6 +35,9 @@ import (
 	"github.com/wuhan005/NekoBox/templates"
 )
 
+// New creates and returns a fully configured Flamego application.
+//
+// The returned instance is configured with environment mode (production when enabled), embedded HTML templates, session storage (memory, MySQL, or Redis depending on configuration), static file serving, route groups and handlers (including web and API endpoints), common middleware (cache, reCAPTCHA v3, session, CSRF, templating, and custom context), and a NotFound handler that redirects to "/".
 func New() *flamego.Flame {
 	f := flamego.Classic()
 	if conf.App.Production {
