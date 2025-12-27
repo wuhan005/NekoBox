@@ -5,6 +5,7 @@
 package conf
 
 import (
+	"fmt"
 	"os"
 	"strings"
 
@@ -69,6 +70,21 @@ func Init() error {
 	if err := File.Section("mail").MapTo(&Mail); err != nil {
 		return errors.Wrap(err, "map 'mail'")
 	}
+
+	serviceSections := File.Section("service").ChildSections()
+	for _, serviceSection := range serviceSections {
+		serviceSection := serviceSection
+		var backend struct {
+			Prefix     string `ini:"prefix"`
+			ForwardURL string `ini:"forward_url"`
+		}
+		if err := serviceSection.MapTo(&backend); err != nil {
+			return errors.Wrapf(err, "map 'service.%s'", serviceSection.Name())
+		}
+		Service.Backends = append(Service.Backends, backend)
+	}
+
+	fmt.Printf("%+v\n", Service)
 
 	return nil
 }

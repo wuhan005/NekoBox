@@ -83,4 +83,11 @@ var (
 		Port     int    `ini:"port"`
 		SMTP     string `ini:"smtp"`
 	}
+
+	Service struct {
+		Backends []struct {
+			Prefix     string `ini:"prefix"`
+			ForwardURL string `ini:"forward_url"`
+		}
+	}
 )

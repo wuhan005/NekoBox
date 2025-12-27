@@ -29,6 +29,7 @@ import (
 	"github.com/wuhan005/NekoBox/route/auth"
 	"github.com/wuhan005/NekoBox/route/pixel"
 	"github.com/wuhan005/NekoBox/route/question"
+	"github.com/wuhan005/NekoBox/route/service"
 	"github.com/wuhan005/NekoBox/route/user"
 	"github.com/wuhan005/NekoBox/static"
 	"github.com/wuhan005/NekoBox/templates"
@@ -141,6 +142,7 @@ func New() *flamego.Flame {
 			})
 
 			f.Any("/pixel/{**}", reqUserSignIn, pixel.Proxy)
+			f.Any("/service/{**}", service.Proxy)
 		}, context.APIEndpoint)
 	},
 		cache.Cacher(cache.Options{
