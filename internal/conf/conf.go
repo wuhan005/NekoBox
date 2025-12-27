@@ -5,7 +5,6 @@
 package conf
 
 import (
-	"fmt"
 	"os"
 	"strings"
 
@@ -83,8 +82,6 @@ func Init() error {
 		}
 		Service.Backends = append(Service.Backends, backend)
 	}
-
-	fmt.Printf("%+v\n", Service)
 
 	return nil
 }
