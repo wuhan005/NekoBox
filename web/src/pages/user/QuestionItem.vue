@@ -9,11 +9,11 @@
           <Skeleton>{{ question.content }}</Skeleton>
         </h4>
         <ul v-if="question.questionImageURLs.length > 0" class="uk-thumbnav" uk-margin>
-          <div v-for="(imageURL, index) in question.questionImageURLs" v-bind:key="index" uk-lightbox>
+          <li v-for="(imageURL, index) in question.questionImageURLs" v-bind:key="index" uk-lightbox>
             <a :href="imageURL">
               <img class="uk-border-rounded uk-object-fill" :src="imageURL" width="100" height="100"/>
             </a>
-          </div>
+          </li>
         </ul>
       </div>
 
@@ -22,11 +22,11 @@
           <Skeleton>{{ question.answer }}</Skeleton>
         </p>
         <ul v-if="question.answerImageURLs.length > 0" class="uk-thumbnav" uk-margin>
-          <div v-for="(imageURL, index) in question.answerImageURLs" v-bind:key="index" uk-lightbox>
+          <li v-for="(imageURL, index) in question.answerImageURLs" v-bind:key="index" uk-lightbox>
             <a :href="imageURL">
               <img class="uk-border-rounded uk-object-fill" :src="imageURL" width="100" height="100"/>
             </a>
-          </div>
+          </li>
         </ul>
         <p class="uk-text-small uk-text-right uk-text-muted">-来自@{{ profile.name }}的回答</p>
       </div>
