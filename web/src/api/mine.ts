@@ -9,7 +9,7 @@ export interface MineQuestionItem {
 }
 
 export interface MineQuestions {
-    total: string;
+    total: number;
     cursor: string;
     questions: MineQuestionItem[];
 }
