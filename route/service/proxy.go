@@ -22,7 +22,7 @@ func Proxy(ctx context.Context) error {
 	span := trace.SpanFromContext(ctx.Request().Context())
 
 	var userID uint
-	if ctx.IsLogged {
+	if ctx.IsSignedIn {
 		userID = ctx.User.ID
 	}
 
@@ -44,13 +44,13 @@ func Proxy(ctx context.Context) error {
 		}
 	}
 	if len(forwardURLStr) == 0 {
-		return ctx.JSONError(http.StatusNotFound, "页面不存在")
+		return ctx.Error(http.StatusNotFound, "页面不存在")
 	}
 
 	forwardURL, err := url.Parse(forwardURLStr)
 	if err != nil {
 		logrus.WithContext(ctx.Request().Context()).WithError(err).Error("Failed to parse forward URL")
-		return ctx.JSONError(http.StatusInternalServerError, "服务网关内部错误")
+		return ctx.Error(http.StatusInternalServerError, "服务网关内部错误")
 	}
 
 	reverseProxy := httputil.ReverseProxy{
@@ -75,7 +75,7 @@ func Proxy(ctx context.Context) error {
 		},
 		ErrorHandler: func(writer http.ResponseWriter, request *http.Request, err error) {
 			logrus.WithContext(ctx.Request().Context()).WithError(err).Error("Failed to handle reverse proxy request")
-			_ = ctx.JSONError(http.StatusInternalServerError, "服务网关内部错误")
+			_ = ctx.Error(http.StatusInternalServerError, "服务网关内部错误")
 		},
 	}
 
