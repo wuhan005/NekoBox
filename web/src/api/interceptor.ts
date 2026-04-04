@@ -35,12 +35,17 @@ axios.interceptors.response.use(
         return res.data;
     },
     (error) => {
+        if (!error.response) {
+            ToastError('网络错误，请检查网络连接')
+            return Promise.reject(error);
+        }
+
         if (error.response.status === 401) {
             const authStore = useAuthStore()
             authStore.signOut()
 
             router.push({name: 'sign-in'})
-            return;
+            return Promise.reject(error);
         }
 
         ToastError(error.response.data.msg || '未知错误')
