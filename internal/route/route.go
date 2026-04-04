@@ -16,6 +16,7 @@ import (
 	"github.com/flamego/recaptcha"
 	"github.com/flamego/session"
 	"github.com/flamego/session/mysql"
+	"github.com/flamego/session/postgres"
 	sessionRedis "github.com/flamego/session/redis"
 	"gorm.io/gorm"
 
@@ -36,10 +37,19 @@ func New(db *gorm.DB) *flamego.Flame {
 	var sessionStorage interface{}
 	initer := session.MemoryIniter()
 	if conf.Database.DSN != "" {
-		initer = mysql.Initer()
-		sessionStorage = mysql.Config{
-			DSN:      conf.Database.DSN,
-			Lifetime: 7 * 24 * time.Hour,
+		switch conf.Database.Type {
+		case "mysql":
+			initer = mysql.Initer()
+			sessionStorage = mysql.Config{
+				DSN:      conf.Database.DSN,
+				Lifetime: 7 * 24 * time.Hour,
+			}
+		case "postgres":
+			initer = postgres.Initer()
+			sessionStorage = postgres.Config{
+				DSN:      conf.Database.DSN,
+				Lifetime: 7 * 24 * time.Hour,
+			}
 		}
 	}
 	if conf.Redis.Addr != "" {
