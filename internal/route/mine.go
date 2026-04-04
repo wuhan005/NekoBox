@@ -136,11 +136,13 @@ func (*MineHandler) AnswerQuestion(ctx context.Context, question *db.Question, t
 		}
 
 		// Update censor result.
-		if err := questionsStore.UpdateCensor(ctx.Request().Context(), question.ID, db.UpdateQuestionCensorOptions{
-			AnswerCensorMetadata: censorResponse.ToJSON(),
-		}); err != nil {
-			logrus.WithContext(ctx.Request().Context()).WithError(err).Error("Failed to update answer censor result")
-			return errors.Wrap(err, "update question censor")
+		if censorResponse != nil {
+			if err := questionsStore.UpdateCensor(ctx.Request().Context(), question.ID, db.UpdateQuestionCensorOptions{
+				AnswerCensorMetadata: censorResponse.ToJSON(),
+			}); err != nil {
+				logrus.WithContext(ctx.Request().Context()).WithError(err).Error("Failed to update answer censor result")
+				return errors.Wrap(err, "update question censor")
+			}
 		}
 
 		if uploadImage != nil {

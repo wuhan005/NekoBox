@@ -219,11 +219,13 @@ func (*UserHandler) PostQuestion(ctx context.Context, pageUser *db.User, recaptc
 		}
 
 		// Update censor result.
-		if err := questionsStore.UpdateCensor(ctx.Request().Context(), question.ID, db.UpdateQuestionCensorOptions{
-			ContentCensorMetadata: censorResponse.ToJSON(),
-		}); err != nil {
-			logrus.WithContext(ctx.Request().Context()).WithError(err).Error("Failed to update question censor result")
-			return errors.Wrap(err, "update question censor")
+		if censorResponse != nil {
+			if err := questionsStore.UpdateCensor(ctx.Request().Context(), question.ID, db.UpdateQuestionCensorOptions{
+				ContentCensorMetadata: censorResponse.ToJSON(),
+			}); err != nil {
+				logrus.WithContext(ctx.Request().Context()).WithError(err).Error("Failed to update question censor result")
+				return errors.Wrap(err, "update question censor")
+			}
 		}
 
 		if uploadImage != nil {
