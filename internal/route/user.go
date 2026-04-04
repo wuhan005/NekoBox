@@ -129,13 +129,13 @@ func (*UserHandler) PostQuestion(ctx context.Context, pageUser *db.User, recaptc
 		return ctx.Error(http.StatusBadRequest, "提问箱的主人设置了仅注册用户才能提问，请先登录。")
 	}
 
-	var receiveReplyEmail string
-	if f.ReceiveReplyEmail != "" {
+	receiveReplyEmail := f.ReceiveReplyEmail
+	if receiveReplyEmail != "" {
 		// Check the email address is valid.
 		if errs, ok := govalid.Check(struct {
 			Email string `valid:"required;email" label:"邮箱地址"`
 		}{
-			Email: f.ReceiveReplyEmail,
+			Email: receiveReplyEmail,
 		}); !ok {
 			return ctx.Error(http.StatusBadRequest, "%s", errs[0].Error())
 		}
