@@ -31,11 +31,12 @@
 import {ref} from 'vue'
 import {Form, Field, ErrorMessage} from 'vee-validate';
 import {signIn, type SignInRequest} from "@/api/auth.ts";
-import {useRouter} from "vue-router";
+import {useRoute, useRouter} from "vue-router";
 import {ToastError, ToastSuccess} from "@/utils/notify.ts";
 import {useAuthStore} from "@/store";
 import {type IReCaptchaComposition, useReCaptcha} from 'vue-recaptcha-v3'
 
+const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
 const {executeRecaptcha, recaptchaLoaded} = useReCaptcha() as IReCaptchaComposition
@@ -62,11 +63,15 @@ const handleSignIn = async () => {
         ToastSuccess('登录成功，欢迎回来~')
         authStore.signIn(res.profile, res.sessionID)
 
-        router.push({
-          name: 'profile', params: {
-            domain: res.profile.domain
+        if (route.query.to) {
+          try {
+            router.push(route.query.to as string)
+          } catch (error) {
+            router.push({name: 'profile', params: {domain: res.profile.domain}})
           }
-        })
+        } else {
+          router.push({name: 'profile', params: {domain: res.profile.domain}})
+        }
       })
       .finally(() => {
         isLoading.value = false

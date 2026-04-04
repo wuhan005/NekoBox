@@ -50,10 +50,6 @@ func (*UserHandler) Domainer(ctx context.Context) error {
 		return ctx.ServerError()
 	}
 
-	if pageUser.HarassmentSetting == db.HarassmentSettingTypeRegisterOnly && !ctx.IsSignedIn {
-		return ctx.Error(http.StatusUnauthorized, "请先登录账号")
-	}
-
 	ctx.Map(pageUser)
 	return nil
 }

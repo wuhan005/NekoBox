@@ -4,7 +4,7 @@
       <p>提问箱的主人设置了仅注册用户才能提问，你需要先登录 NekoBox 才能向他提问。</p>
     </div>
     <div class="uk-margin uk-text-center">
-      <a class="uk-button uk-button-primary" href="/login?to=.CurrentURI">前往登录</a>
+      <a class="uk-button uk-button-primary" :href="`/sign-in?to=${route.path}`">前往登录</a>
     </div>
   </div>
 
@@ -68,6 +68,9 @@ import {postQuestion, type PostQuestionRequest} from "@/api/user.ts";
 import {Form} from "vee-validate";
 import {ToastError} from "@/utils/notify.ts";
 import {type IReCaptchaComposition, useReCaptcha} from "vue-recaptcha-v3";
+import {useRoute} from "vue-router";
+
+const route = useRoute();
 
 const authStore = useAuthStore()
 const {executeRecaptcha, recaptchaLoaded} = useReCaptcha() as IReCaptchaComposition
