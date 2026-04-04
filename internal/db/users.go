@@ -275,7 +275,7 @@ func (db *users) Deactivate(ctx context.Context, id uint) error {
 
 func (db *users) validate(ctx context.Context, opts CreateUserOptions) error {
 	if err := db.WithContext(ctx).Model(&User{}).Where("email = ?", opts.Email).First(&User{}).Error; err != nil {
-		if err != gorm.ErrRecordNotFound {
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
 			return errors.Wrap(err, "validate email")
 		}
 	} else {
@@ -283,7 +283,7 @@ func (db *users) validate(ctx context.Context, opts CreateUserOptions) error {
 	}
 
 	if err := db.WithContext(ctx).Model(&User{}).Where("domain = ?", opts.Domain).First(&User{}).Error; err != nil {
-		if err != gorm.ErrRecordNotFound {
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
 			return errors.Wrap(err, "validate name")
 		}
 	} else {

@@ -49,9 +49,7 @@ func (*AuthHandler) SignUp(ctx context.Context, recaptcha recaptcha.RecaptchaV3,
 		Intro:      "问你想问的",
 	}); err != nil {
 		switch {
-		case errors.Is(err, db.ErrUserNotExists),
-			errors.Is(err, db.ErrBadCredential),
-			errors.Is(err, db.ErrDuplicateEmail),
+		case errors.Is(err, db.ErrDuplicateEmail),
 			errors.Is(err, db.ErrDuplicateDomain):
 			return ctx.Error(http.StatusBadRequest, "%s", errors.Cause(err).Error())
 
