@@ -140,6 +140,7 @@ func (*MineHandler) AnswerQuestion(ctx context.Context, question *db.Question, t
 			AnswerCensorMetadata: censorResponse.ToJSON(),
 		}); err != nil {
 			logrus.WithContext(ctx.Request().Context()).WithError(err).Error("Failed to update answer censor result")
+			return errors.Wrap(err, "update question censor")
 		}
 
 		if uploadImage != nil {
