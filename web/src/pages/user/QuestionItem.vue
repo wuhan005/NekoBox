@@ -195,6 +195,7 @@ const handleSetVisible = () => {
 }
 
 watch(() => [route.params, route.query], () => {
+  domain.value = route.params.domain as string || ''
   questionID.value = route.params.questionID as string || ''
   questionToken.value = route.query.t as string || ''
   fetchQuestion()
@@ -202,7 +203,7 @@ watch(() => [route.params, route.query], () => {
 
 const fetchQuestion = () => {
   isLoading.value = true
-  question.value = EMPTY_QUESTION
+  question.value = { ...EMPTY_QUESTION }
 
   getUserQuestion(domain.value, questionID.value, questionToken.value)
       .then(res => {

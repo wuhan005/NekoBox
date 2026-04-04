@@ -21,6 +21,7 @@
 
 <script setup lang="ts">
 import {defineProps} from 'vue';
+import {computed} from 'vue';
 import {useQRCode} from '@vueuse/integrations/useQRCode'
 
 const props = defineProps({
@@ -29,7 +30,7 @@ const props = defineProps({
   qrcode: String
 })
 
-const qrcodeVal = useQRCode(props.qrcode || '', {
+const qrcodeVal = useQRCode(computed(() => props.qrcode || ''), {
   width: 400,
   height: 400,
   colorDark: "#000000",

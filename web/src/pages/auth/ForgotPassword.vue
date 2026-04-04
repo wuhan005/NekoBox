@@ -9,7 +9,9 @@
         <ErrorMessage class="field-error-message" name="email"/>
       </div>
       <div class="uk-margin">
-        <button type="submit" class="uk-button uk-button-primary">找回密码</button>
+        <button type="submit" class="uk-button uk-button-primary" :disabled="isLoading">
+          {{ isLoading ? '提交中...' : '找回密码' }}
+        </button>
       </div>
     </fieldset>
   </Form>
