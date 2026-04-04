@@ -32,7 +32,7 @@
 </template>
 
 <script setup lang="ts">
-import {defineProps, onMounted, ref} from "vue";
+import {defineProps, watch, ref} from "vue";
 import {getUserQuestions, type PageQuestionItem} from '@/api/user.ts'
 import {humanizeDate} from "@/utils/humanize.ts";
 import {useRouter} from "vue-router";
@@ -87,9 +87,14 @@ const handleViewQuestion = (question: PageQuestionItem) => {
   })
 }
 
-onMounted(() => {
-  fetchQuestions()
-})
+watch(() => props.pageProfileDomain, (domain) => {
+  if (domain) {
+    questions.value = []
+    questionCursor.value = ''
+    hasMore.value = true
+    fetchQuestions()
+  }
+}, {immediate: true})
 </script>
 
 <style scoped>

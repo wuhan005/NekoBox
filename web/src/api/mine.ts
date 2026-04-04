@@ -26,7 +26,6 @@ export function mineQuestions(cursor: string, pageSize: number) {
 export interface AnswerQuestionRequest {
     answer: string;
     images: File[];
-    recaptcha: string;
 }
 
 export function answerQuestion(questionID: number | string, data: AnswerQuestionRequest) {

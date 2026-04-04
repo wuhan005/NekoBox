@@ -48,7 +48,10 @@ axios.interceptors.response.use(
             return Promise.reject(error);
         }
 
-        ToastError(error.response.data.msg || '未知错误')
+        // 404 is handled by the page component (e.g., redirect to the homepage) and does not trigger a Toast notification.
+        if (error.response.status !== 404) {
+            ToastError(error.response?.data?.msg || '未知错误')
+        }
         return Promise.reject(error);
     }
 );

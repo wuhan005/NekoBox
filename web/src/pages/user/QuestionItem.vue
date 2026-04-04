@@ -142,7 +142,6 @@ const isSubmitting = ref<boolean>(false)
 const answerQuestionForm = ref<AnswerQuestionRequest>({
   answer: '',
   images: [],
-  recaptcha: '',
 })
 const handleAnswer = () => {
   isSubmitting.value = true
