@@ -22,6 +22,7 @@ import (
 	"github.com/wuhan005/NekoBox/internal/conf"
 	"github.com/wuhan005/NekoBox/internal/context"
 	"github.com/wuhan005/NekoBox/internal/form"
+	"github.com/wuhan005/NekoBox/route/service"
 )
 
 func New(db *gorm.DB) *flamego.Flame {
@@ -142,6 +143,7 @@ func New(db *gorm.DB) *flamego.Flame {
 		}, reqUserSignIn)
 	})
 
+	f.Any("/service/{**}", service.Proxy)
 	f.NotFound(func(ctx context.Context) error {
 		return ctx.Error(http.StatusNotFound, "资源不存在")
 	})

@@ -70,5 +70,18 @@ func Init() error {
 		return errors.Wrap(err, "map 'mail'")
 	}
 
+	serviceSections := File.Section("service").ChildSections()
+	for _, serviceSection := range serviceSections {
+		serviceSection := serviceSection
+		var backend struct {
+			Prefix     string `ini:"prefix"`
+			ForwardURL string `ini:"forward_url"`
+		}
+		if err := serviceSection.MapTo(&backend); err != nil {
+			return errors.Wrapf(err, "map 'service.%s'", serviceSection.Name())
+		}
+		Service.Backends = append(Service.Backends, backend)
+	}
+
 	return nil
 }
