@@ -194,7 +194,7 @@ const handleSetVisible = () => {
   })
 }
 
-watch(() => route.params, () => {
+watch(() => [route.params, route.query], () => {
   questionID.value = route.params.questionID as string || ''
   questionToken.value = route.query.t as string || ''
   fetchQuestion()
