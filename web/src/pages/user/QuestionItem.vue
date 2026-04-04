@@ -76,7 +76,7 @@
               <button type="submit" class="uk-button uk-button-primary" :disabled="isSubmitting">
                 <span v-if="isSubmitting">提交中...</span>
                 <span v-else>
-                  <span v-if="question.content">更新</span>回答
+                  <span v-if="question.answer">更新</span>回答
                 </span>
               </button>
             </div>
