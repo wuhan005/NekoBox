@@ -98,6 +98,9 @@ func New(db *gorm.DB) *flamego.Flame {
 			recaptcha.Options{
 				Secret: conf.Recaptcha.ServerKey,
 				VerifyURL: func() recaptcha.VerifyURL {
+					if conf.Recaptcha.VerifyURL != "" {
+						return recaptcha.VerifyURL(conf.Recaptcha.VerifyURL)
+					}
 					if conf.Recaptcha.TurnstileStyle {
 						// FYI: https://developers.cloudflare.com/turnstile/migration/migrating-from-recaptcha/
 						return "https://challenges.cloudflare.com/turnstile/v0/siteverify"

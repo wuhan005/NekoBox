@@ -1,0 +1,150 @@
+name: E2E Tests
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  e2e:
+    name: Run E2E Tests
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: nekobox
+          POSTGRES_PASSWORD: nekobox
+          POSTGRES_DB: nekobox_e2e
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      mailhog:
+        image: mailhog/mailhog:latest
+        ports:
+          - 1025:1025
+          - 8025:8025
+        options: >-
+          --health-cmd "wget -qO- http://localhost:8025/api/v2/messages || exit 1"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
+      minio:
+        # bitnami/minio starts the server automatically and supports
+        # MINIO_DEFAULT_BUCKETS to pre-create buckets on first boot.
+        image: bitnami/minio:latest
+        env:
+          MINIO_ROOT_USER: minioadmin
+          MINIO_ROOT_PASSWORD: minioadmin
+          MINIO_DEFAULT_BUCKETS: nekobox-e2e
+        ports:
+          - 9000:9000
+          - 9001:9001
+        options: >-
+          --health-cmd "curl -f http://localhost:9000/minio/health/live || exit 1"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
+
+      # ── Backend ────────────────────────────────────────────────────────────
+
+      - name: Build backend
+        run: go build -o ./nekobox-server ./cmd/nekobox.go
+
+      - name: Start backend (port 8080)
+        run: NEKOBOX_CONFIG_PATH=conf/app.e2e.ini ./nekobox-server web &
+
+      # ── Frontend ───────────────────────────────────────────────────────────
+
+      - name: Install frontend dependencies
+        working-directory: web
+        run: pnpm install
+
+      - name: Start frontend dev server (port 3000)
+        working-directory: web
+        run: pnpm dev &
+        env:
+          VITE_RECAPTCHA_SITE_KEY: 6LdV7SYqAAAAALwpxAFxDU4VnzztKK5UU4nfbQ1b
+          VITE_EXTERNAL_URL: http://localhost:3000
+
+      - name: Wait for frontend to be ready
+        run: |
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:3000 > /dev/null 2>&1; then
+              echo "Frontend is up!"
+              break
+            fi
+            echo "Waiting for frontend ($i/30)..."
+            sleep 2
+          done
+
+      # ── Playwright ─────────────────────────────────────────────────────────
+
+      - name: Install Playwright dependencies
+        working-directory: e2e
+        run: npm install
+
+      - name: Install Playwright browsers
+        working-directory: e2e
+        run: npx playwright install --with-deps chromium
+
+      - name: Run Playwright E2E tests
+        working-directory: e2e
+        run: npx playwright test
+        env:
+          E2E_BASE_URL: http://localhost:3000
+          E2E_MAILHOG_URL: http://localhost:8025
+
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report
+          path: e2e/playwright-report/
+          retention-days: 30
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage/coverage-final.json
+          flags: e2e
+          name: e2e-tests
+

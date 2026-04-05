@@ -57,6 +57,7 @@ var (
 		SiteKey        string `ini:"site_key"`
 		ServerKey      string `ini:"server_key"`
 		TurnstileStyle bool   `ini:"turnstile_style"`
+		VerifyURL      string `ini:"verify_url"` // Optional: override verify URL (e.g. for testing)
 	}
 
 	Pixel struct {
