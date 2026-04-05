@@ -16,6 +16,11 @@ export default defineConfig({
         ...(process.env.CI ? ([['github']] as any) : []),
     ],
 
+    // Real reCAPTCHA + remote verify can take longer than default 5s in CI.
+    expect: {
+        timeout: process.env.CI ? 15_000 : 10_000,
+    },
+
     use: {
         baseURL: process.env.E2E_BASE_URL || 'http://localhost:3000',
         trace: 'on-first-retry',
