@@ -50,21 +50,6 @@ jobs:
           --health-timeout 3s
           --health-retries 10
 
-      minio:
-        image: pgsty/minio
-        env:
-          MINIO_ROOT_USER: minioadmin
-          MINIO_ROOT_PASSWORD: minioadmin
-          MINIO_DEFAULT_BUCKETS: nekobox-e2e
-        ports:
-          - 9000:9000
-          - 9001:9001
-        options: >-
-          --health-cmd "curl -f http://localhost:9000/minio/health/live || exit 1"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 10
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -83,6 +68,38 @@ jobs:
         uses: pnpm/action-setup@v4
         with:
           version: latest
+
+      - name: Start MinIO (pgsty/minio)
+        run: |
+          docker run -d \
+            --name minio \
+            -p 9000:9000 \
+            -p 9001:9001 \
+            -e MINIO_ROOT_USER=minioadmin \
+            -e MINIO_ROOT_PASSWORD=minioadmin \
+            pgsty/minio \
+            server /data --console-address ":9001"
+
+      - name: Wait for MinIO
+        run: |
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:9000/minio/health/live > /dev/null; then
+              echo "MinIO is up"
+              exit 0
+            fi
+            echo "Waiting for MinIO ($i/30)..."
+            sleep 2
+          done
+          echo "MinIO did not become ready in time"
+          docker logs minio
+          exit 1
+
+      - name: Create MinIO bucket
+        run: |
+          curl -fsSL https://dl.min.io/client/mc/release/linux-amd64/mc -o ./mc
+          chmod +x ./mc
+          ./mc alias set local http://localhost:9000 minioadmin minioadmin
+          ./mc mb --ignore-existing local/nekobox-e2e
 
       # ── Backend ────────────────────────────────────────────────────────────
 
