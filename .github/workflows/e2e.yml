@@ -48,9 +48,7 @@ jobs:
           --health-retries 10
 
       minio:
-        # bitnami/minio starts the server automatically and supports
-        # MINIO_DEFAULT_BUCKETS to pre-create buckets on first boot.
-        image: bitnami/minio:latest
+        image: pgsty/minio
         env:
           MINIO_ROOT_USER: minioadmin
           MINIO_ROOT_PASSWORD: minioadmin
