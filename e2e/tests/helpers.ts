@@ -1,4 +1,5 @@
 import type { Page } from '@playwright/test';
+import { randomBytes } from 'node:crypto';
 
 // ─── reCAPTCHA mock ──────────────────────────────────────────────────────────
 
@@ -35,11 +36,16 @@ export async function mockRecaptcha(page: Page): Promise<void> {
  * Each test run gets a different domain/email so repeated local runs do not clash.
  */
 export function uniqueUser(prefix: string) {
-    const ts = Date.now();
+    const ts = Date.now().toString(36);
+    const nonce = randomBytes(3).toString('hex');
+    // Keep domain <= 20 chars to satisfy form/backend constraints.
+    const domainPrefix = prefix.toLowerCase().replace(/[^a-z0-9-]/g, '').slice(0, 8) || 'user';
+    const domain = `${domainPrefix}-${ts}${nonce}`.slice(0, 20);
+
     return {
-        email: `${prefix}-${ts}@example.com`,
-        domain: `${prefix}${ts}`,
-        name: `${prefix} ${ts}`,
+        email: `${domain}@example.com`,
+        domain,
+        name: `${prefix} ${nonce}`,
         password: 'Password123!',
     };
 }

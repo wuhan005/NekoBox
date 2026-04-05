@@ -3,9 +3,10 @@ import { defineConfig, devices } from '@playwright/test';
 export default defineConfig({
     testDir: './tests',
 
-    // Tests are sequential to avoid inter-test race conditions against shared DB/mail state.
-    fullyParallel: false,
-    workers: 1,
+    // Run tests in parallel, but keep worker count conservative for CI stability.
+    fullyParallel: true,
+    workers: process.env.CI ? 2 : undefined,
+    timeout: process.env.CI ? 90_000 : 60_000,
 
     forbidOnly: !!process.env.CI,
     retries: process.env.CI ? 1 : 0,

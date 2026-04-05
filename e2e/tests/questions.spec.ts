@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { registerAndLogin, waitForMailhogEmail, mockRecaptcha } from './helpers';
+import { registerAndLogin, waitForMailhogEmail } from './helpers';
 
 // ─── Post a question ──────────────────────────────────────────────────────────
 
@@ -67,7 +67,7 @@ test('owner receives a "new question" email when someone posts a question', asyn
 
 test('questioner receives a reply email when their question is answered', async ({ page }) => {
     const owner = await registerAndLogin(page, 'replyowner');
-    const replyEmail = `reply-${Date.now()}@example.com`;
+    const replyEmail = `reply-${owner.domain}-${Date.now()}@example.com`;
 
     // 1. Post a question with an email-reply address.
     await page.goto(`/_/${owner.domain}`);
