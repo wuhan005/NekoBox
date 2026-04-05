@@ -357,17 +357,76 @@ func testQuestionsUpdateCensor(t *testing.T, ctx context.Context, db *questions)
 		})
 		require.Nil(t, err)
 
-		err = db.DeleteByID(ctx, 1)
+		contentMetadata := []byte(`{"source_name":"aliyun","result":"pass"}`)
+		answerMetadata := []byte(`{"source_name":"qiniu","result":"review"}`)
+
+		err = db.UpdateCensor(ctx, 1, UpdateQuestionCensorOptions{
+			ContentCensorMetadata: contentMetadata,
+			AnswerCensorMetadata:  answerMetadata,
+		})
 		require.Nil(t, err)
 
-		_, err = db.GetByID(ctx, 1)
-		require.Equal(t, ErrQuestionNotExist, err)
+		got, err := db.GetByID(ctx, 1)
+		require.Nil(t, err)
+		require.JSONEq(t, string(contentMetadata), string(got.ContentCensorMetadata))
+		require.JSONEq(t, string(answerMetadata), string(got.AnswerCensorMetadata))
+	})
+
+	t.Run("invalid metadata should keep original value", func(t *testing.T) {
+		_, err := db.Create(ctx, CreateQuestionOptions{
+			FromIP:            "114.5.1.4",
+			UserID:            1,
+			Content:           "Content - 2",
+			ReceiveReplyEmail: "i@github.red",
+			AskerUserID:       1,
+		})
+		require.Nil(t, err)
+
+		originContentMetadata := []byte(`{"source_name":"aliyun","result":"pass"}`)
+		originAnswerMetadata := []byte(`{"source_name":"qiniu","result":"pass"}`)
+
+		err = db.UpdateCensor(ctx, 2, UpdateQuestionCensorOptions{
+			ContentCensorMetadata: originContentMetadata,
+			AnswerCensorMetadata:  originAnswerMetadata,
+		})
+		require.Nil(t, err)
+
+		err = db.UpdateCensor(ctx, 2, UpdateQuestionCensorOptions{
+			ContentCensorMetadata: []byte(`null`),
+			AnswerCensorMetadata:  []byte(`{"source_name":}`),
+		})
+		require.Nil(t, err)
+
+		got, err := db.GetByID(ctx, 2)
+		require.Nil(t, err)
+		require.JSONEq(t, string(originContentMetadata), string(got.ContentCensorMetadata))
+		require.JSONEq(t, string(originAnswerMetadata), string(got.AnswerCensorMetadata))
 	})
 
 	t.Run("not found", func(t *testing.T) {
 		err := db.UpdateCensor(ctx, 404, UpdateQuestionCensorOptions{})
 		require.NotNil(t, err)
 	})
+}
+
+func TestCheckTextCensorResponseValid(t *testing.T) {
+	t.Parallel()
+
+	for _, tc := range []struct {
+		name string
+		raw  []byte
+		want bool
+	}{
+		{name: "empty", raw: nil, want: false},
+		{name: "null", raw: []byte(`null`), want: false},
+		{name: "missing source", raw: []byte(`{"result":"pass"}`), want: false},
+		{name: "malformed", raw: []byte(`{"source_name":}`), want: false},
+		{name: "valid", raw: []byte(`{"source_name":"aliyun"}`), want: true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			require.Equal(t, tc.want, checkTextCensorResponseValid(tc.raw))
+		})
+	}
 }
 
 func testQuestionsCount(t *testing.T, ctx context.Context, db *questions) {

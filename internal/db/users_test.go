@@ -30,6 +30,7 @@ func TestUsers(t *testing.T) {
 		{"GetByEmail", testUsersGetByEmail},
 		{"GetByDomain", testUsersGetByDomain},
 		{"Update", testUsersUpdate},
+		{"SetName", testUsersSetName},
 		{"UpdateHarassmentSetting", testUsersUpdateHarassmentSetting},
 		{"Authenticate", testUsersAuthenticate},
 		{"ChangePassword", testUsersChangePassword},
@@ -261,6 +262,33 @@ func testUsersUpdate(t *testing.T, ctx context.Context, db *users) {
 		}
 		want.EncodePassword()
 		require.Equal(t, want, got)
+	})
+}
+
+func testUsersSetName(t *testing.T, ctx context.Context, db *users) {
+	err := db.Create(ctx, CreateUserOptions{
+		Name:       "E99p1ant",
+		Password:   "super_secret",
+		Email:      "i@github.red",
+		Avatar:     "avater.png",
+		Domain:     "e99",
+		Background: "background.png",
+		Intro:      "Be cool, but also be warm.",
+	})
+	require.Nil(t, err)
+
+	t.Run("normal", func(t *testing.T) {
+		err := db.SetName(ctx, 1, "new-name")
+		require.Nil(t, err)
+
+		got, err := db.GetByID(ctx, 1)
+		require.Nil(t, err)
+		require.Equal(t, "new-name", got.Name)
+	})
+
+	t.Run("empty name", func(t *testing.T) {
+		err := db.SetName(ctx, 1, "   ")
+		require.EqualError(t, err, "name cannot be empty")
 	})
 }
 
