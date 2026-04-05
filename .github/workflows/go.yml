@@ -37,6 +37,10 @@ jobs:
           DB_USER: root
           DB_PASSWORD: root
           DB_DATABASE: nekobox
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   test-postgres:
     name: Test Postgres
@@ -68,6 +72,10 @@ jobs:
           DB_USER: postgres
           DB_PASSWORD: postgres
           DB_DATABASE: nekobox
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   lint:
     name: Lint
