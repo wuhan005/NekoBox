@@ -1,34 +1,6 @@
 import { expect, type Page } from '@playwright/test';
 import { randomBytes } from 'node:crypto';
 
-// ─── reCAPTCHA mock ──────────────────────────────────────────────────────────
-
-/**
- * Intercepts the reCAPTCHA v3 script request and injects a lightweight mock so
- * the test-runner never needs network access to Google/recaptcha.net.
- *
- * Call this before navigating to any page that uses reCAPTCHA.
- */
-export async function mockRecaptcha(page: Page): Promise<void> {
-    const mockScript = `
-        window.grecaptcha = {
-            ready: function(cb) { if (typeof cb === 'function') cb(); },
-            execute: function(_siteKey, _opts) { return Promise.resolve('e2e-mock-token'); },
-            render: function() { return 0; },
-            reset: function() {},
-            getResponse: function() { return 'e2e-mock-token'; },
-        };
-    `;
-
-    // 1. Intercept the script download and return the mock inline.
-    await page.route(/recaptcha\.net\/recaptcha\/api\.js|google\.com\/recaptcha\/api\.js/, async route => {
-        await route.fulfill({ contentType: 'application/javascript', body: mockScript });
-    });
-
-    // 2. Also pre-populate the global before any page script runs (belt-and-suspenders).
-    await page.addInitScript(`(function(){ ${mockScript} })()`);
-}
-
 // ─── Unique test data ─────────────────────────────────────────────────────────
 
 /**
@@ -101,7 +73,6 @@ type User = ReturnType<typeof uniqueUser>;
  * profile page.  Returns the user object for later use.
  */
 export async function registerAndLogin(page: Page, prefix: string): Promise<User> {
-    await mockRecaptcha(page);
     const user = uniqueUser(prefix);
 
     // ── Sign up

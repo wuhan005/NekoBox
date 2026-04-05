@@ -99,7 +99,6 @@ test('questioner receives a reply email when their question is answered', async 
 // ─── Image upload (MinIO / S3) ────────────────────────────────────────────────
 
 test('can post a question with an image (MinIO upload)', async ({ page }) => {
-    // mockRecaptcha is already set by registerAndLogin via helpers.
     const user = await registerAndLogin(page, 'imgupload');
 
     await page.goto(`/_/${user.domain}`);

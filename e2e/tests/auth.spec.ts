@@ -1,11 +1,7 @@
 import { test, expect } from '@playwright/test';
-import { mockRecaptcha, uniqueUser } from './helpers';
+import { uniqueUser } from './helpers';
 
 test.describe('Authentication', () => {
-    // Each test sets up its own reCAPTCHA mock before navigating.
-    test.beforeEach(async ({ page }) => {
-        await mockRecaptcha(page);
-    });
 
     test('user can sign up and is redirected to sign-in', async ({ page }) => {
         const user = uniqueUser('signup');
