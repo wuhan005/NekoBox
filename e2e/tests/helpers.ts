@@ -1,4 +1,4 @@
-import type { Page } from '@playwright/test';
+import { expect, type Page } from '@playwright/test';
 import { randomBytes } from 'node:crypto';
 
 // ─── reCAPTCHA mock ──────────────────────────────────────────────────────────
@@ -112,13 +112,13 @@ export async function registerAndLogin(page: Page, prefix: string): Promise<User
     await page.locator('input[name="password"]').fill(user.password);
     await page.locator('input[name="repeatPassword"]').fill(user.password);
     await page.locator('button[type="submit"]').click();
-    await page.waitForURL('/sign-in');
+    await expect(page).toHaveURL(/\/sign-in$/);
 
     // ── Sign in
     await page.locator('input[name="email"]').fill(user.email);
     await page.locator('input[name="password"]').fill(user.password);
     await page.locator('button[type="submit"]').click();
-    await page.waitForURL(`/_/${user.domain}`);
+    await expect(page).toHaveURL(new RegExp(`/_/${user.domain}$`));
 
     return user;
 }

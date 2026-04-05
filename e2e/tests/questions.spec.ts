@@ -35,7 +35,7 @@ test('owner can answer a question and the answer is shown publicly', async ({ pa
     await page.locator('p.uk-text-small').first().click();
 
     // 3. On the question-detail page, the owner sees the answer form.
-    await page.waitForURL(`/_/${user.domain}/**`);
+    await expect(page).toHaveURL(new RegExp(`/_/${user.domain}/\\d+`));
     await expect(page.locator('textarea[name="answer"]')).toBeVisible({ timeout: 10_000 });
 
     // 4. Submit the answer.
@@ -83,7 +83,7 @@ test('questioner receives a reply email when their question is answered', async 
     // 2. Open the question from the mine list.
     await page.goto('/mine/questions');
     await page.locator('p.uk-text-small').first().click();
-    await page.waitForURL(`/_/${owner.domain}/**`);
+    await expect(page).toHaveURL(new RegExp(`/_/${owner.domain}/\\d+`));
 
     // 3. Answer the question – this triggers the reply email.
     await expect(page.locator('textarea[name="answer"]')).toBeVisible({ timeout: 10_000 });

@@ -19,7 +19,7 @@ test.describe('Authentication', () => {
         await page.locator('button[type="submit"]').click();
 
         // Successful registration redirects to /sign-in.
-        await page.waitForURL('/sign-in');
+        await expect(page).toHaveURL(/\/sign-in$/);
     });
 
     test('user can sign in and land on their profile page', async ({ page }) => {
@@ -33,7 +33,7 @@ test.describe('Authentication', () => {
         await page.locator('input[name="password"]').fill(user.password);
         await page.locator('input[name="repeatPassword"]').fill(user.password);
         await page.locator('button[type="submit"]').click();
-        await page.waitForURL('/sign-in');
+        await expect(page).toHaveURL(/\/sign-in$/);
 
         // Sign in.
         await page.locator('input[name="email"]').fill(user.email);
@@ -41,7 +41,7 @@ test.describe('Authentication', () => {
         await page.locator('button[type="submit"]').click();
 
         // Should land on the user's own profile page.
-        await page.waitForURL(`/_/${user.domain}`);
+        await expect(page).toHaveURL(new RegExp(`/_/${user.domain}$`));
         await expect(page).toHaveTitle(new RegExp(user.name));
     });
 
@@ -56,7 +56,7 @@ test.describe('Authentication', () => {
         await page.locator('input[name="password"]').fill(user.password);
         await page.locator('input[name="repeatPassword"]').fill(user.password);
         await page.locator('button[type="submit"]').click();
-        await page.waitForURL('/sign-in');
+        await expect(page).toHaveURL(/\/sign-in$/);
 
         // Try to register again with the same email but a different domain.
         await page.goto('/sign-up');
@@ -82,7 +82,7 @@ test.describe('Authentication', () => {
         await page.locator('input[name="password"]').fill(user.password);
         await page.locator('input[name="repeatPassword"]').fill(user.password);
         await page.locator('button[type="submit"]').click();
-        await page.waitForURL('/sign-in');
+        await expect(page).toHaveURL(/\/sign-in$/);
 
         // Sign in with wrong password.
         await page.locator('input[name="email"]').fill(user.email);
