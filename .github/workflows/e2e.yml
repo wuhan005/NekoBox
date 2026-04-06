@@ -84,12 +84,9 @@ jobs:
           echo "Waiting for MinIO S3 API to be ready..."
           for i in $(seq 1 60); do
             if curl -sf http://localhost:9000/minio/health/live > /dev/null 2>&1; then
-              echo "MinIO health check passed"
-              # Double-check: try to connect via S3 client
-              if timeout 5 curl -sf -u minioadmin:minioadmin http://localhost:9000 > /dev/null 2>&1; then
-                echo "MinIO S3 API is up"
-                exit 0
-              fi
+              echo "MinIO is ready (health check passed)"
+              sleep 2
+              exit 0
             fi
             echo "Waiting for MinIO ($i/60)..."
             sleep 2
