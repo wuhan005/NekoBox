@@ -109,10 +109,13 @@ jobs:
       # ── Backend ────────────────────────────────────────────────────────────
 
       - name: Build backend
-        run: go build -o ./nekobox-server ./cmd/nekobox.go
+        run: go build -cover -coverpkg=./... -o ./nekobox-server ./cmd/nekobox.go
 
       - name: Start backend (port 8080)
-        run: NEKOBOX_CONFIG_PATH=conf/app.e2e.ini ./nekobox-server web &
+        run: |
+          mkdir -p coverage/backend
+          GOCOVERDIR=$PWD/coverage/backend NEKOBOX_CONFIG_PATH=conf/app.e2e.ini ./nekobox-server web &
+          echo $! > /tmp/nekobox-server.pid
 
       # ── Frontend ───────────────────────────────────────────────────────────
 
@@ -154,6 +157,32 @@ jobs:
           E2E_BASE_URL: http://localhost:3000
           E2E_MAILHOG_URL: http://localhost:8025
 
+      - name: Stop backend and generate coverage.txt
+        if: always()
+        run: |
+          if [ -f /tmp/nekobox-server.pid ]; then
+            BACKEND_PID=$(cat /tmp/nekobox-server.pid)
+            if kill -0 "$BACKEND_PID" 2>/dev/null; then
+              kill "$BACKEND_PID"
+              for i in $(seq 1 20); do
+                if ! kill -0 "$BACKEND_PID" 2>/dev/null; then
+                  break
+                fi
+                sleep 1
+              done
+              if kill -0 "$BACKEND_PID" 2>/dev/null; then
+                kill -9 "$BACKEND_PID" || true
+              fi
+            fi
+          fi
+
+          mkdir -p coverage
+          if [ -d coverage/backend ] && [ -n "$(ls -A coverage/backend)" ]; then
+            go tool covdata textfmt -i=coverage/backend -o=coverage/coverage.txt
+          else
+            echo "No backend coverage data found" > coverage/coverage.txt
+          fi
+
       - name: Upload Playwright report
         uses: actions/upload-artifact@v4
         if: always()
@@ -162,11 +191,20 @@ jobs:
           path: e2e/playwright-report/
           retention-days: 30
 
+      - name: Upload backend coverage artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage
+          path: coverage/coverage.txt
+          retention-days: 30
+
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
+        if: always()
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          files: ./coverage/coverage-final.json
+          files: ./coverage/coverage.txt
           flags: e2e
           name: e2e-tests
 
