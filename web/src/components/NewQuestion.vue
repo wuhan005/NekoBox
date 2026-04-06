@@ -53,8 +53,8 @@
       </div>
 
       <div class="uk-margin uk-text-center">
-        <button type="submit" class="uk-button uk-button-primary" :disabled="isLoading">
-          {{ isLoading ? '发送中...' : '发送提问' }}
+        <button type="submit" class="uk-button uk-button-primary" :disabled="isLoading || !recaptchaReady">
+          {{ isLoading ? '发送中...' : (recaptchaReady ? '发送提问' : '加载中...') }}
         </button>
       </div>
     </Form>
@@ -62,7 +62,7 @@
 </template>
 
 <script setup lang="ts">
-import {ref, computed, defineProps} from "vue";
+import {ref, computed, defineProps, onMounted} from "vue";
 import {useAuthStore} from "@/store";
 import {postQuestion, type PostQuestionRequest} from "@/api/user.ts";
 import {Form} from "vee-validate";
@@ -100,14 +100,30 @@ const postQuestionForm = ref<PostQuestionRequest>({
 })
 
 const isLoading = ref<boolean>(false)
+const recaptchaReady = ref<boolean>(false)
 const successMessageVisible = ref<boolean>(false)
 const successMessage = ref<string>('')
+
+onMounted(async () => {
+  try {
+    await recaptchaLoaded()
+    recaptchaReady.value = true
+  } catch (error) {
+    ToastError('无感验证码加载失败，请刷新页面重试')
+  }
+})
 const handleSubmit = async () => {
   try {
     await recaptchaLoaded()
     postQuestionForm.value.recaptcha = await executeRecaptcha('submit')
   } catch (error) {
     ToastError('无感验证码加载失败，请刷新页面重试')
+    return
+  }
+
+  // Check if recaptcha token is valid
+  if (!postQuestionForm.value.recaptcha || postQuestionForm.value.recaptcha.trim() === '') {
+    ToastError('验证码获取失败，请稍后再试（可能是提交过于频繁）')
     return
   }
 
@@ -129,6 +145,7 @@ const handleSubmit = async () => {
           isPrivate: false,
           recaptcha: '',
         }
+        // No need to reload recaptcha - executeRecaptcha will generate a new token on next submit
       })
       .finally(() => {
         isLoading.value = false

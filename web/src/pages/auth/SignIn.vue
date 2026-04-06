@@ -17,8 +17,8 @@
       </div>
 
       <div class="uk-margin">
-        <button type="submit" class="uk-button uk-button-primary" :disabled="isLoading">
-          {{ isLoading ? '登录中...' : '登录' }}
+        <button type="submit" class="uk-button uk-button-primary" :disabled="isLoading || !recaptchaReady">
+          {{ isLoading ? '登录中...' : (recaptchaReady ? '登录' : '加载中...') }}
         </button>
         <button type="button" class="uk-button uk-button-default" @click="handleForgotPassword">忘记密码
         </button>
@@ -28,7 +28,7 @@
 </template>
 
 <script setup lang="ts">
-import {ref} from 'vue'
+import {ref, onMounted} from 'vue'
 import {Form, Field, ErrorMessage} from 'vee-validate';
 import {signIn, type SignInRequest} from "@/api/auth.ts";
 import {useRoute, useRouter} from "vue-router";
@@ -42,10 +42,20 @@ const authStore = useAuthStore()
 const {executeRecaptcha, recaptchaLoaded} = useReCaptcha() as IReCaptchaComposition
 
 const isLoading = ref<boolean>(false)
+const recaptchaReady = ref<boolean>(false)
 const signInForm = ref<SignInRequest>({
   email: '',
   password: '',
   recaptcha: '',
+})
+
+onMounted(async () => {
+  try {
+    await recaptchaLoaded()
+    recaptchaReady.value = true
+  } catch (error) {
+    ToastError('无感验证码加载失败，请刷新页面重试')
+  }
 })
 
 const handleSignIn = async () => {
@@ -54,6 +64,12 @@ const handleSignIn = async () => {
     signInForm.value.recaptcha = await executeRecaptcha('submit')
   } catch (error) {
     ToastError('无感验证码加载失败，请刷新页面重试')
+    return
+  }
+
+  // Check if recaptcha token is valid
+  if (!signInForm.value.recaptcha || signInForm.value.recaptcha.trim() === '') {
+    ToastError('验证码获取失败，请稍后再试（可能是提交过于频繁）')
     return
   }
 
