@@ -101,6 +101,10 @@ jobs:
           chmod +x ./mc
           ./mc alias set local http://localhost:9000 minioadmin minioadmin
           ./mc mb --ignore-existing local/nekobox-e2e
+          ./mc ls local/nekobox-e2e
+          echo "minio-smoke" > /tmp/minio-smoke.txt
+          ./mc cp /tmp/minio-smoke.txt local/nekobox-e2e/health/smoke.txt
+          ./mc stat local/nekobox-e2e/health/smoke.txt
 
       # ── Backend ────────────────────────────────────────────────────────────
 
