@@ -52,6 +52,12 @@ const handleForgotPassword = async () => {
     return
   }
 
+  // Check if recaptcha token is valid
+  if (!forgotPasswordForm.value.recaptcha || forgotPasswordForm.value.recaptcha.trim() === '') {
+    ToastError('验证码获取失败，请稍后再试（可能是提交过于频繁）')
+    return
+  }
+
   isLoading.value = true
   forgotPassword(forgotPasswordForm.value).then(res => {
     ToastSuccess(res)

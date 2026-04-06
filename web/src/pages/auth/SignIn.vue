@@ -67,6 +67,12 @@ const handleSignIn = async () => {
     return
   }
 
+  // Check if recaptcha token is valid
+  if (!signInForm.value.recaptcha || signInForm.value.recaptcha.trim() === '') {
+    ToastError('验证码获取失败，请稍后再试（可能是提交过于频繁）')
+    return
+  }
+
   isLoading.value = true
   signIn(signInForm.value)
       .then(res => {

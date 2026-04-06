@@ -84,6 +84,12 @@ const handleSignUp = async () => {
     return
   }
 
+  // Check if recaptcha token is valid
+  if (!signUpForm.value.recaptcha || signUpForm.value.recaptcha.trim() === '') {
+    ToastError('验证码获取失败，请稍后再试（可能是提交过于频繁）')
+    return
+  }
+
   isLoading.value = true
   signUp(signUpForm.value)
       .then(res => {

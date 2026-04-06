@@ -121,6 +121,12 @@ const handleSubmit = async () => {
     return
   }
 
+  // Check if recaptcha token is valid
+  if (!postQuestionForm.value.recaptcha || postQuestionForm.value.recaptcha.trim() === '') {
+    ToastError('验证码获取失败，请稍后再试（可能是提交过于频繁）')
+    return
+  }
+
   isLoading.value = true
   postQuestion(props.pageProfileDomain, postQuestionForm.value)
       .then(res => {
