@@ -143,9 +143,6 @@ jobs:
         working-directory: e2e
         run: npx playwright install --with-deps chromium
 
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
-
       - name: Run Playwright E2E tests
         working-directory: e2e
         run: npx playwright test

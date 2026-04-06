@@ -12,7 +12,7 @@ export function uniqueUser(prefix: string) {
     const nonce = randomBytes(3).toString('hex');
     // Keep domain <= 20 chars to satisfy form/backend constraints.
     const domainPrefix = prefix.toLowerCase().replace(/[^a-z0-9-]/g, '').slice(0, 8) || 'user';
-    const domain = `${domainPrefix}-${ts}${nonce}`.slice(0, 20);
+    const domain = `${domainPrefix}_${ts}${nonce}`.slice(0, 20);
 
     return {
         email: `${domain}@example.com`,
