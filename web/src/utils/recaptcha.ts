@@ -7,7 +7,7 @@ type RecaptchaClient = Pick<IReCaptchaComposition, 'executeRecaptcha' | 'recaptc
 
 export const isE2EMode = import.meta.env.MODE === 'e2e'
 export const isUsingRecaptchaTestKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY === RECAPTCHA_TEST_SITE_KEY
-const shouldBypassRecaptcha = isE2EMode || isUsingRecaptchaTestKey
+const shouldBypassRecaptcha = isE2EMode
 
 export async function ensureRecaptchaReady(recaptcha: RecaptchaClient) {
     if (shouldBypassRecaptcha) {
