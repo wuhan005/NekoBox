@@ -56,15 +56,6 @@ const handleForgotPassword = async () => {
   forgotPassword(forgotPasswordForm.value).then(res => {
     ToastSuccess(res)
     router.push({name: 'home'})
-  }).catch(async () => {
-    // Reload recaptcha after failed submission
-    recaptchaReady.value = false
-    try {
-      await recaptchaLoaded()
-      recaptchaReady.value = true
-    } catch (error) {
-      ToastError('无感验证码重新加载失败，请刷新页面重试')
-    }
   }).finally(() => {
     isLoading.value = false
   })

@@ -83,16 +83,6 @@ const handleSignIn = async () => {
           router.push({name: 'profile', params: {domain: res.profile.domain}})
         }
       })
-      .catch(async () => {
-        // Reload recaptcha after failed submission
-        recaptchaReady.value = false
-        try {
-          await recaptchaLoaded()
-          recaptchaReady.value = true
-        } catch (error) {
-          ToastError('无感验证码重新加载失败，请刷新页面重试')
-        }
-      })
       .finally(() => {
         isLoading.value = false
       })
