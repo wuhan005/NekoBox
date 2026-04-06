@@ -9,8 +9,8 @@
         <ErrorMessage class="field-error-message" name="email"/>
       </div>
       <div class="uk-margin">
-        <button type="submit" class="uk-button uk-button-primary" :disabled="isLoading">
-          {{ isLoading ? '提交中...' : '找回密码' }}
+        <button type="submit" class="uk-button uk-button-primary" :disabled="isLoading || !recaptchaReady">
+          {{ isLoading ? '提交中...' : (recaptchaReady ? '找回密码' : '加载中...') }}
         </button>
       </div>
     </fieldset>
@@ -18,7 +18,7 @@
 </template>
 
 <script setup lang="ts">
-import {ref} from 'vue'
+import {ref, onMounted} from 'vue'
 import {Form, Field, ErrorMessage} from "vee-validate";
 import {type ForgotPasswordRequest, forgotPassword} from "@/api/auth.ts";
 import {useRouter} from "vue-router";
@@ -29,9 +29,19 @@ const router = useRouter()
 const {executeRecaptcha, recaptchaLoaded} = useReCaptcha() as IReCaptchaComposition
 
 const isLoading = ref<boolean>(false);
+const recaptchaReady = ref<boolean>(false)
 const forgotPasswordForm = ref<ForgotPasswordRequest>({
   email: '',
   recaptcha: '',
+})
+
+onMounted(async () => {
+  try {
+    await recaptchaLoaded()
+    recaptchaReady.value = true
+  } catch (error) {
+    ToastError('无感验证码加载失败，请刷新页面重试')
+  }
 })
 const handleForgotPassword = async () => {
   try {
@@ -46,6 +56,15 @@ const handleForgotPassword = async () => {
   forgotPassword(forgotPasswordForm.value).then(res => {
     ToastSuccess(res)
     router.push({name: 'home'})
+  }).catch(async () => {
+    // Reload recaptcha after failed submission
+    recaptchaReady.value = false
+    try {
+      await recaptchaLoaded()
+      recaptchaReady.value = true
+    } catch (error) {
+      ToastError('无感验证码重新加载失败，请刷新页面重试')
+    }
   }).finally(() => {
     isLoading.value = false
   })
