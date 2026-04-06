@@ -117,9 +117,8 @@ jobs:
 
       - name: Start frontend dev server (port 3000)
         working-directory: web
-        run: pnpm dev &
+        run: pnpm dev:e2e &
         env:
-          VITE_RECAPTCHA_SITE_KEY: 6LdV7SYqAAAAALwpxAFxDU4VnzztKK5UU4nfbQ1b
           VITE_EXTERNAL_URL: http://localhost:3000
 
       - name: Wait for frontend to be ready
