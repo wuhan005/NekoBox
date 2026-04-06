@@ -7,6 +7,13 @@ function waitForAnswerResponse(page: Page) {
     );
 }
 
+function waitForPostQuestionResponse(page: Page, domain: string) {
+    return page.waitForResponse(resp =>
+        resp.request().method() === 'POST' &&
+        new RegExp(`/api/users/${domain}/questions$`).test(new URL(resp.url()).pathname)
+    );
+}
+
 // ─── Post a question ──────────────────────────────────────────────────────────
 
 test('can post a question to a profile box', async ({ page }) => {
@@ -135,7 +142,13 @@ test('can post a question with an image (MinIO upload)', async ({ page }) => {
         buffer: minimalPNG,
     });
 
+    const postQuestionResponsePromise = waitForPostQuestionResponse(page, user.domain);
     await clickSubmitWhenReady(page);
+    const postQuestionResponse = await postQuestionResponsePromise;
+
+    const postQuestionBody = await postQuestionResponse.json();
+    expect(postQuestionResponse.status(), `Post question failed: ${JSON.stringify(postQuestionBody)}`).toBe(200);
+    expect(postQuestionBody?.data ?? '').toContain('发送问题成功');
 
     // Success message must appear (image upload in CI can take longer due to MinIO initialization).
     await expect(page.locator('.uk-alert-success')).toBeVisible({ timeout: 30_000 });
