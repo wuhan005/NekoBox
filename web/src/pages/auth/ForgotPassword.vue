@@ -24,6 +24,7 @@ import {type ForgotPasswordRequest, forgotPassword} from "@/api/auth.ts";
 import {useRouter} from "vue-router";
 import {type IReCaptchaComposition, useReCaptcha} from "vue-recaptcha-v3";
 import {ToastError, ToastSuccess} from "@/utils/notify.ts";
+import {ensureRecaptchaReady, getRecaptchaToken} from "@/utils/recaptcha.ts";
 
 const router = useRouter()
 const {executeRecaptcha, recaptchaLoaded} = useReCaptcha() as IReCaptchaComposition
@@ -37,7 +38,7 @@ const forgotPasswordForm = ref<ForgotPasswordRequest>({
 
 onMounted(async () => {
   try {
-    await recaptchaLoaded()
+    await ensureRecaptchaReady({executeRecaptcha, recaptchaLoaded})
     recaptchaReady.value = true
   } catch (error) {
     ToastError('无感验证码加载失败，请刷新页面重试')
@@ -45,8 +46,7 @@ onMounted(async () => {
 })
 const handleForgotPassword = async () => {
   try {
-    await recaptchaLoaded()
-    forgotPasswordForm.value.recaptcha = await executeRecaptcha('submit')
+    forgotPasswordForm.value.recaptcha = await getRecaptchaToken({executeRecaptcha, recaptchaLoaded})
   } catch (error) {
     ToastError('无感验证码加载失败，请刷新页面重试')
     return

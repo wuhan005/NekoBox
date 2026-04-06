@@ -73,8 +73,7 @@ jobs:
         run: |
           docker run -d \
             --name minio \
-            -p 9000:9000 \
-            -p 9001:9001 \
+            --network host \
             -e MINIO_ROOT_USER=minioadmin \
             -e MINIO_ROOT_PASSWORD=minioadmin \
             pgsty/minio \
@@ -82,16 +81,21 @@ jobs:
 
       - name: Wait for MinIO
         run: |
+          echo "Waiting for MinIO S3 API to be ready..."
           for i in $(seq 1 60); do
-            if curl -sf http://localhost:9000/minio/health/live > /dev/null; then
-              echo "MinIO is up"
-              exit 0
+            if curl -sf http://localhost:9000/minio/health/live > /dev/null 2>&1; then
+              echo "MinIO health check passed"
+              # Double-check: try to connect via S3 client
+              if timeout 5 curl -sf -u minioadmin:minioadmin http://localhost:9000 > /dev/null 2>&1; then
+                echo "MinIO S3 API is up"
+                exit 0
+              fi
             fi
             echo "Waiting for MinIO ($i/60)..."
             sleep 2
           done
           echo "MinIO did not become ready in time"
-          docker logs minio
+          docker logs minio || true
           exit 1
 
       - name: Create MinIO bucket
