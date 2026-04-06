@@ -109,7 +109,9 @@ jobs:
       # ── Backend ────────────────────────────────────────────────────────────
 
       - name: Build backend
-        run: go build -cover -coverpkg=./... -o ./nekobox-server ./cmd/nekobox.go
+        run: |
+          COVERPKG=$(go list ./... | paste -sd "," -)
+          go build -cover -covermode=atomic -coverpkg="$COVERPKG" -o ./nekobox-server ./cmd
 
       - name: Start backend (port 8080)
         run: |
@@ -179,8 +181,17 @@ jobs:
           mkdir -p coverage
           if [ -d coverage/backend ] && [ -n "$(ls -A coverage/backend)" ]; then
             go tool covdata textfmt -i=coverage/backend -o=coverage/coverage.txt
+            echo "Route coverage entries:"
+            grep 'internal/route/' coverage/coverage.txt | head -n 20 || true
+
+            if ! grep -q 'internal/route/' coverage/coverage.txt; then
+              echo "::error::No internal/route coverage found in coverage/coverage.txt"
+              exit 1
+            fi
           else
             echo "No backend coverage data found" > coverage/coverage.txt
+            echo "::error::No backend coverage data found in coverage/backend"
+            exit 1
           fi
 
       - name: Upload Playwright report
