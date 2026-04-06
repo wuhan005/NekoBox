@@ -14,6 +14,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
+	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/flamego/recaptcha"
 	"github.com/pkg/errors"
@@ -300,7 +301,8 @@ func uploadImageFile(ctx context.Context, options uploadImageFileOptions) (*db.U
 	}
 
 	client := s3.NewFromConfig(cfg)
-	if _, err := client.PutObject(ctx.Request().Context(), &s3.PutObjectInput{
+	uploader := manager.NewUploader(client)
+	if _, err := uploader.Upload(ctx.Request().Context(), &s3.PutObjectInput{
 		Bucket:        aws.String(conf.Upload.ImageBucket),
 		Key:           aws.String(fileKey),
 		Body:          reader,
