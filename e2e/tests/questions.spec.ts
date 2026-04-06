@@ -137,8 +137,8 @@ test('can post a question with an image (MinIO upload)', async ({ page }) => {
 
     await clickSubmitWhenReady(page);
 
-    // Success message must appear.
-    await expect(page.locator('.uk-alert-success')).toBeVisible({ timeout: 15_000 });
+    // Success message must appear (image upload in CI can take longer due to MinIO initialization).
+    await expect(page.locator('.uk-alert-success')).toBeVisible({ timeout: 30_000 });
     await expect(page.locator('.uk-alert-success')).toContainText('发送问题成功');
 });
 
