@@ -8,7 +8,7 @@ function getCommitSHA() {
     try {
         return execSync('git rev-parse HEAD', {encoding: 'utf-8'}).trim()
     } catch (error) {
-        console.warn('Warning: Could not get git commit SHA:', error.message)
+        console.warn('Warning: Could not get git commit SHA:', error instanceof Error ? error.message : String(error))
         return process.env.VITE_COMMIT_SHA || ''
     }
 }
