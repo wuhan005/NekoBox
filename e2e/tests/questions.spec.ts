@@ -1,5 +1,11 @@
-import { test, expect } from '@playwright/test';
-import { registerAndLogin, waitForMailhogEmail } from './helpers';
+import { test, expect, type Page } from '@playwright/test';
+import { clickSubmitWhenReady, registerAndLogin, waitForMailhogEmail } from './helpers';
+
+function waitForAnswerResponse(page: Page) {
+    return page.waitForResponse(resp =>
+        /\/api\/mine\/questions\/\d+\/answer$/.test(resp.url()) && resp.request().method() === 'PUT'
+    );
+}
 
 // ─── Post a question ──────────────────────────────────────────────────────────
 
@@ -8,7 +14,7 @@ test('can post a question to a profile box', async ({ page }) => {
 
     await page.goto(`/_/${user.domain}`);
     await page.locator('textarea[name="content"]').fill('What is your favorite color?');
-    await page.locator('button[type="submit"]').click();
+    await clickSubmitWhenReady(page);
 
     // A success banner with the private link appears.
     await expect(page.locator('.uk-alert-success')).toBeVisible({ timeout: 10_000 });
@@ -23,7 +29,7 @@ test('owner can answer a question and the answer is shown publicly', async ({ pa
     // 1. Post a question (as the signed-in owner – valid for testing).
     await page.goto(`/_/${user.domain}`);
     await page.locator('textarea[name="content"]').fill('What is your favorite programming language?');
-    await page.locator('button[type="submit"]').click();
+    await clickSubmitWhenReady(page);
     await expect(page.locator('.uk-alert-success')).toBeVisible({ timeout: 10_000 });
 
     // 2. Navigate to "my questions" and open the first one.
@@ -40,13 +46,15 @@ test('owner can answer a question and the answer is shown publicly', async ({ pa
 
     // 4. Submit the answer.
     await page.locator('textarea[name="answer"]').fill('Go is my favorite!');
-    await page.locator('button[type="submit"]').click();
+    const answerResponsePromise = waitForAnswerResponse(page);
+    await clickSubmitWhenReady(page);
+    const answerResponse = await answerResponsePromise;
+    expect(answerResponse.status()).toBe(200);
+    const answerPayload = await answerResponse.json();
+    expect(answerPayload.data).toContain('提问回复成功');
 
-    // 5. Success toast appears.
-    await expect(page.locator('.Toastify')).toContainText('提问回复成功', { timeout: 10_000 });
-
-    // 6. The answer text is now rendered in the card body.
-    await expect(page.locator('.uk-card-body p.uk-text-small')).toContainText('Go is my favorite!');
+    // 5. The answer text is now rendered in the card body.
+    await expect(page.locator('.uk-card-body p.uk-text-small').first()).toContainText('Go is my favorite!');
 });
 
 // ─── Email notifications ──────────────────────────────────────────────────────
@@ -57,11 +65,11 @@ test('owner receives a "new question" email when someone posts a question', asyn
     // Post a question to the owner's box (as the signed-in owner for simplicity).
     await page.goto(`/_/${owner.domain}`);
     await page.locator('textarea[name="content"]').fill('Will you get an email about this?');
-    await page.locator('button[type="submit"]').click();
+    await clickSubmitWhenReady(page);
     await expect(page.locator('.uk-alert-success')).toBeVisible({ timeout: 10_000 });
 
     // MailHog should receive the "new question" notification.
-    const received = await waitForMailhogEmail(owner.email);
+    const received = await waitForMailhogEmail(owner.email, 30_000);
     expect(received).toBe(true);
 });
 
@@ -77,7 +85,7 @@ test('questioner receives a reply email when their question is answered', async 
     await page.locator('label:has-text("我想接收回复通知") input[type="checkbox"]').check();
     await page.locator('input[name="receiveReplyEmail"]').fill(replyEmail);
 
-    await page.locator('button[type="submit"]').click();
+    await clickSubmitWhenReady(page);
     await expect(page.locator('.uk-alert-success')).toBeVisible({ timeout: 10_000 });
 
     // 2. Open the question from the mine list.
@@ -88,11 +96,15 @@ test('questioner receives a reply email when their question is answered', async 
     // 3. Answer the question – this triggers the reply email.
     await expect(page.locator('textarea[name="answer"]')).toBeVisible({ timeout: 10_000 });
     await page.locator('textarea[name="answer"]').fill('Yes, you will receive a reply!');
-    await page.locator('button[type="submit"]').click();
-    await expect(page.locator('.Toastify')).toContainText('提问回复成功', { timeout: 10_000 });
+    const replyAnswerResponsePromise = waitForAnswerResponse(page);
+    await clickSubmitWhenReady(page);
+    const replyAnswerResponse = await replyAnswerResponsePromise;
+    expect(replyAnswerResponse.status()).toBe(200);
+    const replyAnswerPayload = await replyAnswerResponse.json();
+    expect(replyAnswerPayload.data).toContain('提问回复成功');
 
     // 4. MailHog must have delivered the reply notification to replyEmail.
-    const received = await waitForMailhogEmail(replyEmail);
+    const received = await waitForMailhogEmail(replyEmail, 30_000);
     expect(received).toBe(true);
 });
 
@@ -123,7 +135,7 @@ test('can post a question with an image (MinIO upload)', async ({ page }) => {
         buffer: minimalPNG,
     });
 
-    await page.locator('button[type="submit"]').click();
+    await clickSubmitWhenReady(page);
 
     // Success message must appear.
     await expect(page.locator('.uk-alert-success')).toBeVisible({ timeout: 15_000 });

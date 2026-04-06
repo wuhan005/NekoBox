@@ -1,6 +1,13 @@
 import { expect, type Page } from '@playwright/test';
 import { randomBytes } from 'node:crypto';
 
+export async function clickSubmitWhenReady(page: Page): Promise<void> {
+    const submitButton = page.locator('button[type="submit"]');
+    await expect(submitButton).toBeVisible();
+    await expect(submitButton).toBeEnabled();
+    await submitButton.click();
+}
+
 // ─── Unique test data ─────────────────────────────────────────────────────────
 
 /**
@@ -82,13 +89,13 @@ export async function registerAndLogin(page: Page, prefix: string): Promise<User
     await page.locator('input[name="name"]').fill(user.name);
     await page.locator('input[name="password"]').fill(user.password);
     await page.locator('input[name="repeatPassword"]').fill(user.password);
-    await page.locator('button[type="submit"]').click();
+    await clickSubmitWhenReady(page);
     await expect(page).toHaveURL(/\/sign-in$/);
 
     // ── Sign in
     await page.locator('input[name="email"]').fill(user.email);
     await page.locator('input[name="password"]').fill(user.password);
-    await page.locator('button[type="submit"]').click();
+    await clickSubmitWhenReady(page);
     await expect(page).toHaveURL(new RegExp(`/_/${user.domain}$`));
 
     return user;

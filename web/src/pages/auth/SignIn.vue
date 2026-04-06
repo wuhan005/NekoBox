@@ -35,6 +35,7 @@ import {useRoute, useRouter} from "vue-router";
 import {ToastError, ToastSuccess} from "@/utils/notify.ts";
 import {useAuthStore} from "@/store";
 import {type IReCaptchaComposition, useReCaptcha} from 'vue-recaptcha-v3'
+import {ensureRecaptchaReady, getRecaptchaToken} from '@/utils/recaptcha.ts'
 
 const route = useRoute()
 const router = useRouter()
@@ -51,7 +52,7 @@ const signInForm = ref<SignInRequest>({
 
 onMounted(async () => {
   try {
-    await recaptchaLoaded()
+    await ensureRecaptchaReady({executeRecaptcha, recaptchaLoaded})
     recaptchaReady.value = true
   } catch (error) {
     ToastError('无感验证码加载失败，请刷新页面重试')
@@ -60,8 +61,7 @@ onMounted(async () => {
 
 const handleSignIn = async () => {
   try {
-    await recaptchaLoaded()
-    signInForm.value.recaptcha = await executeRecaptcha('submit')
+    signInForm.value.recaptcha = await getRecaptchaToken({executeRecaptcha, recaptchaLoaded})
   } catch (error) {
     ToastError('无感验证码加载失败，请刷新页面重试')
     return
