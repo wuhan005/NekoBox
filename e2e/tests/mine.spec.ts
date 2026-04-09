@@ -175,14 +175,36 @@ test.describe('Mine – Question Management', () => {
         expect(match).not.toBeNull();
         const questionID = match![1];
 
-        // Register a second user and try to answer the owner's question.
-        const other = await registerAndLogin(page, 'qother2');
-        const answerResponse = await page.request.put(
-            `/api/mine/questions/${questionID}/answer`,
-            { multipart: { answer: 'Hacked!' } }
-        );
-        // The Questioner middleware should return 404 because the question doesn't belong to `other`.
-        expect(answerResponse.status()).toBe(404);
+        // Register a second user in an isolated context, then try to answer owner's question.
+        const otherContext = await browser.newContext();
+        const otherPage = await otherContext.newPage();
+        try {
+            await registerAndLogin(otherPage, 'qother2');
+
+            // page.request does not automatically mirror app-level axios auth headers from Pinia.
+            const sessionID = await otherPage.evaluate(() => {
+                const raw = window.localStorage.getItem('auth');
+                if (!raw) return '';
+                try {
+                    return (JSON.parse(raw) as { sessionID?: string }).sessionID ?? '';
+                } catch {
+                    return '';
+                }
+            });
+            expect(sessionID).not.toBe('');
+
+            const answerResponse = await otherPage.request.put(
+                `/api/mine/questions/${questionID}/answer`,
+                {
+                    headers: { Authorization: `Token ${sessionID}` },
+                    multipart: { answer: 'Hacked!' },
+                }
+            );
+            // The Questioner middleware should return 404 because the question doesn't belong to this user.
+            expect(answerResponse.status()).toBe(404);
+        } finally {
+            await otherContext.close();
+        }
     });
 });
 
