@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { registerAndLogin, clickSubmitWhenReady } from './helpers';
+import { registerAndLogin, clickSubmitWhenReady, authHeaderFromPage } from './helpers';
 
 // ─── Profile settings ─────────────────────────────────────────────────────────
 
@@ -118,10 +118,11 @@ test.describe('Box Settings', () => {
 
     test('invalid notify type is rejected by the server', async ({ page }) => {
         const user = await registerAndLogin(page, 'badnotify');
+        const authHeader = await authHeaderFromPage(page);
 
         // Send a PUT request directly with an invalid notifyType.
         const response = await page.request.put('/api/mine/settings/box', {
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', ...authHeader },
             data: { intro: 'test', notifyType: 'sms' },
         });
         // The server should reject unknown notify types.
@@ -195,10 +196,11 @@ test.describe('Harassment Settings', () => {
 
     test('block words with more than 10 entries are rejected', async ({ page }) => {
         const user = await registerAndLogin(page, 'toomanyblk');
+        const authHeader = await authHeaderFromPage(page);
 
         const tooManyWords = 'a,b,c,d,e,f,g,h,i,j,k'; // 11 words
         const response = await page.request.put('/api/mine/settings/harassment', {
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', ...authHeader },
             data: { harassmentSettingType: 'none', blockWords: tooManyWords },
         });
         expect(response.status()).toBe(400);
