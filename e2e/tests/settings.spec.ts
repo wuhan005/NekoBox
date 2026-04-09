@@ -13,7 +13,7 @@ test.describe('Profile Settings', () => {
         // Name field is pre-populated with the registered name.
         await expect(page.locator('input#name')).toHaveValue(user.name, { timeout: 10_000 });
         // Email field (disabled) shows the registered email.
-        await expect(page.locator('input.uk-input[disabled]')).toHaveValue(user.email);
+        await expect(page.getByLabel('电子邮箱')).toHaveValue(user.email);
     });
 
     test('user can update their display name', async ({ page }) => {
