@@ -135,7 +135,7 @@ test.describe('Public Profile Page', () => {
     });
 
     test('GET /api/users/:domain/profile for non-existent domain returns 404', async ({ page }) => {
-        const response = await page.request.get('/api/users/domain-that-does-not-exist-ever');
+        const response = await page.request.get('/api/users/domain-that-does-not-exist-ever/profile');
         expect(response.status()).toBe(404);
     });
 });
