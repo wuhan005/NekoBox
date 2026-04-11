@@ -25,10 +25,10 @@ importers:
         version: 4.15.1(vue@3.5.20(typescript@5.8.3))
       '@vueuse/integrations':
         specifier: ^13.8.0
-        version: 13.8.0(axios@1.11.0)(qrcode@1.5.4)(vue@3.5.20(typescript@5.8.3))
+        version: 13.8.0(axios@1.15.0)(qrcode@1.5.4)(vue@3.5.20(typescript@5.8.3))
       axios:
-        specifier: ^1.11.0
-        version: 1.11.0
+        specifier: ^1.15.0
+        version: 1.15.0
       dayjs:
         specifier: ^1.11.18
         version: 1.11.18
@@ -540,8 +540,8 @@ packages:
   asynckit@0.4.0:
     resolution: {integrity: sha512-Oei9OH4tRh0YqU3GxhX79dM/mwVgvbZJaSNaRk+bshkj0S5cfHcgYakreBjrHwatXKbz+IoIdYLxrKim2MjW0Q==}
 
-  axios@1.11.0:
-    resolution: {integrity: sha512-1Lx3WLFQWm3ooKDYZD1eXmoGO9fxYQjrycfHFC8P0sCfQVXyROp0p9PFWBehewBOdCwHc+f/b8I0fMto5eSfwA==}
+  axios@1.15.0:
+    resolution: {integrity: sha512-wWyJDlAatxk30ZJer+GeCWS209sA42X+N5jU2jy6oHTp7ufw8uzUTVFBX9+wTfAlhiJXGS0Bq7X6efruWjuK9Q==}
 
   birpc@2.5.0:
     resolution: {integrity: sha512-VSWO/W6nNQdyP520F1mhf+Lc2f8pjGQOtoHHm7Ze8Go1kX7akpVIrtTa0fn+HB0QJEDVacl6aO08YE0PgXfdnQ==}
@@ -672,8 +672,8 @@ packages:
       debug:
         optional: true
 
-  form-data@4.0.4:
-    resolution: {integrity: sha512-KrGhL9Q4zjj0kiUt5OO4Mr/A/jlI2jDYs5eHBpYHPcBEVSiipAvn2Ko2HnPe20rmcuuvMHNdZFp+4IlGTMF0Ow==}
+  form-data@4.0.5:
+    resolution: {integrity: sha512-8RipRLol37bNs2bhoV67fiTEvdTrbMUYcFTiy3+wuuOnUog2QBHCZWXDRijWQfAkhBj2Uf5UnVaiWwA5vdd82w==}
     engines: {node: '>= 6'}
 
   fsevents@2.3.3:
@@ -859,8 +859,9 @@ packages:
     resolution: {integrity: sha512-3Ybi1tAuwAP9s0r1UQ2J4n5Y0G05bJkpUIO0/bI9MhwmD70S5aTWbXGBwxHrelT+XM1k6dM0pk+SwNkpTRN7Pg==}
     engines: {node: ^10 || ^12 || >=14}
 
-  proxy-from-env@1.1.0:
-    resolution: {integrity: sha512-D+zkORCbA9f1tdWRK0RaCR3GPv50cMxcrz4X8k5LTSUD1Dkw47mKJEZQNunItRTkWwgtaUSo1RVFRIG9ZXiFYg==}
+  proxy-from-env@2.1.0:
+    resolution: {integrity: sha512-cJ+oHTW1VAEa8cJslgmUZrc+sjRKgAKl3Zyse6+PV38hZe/V6Z14TbCuXcan9F9ghlz4QrFr2c92TNF82UkYHA==}
+    engines: {node: '>=10'}
 
   prr@1.0.1:
     resolution: {integrity: sha512-yPw4Sng1gWghHQWj0B3ZggWUm4qVbPwPFcRG8KyxiU7J2OHFSoEHKS+EZ3fv5l1t9CyCiop6l/ZYeWbrgoQejw==}
@@ -1355,13 +1356,13 @@ snapshots:
       '@vueuse/shared': 13.8.0(vue@3.5.20(typescript@5.8.3))
       vue: 3.5.20(typescript@5.8.3)
 
-  '@vueuse/integrations@13.8.0(axios@1.11.0)(qrcode@1.5.4)(vue@3.5.20(typescript@5.8.3))':
+  '@vueuse/integrations@13.8.0(axios@1.15.0)(qrcode@1.5.4)(vue@3.5.20(typescript@5.8.3))':
     dependencies:
       '@vueuse/core': 13.8.0(vue@3.5.20(typescript@5.8.3))
       '@vueuse/shared': 13.8.0(vue@3.5.20(typescript@5.8.3))
       vue: 3.5.20(typescript@5.8.3)
     optionalDependencies:
-      axios: 1.11.0
+      axios: 1.15.0
       qrcode: 1.5.4
 
   '@vueuse/metadata@13.8.0': {}
@@ -1380,11 +1381,11 @@ snapshots:
 
   asynckit@0.4.0: {}
 
-  axios@1.11.0:
+  axios@1.15.0:
     dependencies:
       follow-redirects: 1.15.11
-      form-data: 4.0.4
-      proxy-from-env: 1.1.0
+      form-data: 4.0.5
+      proxy-from-env: 2.1.0
     transitivePeerDependencies:
       - debug
 
@@ -1515,7 +1516,7 @@ snapshots:
 
   follow-redirects@1.15.11: {}
 
-  form-data@4.0.4:
+  form-data@4.0.5:
     dependencies:
       asynckit: 0.4.0
       combined-stream: 1.0.8
@@ -1680,7 +1681,7 @@ snapshots:
       picocolors: 1.1.1
       source-map-js: 1.2.1
 
-  proxy-from-env@1.1.0: {}
+  proxy-from-env@2.1.0: {}
 
   prr@1.0.1:
     optional: true
