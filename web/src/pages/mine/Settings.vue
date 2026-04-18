@@ -8,7 +8,7 @@
       <Form @submit="updateProfile">
         <div class="uk-margin">
           <label class="uk-form-label" for="email">电子邮箱</label>
-          <input v-model="profile.email" class="uk-input" type="text" disabled/>
+          <input v-model="profile.email" id="email" class="uk-input" type="text" disabled/>
         </div>
         <div class="uk-margin">
           <label class="uk-form-label" for="name">昵称</label>
