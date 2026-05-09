@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { clickSubmitWhenReady, uniqueUser } from './helpers';
 
+
 test.describe('Authentication', () => {
 
     test('user can sign up and is redirected to sign-in', async ({ page }) => {
@@ -74,6 +75,39 @@ test.describe('Authentication', () => {
 
         // Error toast must appear.
         await expect(duplicateSignUpPayload.msg).toContain('邮箱');
+    });
+
+    test('sign-up with duplicate domain shows an error', async ({ page }) => {
+        const user = uniqueUser('dupdomain');
+        const altEmail = `alt_${user.domain}@example.com`.slice(0, 40);
+
+        // First registration.
+        await page.goto('/sign-up');
+        await page.locator('input[name="email"]').fill(user.email);
+        await page.locator('input[name="domain"]').fill(user.domain);
+        await page.locator('input[name="name"]').fill(user.name);
+        await page.locator('input[name="password"]').fill(user.password);
+        await page.locator('input[name="repeatPassword"]').fill(user.password);
+        await clickSubmitWhenReady(page);
+        await expect(page).toHaveURL(/\/sign-in$/);
+
+        // Second registration with a different email but the same domain.
+        await page.goto('/sign-up');
+        await page.locator('input[name="email"]').fill(altEmail);
+        await page.locator('input[name="domain"]').fill(user.domain);      // duplicate
+        await page.locator('input[name="name"]').fill(user.name);
+        await page.locator('input[name="password"]').fill(user.password);
+        await page.locator('input[name="repeatPassword"]').fill(user.password);
+
+        const dupDomainResponsePromise = page.waitForResponse(resp =>
+            resp.url().includes('/auth/sign-up') && resp.request().method() === 'POST'
+        );
+        await clickSubmitWhenReady(page);
+
+        const dupDomainResponse = await dupDomainResponsePromise;
+        expect(dupDomainResponse.status()).toBe(400);
+        const dupDomainPayload = await dupDomainResponse.json();
+        expect(dupDomainPayload.msg).toContain('域名');
     });
 
     test('sign-in with wrong password shows an error', async ({ page }) => {

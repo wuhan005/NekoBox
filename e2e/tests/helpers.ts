@@ -101,3 +101,21 @@ export async function registerAndLogin(page: Page, prefix: string): Promise<User
     return user;
 }
 
+/**
+ * Reads the persisted auth store from localStorage and returns a valid
+ * Authorization header for sign-in-required API calls.
+ */
+export async function authHeaderFromPage(page: Page): Promise<Record<string, string>> {
+    const sessionID = await page.evaluate(() => {
+        const raw = window.localStorage.getItem('auth');
+        if (!raw) return '';
+        try {
+            return (JSON.parse(raw) as { sessionID?: string }).sessionID ?? '';
+        } catch {
+            return '';
+        }
+    });
+
+    expect(sessionID).not.toBe('');
+    return { Authorization: `Token ${sessionID}` };
+}
