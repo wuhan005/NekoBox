@@ -16,7 +16,7 @@
     "@vee-validate/i18n": "^4.15.1",
     "@vee-validate/rules": "^4.15.1",
     "@vueuse/integrations": "^13.8.0",
-    "axios": "^1.11.0",
+    "axios": "^1.16.1",
     "dayjs": "^1.11.18",
     "file-saver": "^2.0.5",
     "pinia": "^3.0.3",
