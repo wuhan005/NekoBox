@@ -48,8 +48,12 @@ axios.interceptors.response.use(
             return Promise.reject(error);
         }
 
-        // 404 is handled by the page component (e.g., redirect to the homepage) and does not trigger a Toast notification.
-        if (error.response.status !== 404) {
+        // GET 404s are page-level (e.g. profile/question pages) and the calling component
+        // redirects on its own, so we suppress the toast there. For mutating requests a 404
+        // means the business operation failed (e.g. forgot-password with an unknown email),
+        // which the user must be told about.
+        const isGetRequest = (error.config?.method ?? '').toLowerCase() === 'get'
+        if (error.response.status !== 404 || !isGetRequest) {
             ToastError(error.response?.data?.msg || '未知错误')
         }
         return Promise.reject(error);
