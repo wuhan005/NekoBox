@@ -15,7 +15,7 @@ import (
 
 const (
 	challengeRateLimitKeyPrefix = "captcha:challenge:rate:"
-	challengeRateLimitMax       = 10
+	challengeRateLimitMax       = 30
 	challengeRateLimitWindow    = time.Minute
 )
 
