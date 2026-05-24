@@ -19,6 +19,7 @@
     "axios": "^1.11.0",
     "dayjs": "^1.11.18",
     "file-saver": "^2.0.5",
+    "go-captcha-vue": "^2.0.6",
     "pinia": "^3.0.3",
     "pinia-plugin-persistedstate": "^4.5.0",
     "qrcode": "^1.5.4",

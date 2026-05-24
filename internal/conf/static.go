@@ -52,12 +52,22 @@ var (
 		Password string `ini:"password"`
 	}
 
+	Captcha struct {
+		Type string `ini:"type"`
+	}
+
 	Recaptcha struct {
 		Domain         string `ini:"domain"`
 		SiteKey        string `ini:"site_key"`
 		ServerKey      string `ini:"server_key"`
 		TurnstileStyle bool   `ini:"turnstile_style"`
 		VerifyURL      string `ini:"verify_url"` // Optional: override verify URL (e.g. for testing)
+	}
+
+	GoCaptcha struct {
+		VerifyPadding int `ini:"verify_padding"`
+		ChallengeTTL  int `ini:"challenge_ttl"`
+		TokenTTL      int `ini:"token_ttl"`
 	}
 
 	Pixel struct {

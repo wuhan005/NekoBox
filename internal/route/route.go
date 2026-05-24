@@ -13,23 +13,30 @@ import (
 	cacheRedis "github.com/flamego/cache/redis"
 	"github.com/flamego/cors"
 	"github.com/flamego/flamego"
-	"github.com/flamego/recaptcha"
 	"github.com/flamego/session"
 	"github.com/flamego/session/mysql"
 	"github.com/flamego/session/postgres"
 	sessionRedis "github.com/flamego/session/redis"
+	"github.com/pkg/errors"
+	"github.com/wuhan005/NekoBox/internal/tracing"
 	"gorm.io/gorm"
 
+	"github.com/wuhan005/NekoBox/internal/captcha"
 	"github.com/wuhan005/NekoBox/internal/conf"
 	"github.com/wuhan005/NekoBox/internal/context"
 	"github.com/wuhan005/NekoBox/internal/form"
 	"github.com/wuhan005/NekoBox/route/service"
 )
 
-func New(db *gorm.DB) *flamego.Flame {
+func New(db *gorm.DB) (*flamego.Flame, error) {
 	f := flamego.Classic()
 	if conf.App.Production {
 		flamego.SetEnv(flamego.EnvTypeProd)
+	}
+
+	captchaService, err := captcha.New(captcha.Type(conf.Captcha.Type))
+	if err != nil {
+		return nil, errors.Wrap(err, "init captcha service")
 	}
 
 	// We prefer to save session into database,
@@ -94,21 +101,8 @@ func New(db *gorm.DB) *flamego.Flame {
 				},
 			},
 		}),
-		recaptcha.V3(
-			recaptcha.Options{
-				Secret: conf.Recaptcha.ServerKey,
-				VerifyURL: func() recaptcha.VerifyURL {
-					if conf.Recaptcha.VerifyURL != "" {
-						return recaptcha.VerifyURL(conf.Recaptcha.VerifyURL)
-					}
-					if conf.Recaptcha.TurnstileStyle {
-						// FYI: https://developers.cloudflare.com/turnstile/migration/migrating-from-recaptcha/
-						return "https://challenges.cloudflare.com/turnstile/v0/siteverify"
-					}
-					return recaptcha.VerifyURLGlobal
-				}(),
-			},
-		),
+		tracing.Middleware("NekoBox"),
+		captcha.Provider(captchaService),
 		context.Contexter(db),
 	)
 
@@ -116,6 +110,13 @@ func New(db *gorm.DB) *flamego.Flame {
 	reqUserSignIn := context.Toggle(&context.ToggleOptions{UserSignInRequired: true})
 
 	f.Group("/api", func() {
+		captchaHandler := NewCaptchaHandler()
+		f.Group("/captcha", func() {
+			f.Get("/config", captchaHandler.Config)
+			f.Get("/challenge", captchaHandler.Challenge)
+			f.Post("/verify", form.Bind(form.VerifyCaptcha{}), captchaHandler.Verify)
+		})
+
 		authHandler := NewAuthHandler()
 		f.Group("/auth", func() {
 			f.Post("/sign-up", form.Bind(form.SignUp{}), authHandler.SignUp)
@@ -161,5 +162,5 @@ func New(db *gorm.DB) *flamego.Flame {
 		return ctx.Error(http.StatusNotFound, "资源不存在")
 	})
 
-	return f
+	return f, nil
 }

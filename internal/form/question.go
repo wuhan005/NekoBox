@@ -13,5 +13,5 @@ type PostQuestion struct {
 	ReceiveReplyEmail string                  `form:"receiveReplyEmail"`
 	Images            []*multipart.FileHeader `form:"images[]" label:"图片"`
 	IsPrivate         bool                    `form:"isPrivate"`
-	Recaptcha         string                  `form:"recaptcha" valid:"required" label:"无感验证码" msg:"无感验证码加载错误，请尝试刷新页面重试。"`
+	Captcha           string                  `form:"captcha" valid:"required" label:"验证码" msg:"验证码加载错误，请尝试刷新页面重试。"`
 }

@@ -14,7 +14,6 @@ import (
 	"github.com/wuhan005/NekoBox/internal/conf"
 	"github.com/wuhan005/NekoBox/internal/db"
 	"github.com/wuhan005/NekoBox/internal/route"
-	"github.com/wuhan005/NekoBox/internal/tracing"
 )
 
 var Web = &cli.Command{
@@ -63,8 +62,10 @@ func runWeb(ctx *cli.Context) error {
 	}
 
 	logrus.WithContext(ctx.Context).WithField("external_url", conf.App.ExternalURL).Info("Starting web server")
-	r := route.New(db)
-	r.Use(tracing.Middleware("NekoBox"))
+	r, err := route.New(db)
+	if err != nil {
+		return errors.Wrap(err, "init route")
+	}
 	r.Run(conf.Server.Port)
 
 	return nil

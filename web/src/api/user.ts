@@ -41,7 +41,7 @@ export interface PostQuestionRequest {
     receiveReplyEmail: string;
     images: File[];
     isPrivate: boolean;
-    recaptcha: string;
+    captcha: string;
 }
 
 export function postQuestion(domain: string, data: PostQuestionRequest) {

@@ -54,8 +54,25 @@ func Init() error {
 		return errors.Wrap(err, "map 'redis'")
 	}
 
+	if err := File.Section("captcha").MapTo(&Captcha); err != nil {
+		return errors.Wrap(err, "map 'captcha'")
+	}
+
 	if err := File.Section("recaptcha").MapTo(&Recaptcha); err != nil {
 		return errors.Wrap(err, "map 'recaptcha'")
+	}
+
+	if err := File.Section("go_captcha").MapTo(&GoCaptcha); err != nil {
+		return errors.Wrap(err, "map 'go_captcha'")
+	}
+	if GoCaptcha.VerifyPadding <= 0 {
+		GoCaptcha.VerifyPadding = 5
+	}
+	if GoCaptcha.ChallengeTTL <= 0 {
+		GoCaptcha.ChallengeTTL = 300
+	}
+	if GoCaptcha.TokenTTL <= 0 {
+		GoCaptcha.TokenTTL = 300
 	}
 
 	if err := File.Section("pixel").MapTo(&Pixel); err != nil {

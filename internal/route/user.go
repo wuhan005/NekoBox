@@ -16,13 +16,14 @@ import (
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
-	"github.com/flamego/recaptcha"
+	"github.com/flamego/cache"
 	"github.com/pkg/errors"
 	"github.com/samber/lo"
 	"github.com/sirupsen/logrus"
 	"github.com/wuhan005/govalid"
 	"gorm.io/gorm"
 
+	"github.com/wuhan005/NekoBox/internal/captcha"
 	"github.com/wuhan005/NekoBox/internal/conf"
 	"github.com/wuhan005/NekoBox/internal/context"
 	"github.com/wuhan005/NekoBox/internal/db"
@@ -121,7 +122,7 @@ func (*UserHandler) ListQuestions(ctx context.Context, pageUser *db.User) error 
 	})
 }
 
-func (*UserHandler) PostQuestion(ctx context.Context, pageUser *db.User, recaptcha recaptcha.RecaptchaV3, tx dbutil.Transactor, f form.PostQuestion) error {
+func (*UserHandler) PostQuestion(ctx context.Context, pageUser *db.User, v captcha.Verifier, c cache.Cache, tx dbutil.Transactor, f form.PostQuestion) error {
 	if !ctx.IsSignedIn && pageUser.HarassmentSetting == db.HarassmentSettingTypeRegisterOnly {
 		return ctx.Error(http.StatusBadRequest, "提问箱的主人设置了仅注册用户才能提问，请先登录。")
 	}
@@ -138,14 +139,9 @@ func (*UserHandler) PostQuestion(ctx context.Context, pageUser *db.User, recaptc
 		}
 	}
 
-	// Check recaptcha code.
-	resp, err := recaptcha.Verify(f.Recaptcha, ctx.IP())
-	if err != nil {
-		logrus.WithContext(ctx.Request().Context()).WithError(err).Error("Failed to check recaptcha")
-		return ctx.Error(http.StatusInternalServerError, "无感验证码请求失败，请稍后再试")
-	}
-	if !resp.Success {
-		return ctx.Error(http.StatusBadRequest, "无感验证码校验失败，请重试")
+	verifyCaptchaToken(ctx, v, c, f.Captcha)
+	if ctx.ResponseWriter().Written() {
+		return nil
 	}
 
 	content := f.Content

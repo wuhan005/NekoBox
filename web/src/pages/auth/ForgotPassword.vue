@@ -9,51 +9,49 @@
         <ErrorMessage class="field-error-message" name="email"/>
       </div>
       <div class="uk-margin">
-        <button type="submit" class="uk-button uk-button-primary" :disabled="isLoading || !recaptchaReady">
-          {{ isLoading ? '提交中...' : (recaptchaReady ? '找回密码' : '加载中...') }}
+        <button type="submit" class="uk-button uk-button-primary" :disabled="isLoading || !captchaReady">
+          {{ isLoading ? '提交中...' : (captchaReady ? '找回密码' : '加载中...') }}
         </button>
       </div>
     </fieldset>
   </Form>
+
+  <Captcha ref="captchaRef"/>
 </template>
 
 <script setup lang="ts">
-import {ref, onMounted} from 'vue'
+import {computed, ref} from 'vue'
 import {Form, Field, ErrorMessage} from "vee-validate";
 import {type ForgotPasswordRequest, forgotPassword} from "@/api/auth.ts";
 import {useRouter} from "vue-router";
-import {type IReCaptchaComposition, useReCaptcha} from "vue-recaptcha-v3";
 import {ToastError, ToastSuccess} from "@/utils/notify.ts";
-import {ensureRecaptchaReady, getRecaptchaToken} from "@/utils/recaptcha.ts";
+import Captcha from "@/components/Captcha.vue";
 
 const router = useRouter()
-const {executeRecaptcha, recaptchaLoaded} = useReCaptcha() as IReCaptchaComposition
+
+const captchaRef = ref<InstanceType<typeof Captcha> | null>(null)
+const captchaReady = computed(() => captchaRef.value?.ready ?? false)
 
 const isLoading = ref<boolean>(false);
-const recaptchaReady = ref<boolean>(false)
 const forgotPasswordForm = ref<ForgotPasswordRequest>({
   email: '',
-  recaptcha: '',
+  captcha: '',
 })
 
-onMounted(async () => {
-  try {
-    await ensureRecaptchaReady({executeRecaptcha, recaptchaLoaded})
-    recaptchaReady.value = true
-  } catch (error) {
-    ToastError('无感验证码加载失败，请刷新页面重试')
-  }
-})
 const handleForgotPassword = async () => {
-  try {
-    forgotPasswordForm.value.recaptcha = await getRecaptchaToken({executeRecaptcha, recaptchaLoaded})
-  } catch (error) {
-    ToastError('无感验证码加载失败，请刷新页面重试')
+  if (!captchaRef.value) {
+    ToastError('验证码加载失败，请刷新页面重试')
     return
   }
 
-  // Check if recaptcha token is valid
-  if (!forgotPasswordForm.value.recaptcha || forgotPasswordForm.value.recaptcha.trim() === '') {
+  try {
+    forgotPasswordForm.value.captcha = await captchaRef.value.acquire('forgot_password')
+  } catch (error) {
+    ToastError('验证码校验未完成，请重试')
+    return
+  }
+
+  if (!forgotPasswordForm.value.captcha.trim()) {
     ToastError('验证码获取失败，请稍后再试（可能是提交过于频繁）')
     return
   }

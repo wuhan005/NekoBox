@@ -7,7 +7,7 @@ export interface SignUpRequest {
     name: string;
     password: string;
     repeatPassword: string;
-    recaptcha: string;
+    captcha: string;
 }
 
 export function signUp(data: SignUpRequest) {
@@ -17,7 +17,7 @@ export function signUp(data: SignUpRequest) {
 export interface SignInRequest {
     email: string;
     password: string;
-    recaptcha: string;
+    captcha: string;
 }
 
 export interface SignInResponse {
@@ -37,7 +37,7 @@ export function signIn(data: SignInRequest) {
 
 export interface ForgotPasswordRequest {
     email: string;
-    recaptcha: string;
+    captcha: string;
 }
 
 export function forgotPassword(data: ForgotPasswordRequest) {
