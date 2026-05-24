@@ -26,6 +26,7 @@ var (
 	ErrVerifyFailed = errors.New("captcha: verify failed")
 	ErrUnsupported  = errors.New("captcha: operation not supported by current driver")
 	ErrInternal     = errors.New("captcha: internal error")
+	ErrRateLimited  = errors.New("captcha: rate limited")
 )
 
 // ChallengeData carries the data the client needs to render a slide challenge. Unused for reCAPTCHA.

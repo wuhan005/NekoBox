@@ -30,6 +30,7 @@ const (
 // and the issued one-shot token are persisted via cache.Cache.
 type goCaptchaService struct {
 	captcha       slide.Captcha
+	tokens        *tokenStore
 	verifyPadding int
 	challengeTTL  time.Duration
 	tokenTTL      time.Duration
@@ -86,6 +87,7 @@ func NewGoCaptchaService() (Service, error) {
 
 	return &goCaptchaService{
 		captcha:       builder.Make(),
+		tokens:        newTokenStore(),
 		verifyPadding: verifyPadding,
 		challengeTTL:  challengeTTL,
 		tokenTTL:      tokenTTL,
@@ -175,7 +177,7 @@ func (s *goCaptchaService) VerifyChallenge(ctx context.Context, c cache.Cache, k
 	}
 
 	token := randstr.String(64)
-	if err := c.Set(ctx, tokenCacheKeyPrefix+token, []byte("1"), s.tokenTTL); err != nil {
+	if err := s.tokens.put(ctx, c, token, s.tokenTTL); err != nil {
 		return "", errors.Wrap(ErrInternal, err.Error())
 	}
 	return token, nil
@@ -183,21 +185,7 @@ func (s *goCaptchaService) VerifyChallenge(ctx context.Context, c cache.Cache, k
 
 // Verify consumes a one-shot business token: missing or already-used tokens are rejected as ErrVerifyFailed.
 func (s *goCaptchaService) Verify(ctx context.Context, c cache.Cache, token, _ string) error {
-	if token == "" {
-		return ErrVerifyFailed
-	}
-
-	cacheKey := tokenCacheKeyPrefix + token
-	if _, err := c.Get(ctx, cacheKey); err != nil {
-		if errors.Is(err, os.ErrNotExist) {
-			return ErrVerifyFailed
-		}
-		return errors.Wrap(ErrInternal, err.Error())
-	}
-	if err := c.Delete(ctx, cacheKey); err != nil {
-		return errors.Wrap(ErrInternal, err.Error())
-	}
-	return nil
+	return s.tokens.consume(ctx, c, token)
 }
 
 // captchaCacheValueBytes normalizes the cache value to []byte regardless of whether the backend returned []byte or string.

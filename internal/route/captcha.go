@@ -34,6 +34,14 @@ func (*CaptchaHandler) Config(ctx context.Context, v captcha.Verifier) error {
 
 // Challenge generates a slide challenge image. Only available for the go-captcha driver.
 func (*CaptchaHandler) Challenge(ctx context.Context, svc captcha.Service, c cache.Cache) error {
+	if err := captcha.CheckChallengeRateLimit(ctx.Request().Context(), c, ctx.IP()); err != nil {
+		if errors.Is(err, captcha.ErrRateLimited) {
+			return ctx.Error(http.StatusTooManyRequests, "请求过于频繁，请稍后再试")
+		}
+		logrus.WithContext(ctx.Request().Context()).WithError(err).Error("Failed to check captcha challenge rate limit")
+		return ctx.ServerError()
+	}
+
 	data, err := svc.Generate(ctx.Request().Context(), c)
 	if err != nil {
 		if errors.Is(err, captcha.ErrUnsupported) {

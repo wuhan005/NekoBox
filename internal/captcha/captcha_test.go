@@ -7,6 +7,7 @@ package captcha
 import (
 	"context"
 	"encoding/json"
+	"sync"
 	"testing"
 
 	"github.com/flamego/cache"
@@ -113,4 +114,56 @@ func TestGoCaptcha_VerifyChallenge_OneShotToken(t *testing.T) {
 	require.NoError(t, svc.Verify(context.Background(), c, token, ""))
 	err = svc.Verify(context.Background(), c, token, "")
 	assert.ErrorIs(t, err, ErrVerifyFailed)
+}
+
+func TestGoCaptcha_VerifyToken_ConcurrentConsume(t *testing.T) {
+	svc, err := NewGoCaptchaService()
+	require.NoError(t, err)
+
+	c := newMemoryCache(t)
+
+	data, err := svc.Generate(context.Background(), c)
+	require.NoError(t, err)
+
+	raw, err := c.Get(context.Background(), challengeCacheKeyPrefix+data.Key)
+	require.NoError(t, err)
+	bytes, ok := captchaCacheValueBytes(raw)
+	require.True(t, ok)
+	var v challengeCacheValue
+	require.NoError(t, json.Unmarshal(bytes, &v))
+
+	token, err := svc.VerifyChallenge(context.Background(), c, data.Key, v.X, v.Y)
+	require.NoError(t, err)
+
+	const workers = 8
+	var wg sync.WaitGroup
+	successes := make(chan struct{}, workers)
+	wg.Add(workers)
+	for i := 0; i < workers; i++ {
+		go func() {
+			defer wg.Done()
+			if err := svc.Verify(context.Background(), c, token, ""); err == nil {
+				successes <- struct{}{}
+			}
+		}()
+	}
+	wg.Wait()
+	close(successes)
+
+	count := 0
+	for range successes {
+		count++
+	}
+	assert.Equal(t, 1, count)
+}
+
+func TestCheckChallengeRateLimit(t *testing.T) {
+	c := newMemoryCache(t)
+	ctx := context.Background()
+	ip := "127.0.0.1"
+
+	for i := 0; i < challengeRateLimitMax; i++ {
+		require.NoError(t, CheckChallengeRateLimit(ctx, c, ip))
+	}
+	assert.ErrorIs(t, CheckChallengeRateLimit(ctx, c, ip), ErrRateLimited)
 }

@@ -62,10 +62,12 @@ onMounted(async () => {
   }
 
   if (config.value.type === 'recaptcha') {
+    if (!recaptchaApi) {
+      console.warn('reCAPTCHA not initialized')
+      return
+    }
     try {
-      if (recaptchaApi) {
-        await recaptchaApi.recaptchaLoaded()
-      }
+      await recaptchaApi.recaptchaLoaded()
       ready.value = true
     } catch (err) {
       console.warn('Failed to initialize reCAPTCHA', err)
