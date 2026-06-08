@@ -105,21 +105,20 @@ func (*MineHandler) ListSentQuestions(ctx context.Context) error {
 		return ctx.ServerError()
 	}
 
-	targetUsers := make(map[uint]*db.User, len(questions))
+	targetUserIDs := make([]uint, 0, len(questions))
 	for _, question := range questions {
-		if _, ok := targetUsers[question.UserID]; ok {
-			continue
-		}
+		targetUserIDs = append(targetUserIDs, question.UserID)
+	}
 
-		targetUser, err := db.Users.GetByID(ctx.Request().Context(), question.UserID)
-		if err != nil {
-			if errors.Is(err, db.ErrUserNotExists) {
-				continue
-			}
-			logrus.WithContext(ctx.Request().Context()).WithError(err).Error("Failed to get target user by ID")
-			return ctx.ServerError()
-		}
-		targetUsers[question.UserID] = targetUser
+	targetUserList, err := db.Users.GetByIDs(ctx.Request().Context(), targetUserIDs)
+	if err != nil {
+		logrus.WithContext(ctx.Request().Context()).WithError(err).Error("Failed to get target users by IDs")
+		return ctx.ServerError()
+	}
+
+	targetUsers := make(map[uint]*db.User, len(targetUserList))
+	for _, targetUser := range targetUserList {
+		targetUsers[targetUser.ID] = targetUser
 	}
 
 	respQuestions := lo.Map(questions, func(question *db.Question, _ int) *response.MineSentQuestionsItem {

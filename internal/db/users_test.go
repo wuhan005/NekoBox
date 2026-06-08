@@ -27,6 +27,7 @@ func TestUsers(t *testing.T) {
 	}{
 		{"Create", testUsersCreate},
 		{"GetByID", testUsersGetByID},
+		{"GetByIDs", testUsersGetByIDs},
 		{"GetByEmail", testUsersGetByEmail},
 		{"GetByDomain", testUsersGetByDomain},
 		{"Update", testUsersUpdate},
@@ -129,6 +130,57 @@ func testUsersGetByID(t *testing.T, ctx context.Context, db *users) {
 	t.Run("not found", func(t *testing.T) {
 		_, err := db.GetByID(ctx, 404)
 		require.Equal(t, ErrUserNotExists, err)
+	})
+}
+
+func testUsersGetByIDs(t *testing.T, ctx context.Context, db *users) {
+	err := db.Create(ctx, CreateUserOptions{
+		Name:       "E99p1ant",
+		Password:   "super_secret",
+		Email:      "i@github.red",
+		Avatar:     "avater.png",
+		Domain:     "e99",
+		Background: "background.png",
+		Intro:      "Be cool, but also be warm.",
+	})
+	require.Nil(t, err)
+
+	err = db.Create(ctx, CreateUserOptions{
+		Name:       "Wuhan",
+		Password:   "super_secret",
+		Email:      "w@github.red",
+		Avatar:     "avater2.png",
+		Domain:     "wuhan",
+		Background: "background2.png",
+		Intro:      "Go and Vue.",
+	})
+	require.Nil(t, err)
+
+	t.Run("normal", func(t *testing.T) {
+		got, err := db.GetByIDs(ctx, []uint{1, 2})
+		require.Nil(t, err)
+		require.Len(t, got, 2)
+
+		byID := make(map[uint]*User, len(got))
+		for _, u := range got {
+			byID[u.ID] = u
+		}
+
+		require.Equal(t, "e99", byID[1].Domain)
+		require.Equal(t, "wuhan", byID[2].Domain)
+	})
+
+	t.Run("partial not found and duplicate IDs", func(t *testing.T) {
+		got, err := db.GetByIDs(ctx, []uint{1, 404, 1})
+		require.Nil(t, err)
+		require.Len(t, got, 1)
+		require.Equal(t, uint(1), got[0].ID)
+	})
+
+	t.Run("empty IDs", func(t *testing.T) {
+		got, err := db.GetByIDs(ctx, []uint{})
+		require.Nil(t, err)
+		require.Empty(t, got)
 	})
 }
 

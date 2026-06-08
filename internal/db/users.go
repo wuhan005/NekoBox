@@ -10,6 +10,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/rs/xid"
+	"github.com/samber/lo"
 	"github.com/wuhan005/gadget"
 	"gorm.io/gorm"
 
@@ -23,6 +24,7 @@ var _ UsersStore = (*users)(nil)
 type UsersStore interface {
 	Create(ctx context.Context, opts CreateUserOptions) error
 	GetByID(ctx context.Context, id uint) (*User, error)
+	GetByIDs(ctx context.Context, ids []uint) ([]*User, error)
 	GetByEmail(ctx context.Context, email string) (*User, error)
 	GetByDomain(ctx context.Context, domain string) (*User, error)
 	Update(ctx context.Context, id uint, opts UpdateUserOptions) error
@@ -138,6 +140,19 @@ func (db *users) getBy(ctx context.Context, where string, args ...interface{}) (
 
 func (db *users) GetByID(ctx context.Context, id uint) (*User, error) {
 	return db.getBy(ctx, "id = ?", id)
+}
+
+func (db *users) GetByIDs(ctx context.Context, ids []uint) ([]*User, error) {
+	if len(ids) == 0 {
+		return []*User{}, nil
+	}
+
+	ids = lo.Uniq(ids)
+	users := make([]*User, 0, len(ids))
+	if err := db.WithContext(ctx).Where("id IN ?", ids).Find(&users).Error; err != nil {
+		return nil, errors.Wrap(err, "get users by IDs")
+	}
+	return users, nil
 }
 
 func (db *users) GetByEmail(ctx context.Context, email string) (*User, error) {
