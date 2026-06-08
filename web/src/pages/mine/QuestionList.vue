@@ -4,13 +4,13 @@
       <Skeleton :count="3" :loading="received.isInitLoading"></Skeleton>
       <div v-if="!received.isInitLoading">
         <a
-            v-for="question in received.questions"
+            v-for="(question, index) in received.questions"
             :key="question.id"
             :href="router.resolve({name: 'question', params: {domain: authStore.profile.domain, questionID: question.id}}).href"
             @click.prevent="handleViewReceived(question)"
         >
           <div>
-            <hr>
+            <hr v-if="index > 0">
             <span v-if="!question.isAnswered" class="uk-label uk-float-right uk-margin-small-right">未回答</span>
             <span v-if="question.isPrivate" class="uk-label uk-label-warning uk-float-right uk-margin-small-right">私密</span>
             <div class="uk-text-left uk-text-small uk-text-muted">{{ humanizeDate(question.createdAt) }}</div>
@@ -42,18 +42,19 @@
       <Skeleton :count="3" :loading="sent.isInitLoading"></Skeleton>
       <div v-if="!sent.isInitLoading">
         <a
-            v-for="question in sent.questions"
+            v-for="(question, index) in sent.questions"
             :key="question.id"
             :href="sentQuestionHref(question)"
             @click.prevent="handleViewSent(question)"
         >
           <div>
-            <hr>
+            <hr v-if="index > 0">
             <span v-if="!question.isAnswered" class="uk-label uk-float-right uk-margin-small-right">未回答</span>
             <span v-if="question.isPrivate" class="uk-label uk-label-warning uk-float-right uk-margin-small-right">私密</span>
-            <div class="uk-text-left uk-text-small uk-text-muted">{{ humanizeDate(question.createdAt) }}</div>
+            <div class="uk-text-left uk-text-small uk-text-muted">
+              {{ humanizeDate(question.createdAt) }} · @{{ question.targetDomain || '已失效提问箱' }}
+            </div>
             <p class="uk-text-small">{{ question.content }}</p>
-            <p class="uk-text-meta">发往：{{ question.targetName || question.targetDomain || '已失效提问箱' }}</p>
           </div>
         </a>
       </div>
