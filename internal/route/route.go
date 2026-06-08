@@ -140,6 +140,7 @@ func New(db *gorm.DB) (*flamego.Flame, error) {
 		f.Group("/mine", func() {
 			f.Group("/questions", func() {
 				f.Get("", mineHandler.ListQuestions)
+				f.Get("/sent", mineHandler.ListSentQuestions)
 				f.Group("/{questionID}", func() {
 					f.Put("/answer", form.BindMultipart(form.AnswerQuestion{}), mineHandler.AnswerQuestion)
 					f.Delete("", mineHandler.DeleteQuestion)

@@ -79,6 +79,76 @@ func (*MineHandler) ListQuestions(ctx context.Context) error {
 	})
 }
 
+func (*MineHandler) ListSentQuestions(ctx context.Context) error {
+	pageSize := ctx.QueryInt("pageSize")
+	cursorValue := ctx.Query("cursor")
+
+	total, err := db.Questions.CountByAskUserID(ctx.Request().Context(), ctx.User.ID, db.GetQuestionsCountOptions{
+		FilterAnswered: false,
+		ShowPrivate:    true,
+	})
+	if err != nil {
+		logrus.WithContext(ctx.Request().Context()).WithError(err).Error("Failed to get sent questions count")
+		return ctx.ServerError()
+	}
+
+	questions, err := db.Questions.GetByAskUserID(ctx.Request().Context(), ctx.User.ID, db.GetQuestionsByAskUserIDOptions{
+		Cursor: &dbutil.Cursor{
+			Value:    cursorValue,
+			PageSize: pageSize,
+		},
+		FilterAnswered: false,
+		ShowPrivate:    true,
+	})
+	if err != nil {
+		logrus.WithContext(ctx.Request().Context()).WithError(err).Error("Failed to get sent questions by ask user ID")
+		return ctx.ServerError()
+	}
+
+	targetUsers := make(map[uint]*db.User, len(questions))
+	for _, question := range questions {
+		if _, ok := targetUsers[question.UserID]; ok {
+			continue
+		}
+
+		targetUser, err := db.Users.GetByID(ctx.Request().Context(), question.UserID)
+		if err != nil {
+			if errors.Is(err, db.ErrUserNotExists) {
+				continue
+			}
+			logrus.WithContext(ctx.Request().Context()).WithError(err).Error("Failed to get target user by ID")
+			return ctx.ServerError()
+		}
+		targetUsers[question.UserID] = targetUser
+	}
+
+	respQuestions := lo.Map(questions, func(question *db.Question, _ int) *response.MineSentQuestionsItem {
+		respItem := &response.MineSentQuestionsItem{
+			ID:         question.ID,
+			CreatedAt:  response.Time(question.CreatedAt),
+			Content:    question.Content,
+			IsAnswered: question.Answer != "",
+			IsPrivate:  question.IsPrivate,
+		}
+		if targetUser, ok := targetUsers[question.UserID]; ok {
+			respItem.TargetDomain = targetUser.Domain
+			respItem.TargetName = targetUser.Name
+		}
+		return respItem
+	})
+
+	var cursor string
+	if len(questions) > 0 {
+		cursor = strconv.Itoa(int(questions[len(questions)-1].ID))
+	}
+
+	return ctx.Success(&response.MineSentQuestions{
+		Total:     total,
+		Cursor:    cursor,
+		Questions: respQuestions,
+	})
+}
+
 func (*MineHandler) Questioner(ctx context.Context) error {
 	questionID := uint(ctx.ParamInt("questionID"))
 	question, err := db.Questions.GetByID(ctx.Request().Context(), questionID)

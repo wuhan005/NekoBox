@@ -23,6 +23,31 @@ export function mineQuestions(cursor: string, pageSize: number) {
     });
 }
 
+export interface MineSentQuestionItem {
+    id: number;
+    createdAt: Date;
+    content: string;
+    isAnswered: boolean;
+    isPrivate: boolean;
+    targetDomain: string;
+    targetName: string;
+}
+
+export interface MineSentQuestions {
+    total: number;
+    cursor: string;
+    questions: MineSentQuestionItem[];
+}
+
+export function mineSentQuestions(cursor: string, pageSize: number) {
+    return axios.get<MineSentQuestions, MineSentQuestions>('/mine/questions/sent', {
+        params: {
+            cursor,
+            pageSize,
+        }
+    });
+}
+
 export interface AnswerQuestionRequest {
     answer: string;
     images: File[];

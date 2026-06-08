@@ -18,6 +18,22 @@ type MineQuestions struct {
 	Questions []*MineQuestionsItem `json:"questions"`
 }
 
+type MineSentQuestionsItem struct {
+	ID           uint   `json:"id"`
+	CreatedAt    Time   `json:"createdAt"`
+	Content      string `json:"content"`
+	IsAnswered   bool   `json:"isAnswered"`
+	IsPrivate    bool   `json:"isPrivate"`
+	TargetDomain string `json:"targetDomain"`
+	TargetName   string `json:"targetName"`
+}
+
+type MineSentQuestions struct {
+	Total     int64                    `json:"total"`
+	Cursor    string                   `json:"cursor"`
+	Questions []*MineSentQuestionsItem `json:"questions"`
+}
+
 type MineProfile struct {
 	Email string `json:"email"`
 	Name  string `json:"name"`

@@ -340,9 +340,9 @@ func (*UserHandler) GetQuestion(ctx context.Context, pageUser *db.User) error {
 		return ctx.Error(http.StatusNotFound, "提问不存在")
 	}
 
-	// If the question has not been answered, we should check the question is belongs to the correct page user.
-	// The questioner can use the token to view the question.
-	if (question.Answer == "" || question.IsPrivate) && (!ctx.IsSignedIn || ctx.User.ID != question.UserID) && (question.Token != "" && question.Token != questionToken) {
+	// For unanswered/private questions, only owner, asker, or token holder can view details.
+	canAccessSensitive := ctx.IsSignedIn && (ctx.User.ID == question.UserID || ctx.User.ID == question.AskerUserID)
+	if (question.Answer == "" || question.IsPrivate) && !canAccessSensitive && (question.Token != "" && question.Token != questionToken) {
 		return ctx.Error(http.StatusNotFound, "提问不存在")
 	}
 

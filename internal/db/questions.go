@@ -25,6 +25,7 @@ type QuestionsStore interface {
 	GetByID(ctx context.Context, id uint) (*Question, error)
 	GetByUserID(ctx context.Context, userID uint, opts GetQuestionsByUserIDOptions) ([]*Question, error)
 	GetByAskUserID(ctx context.Context, userID uint, opts GetQuestionsByAskUserIDOptions) ([]*Question, error)
+	CountByAskUserID(ctx context.Context, userID uint, opts GetQuestionsCountOptions) (int64, error)
 	AnswerByID(ctx context.Context, id uint, answer string) error
 	DeleteByID(ctx context.Context, id uint) error
 	UpdateCensor(ctx context.Context, id uint, opts UpdateQuestionCensorOptions) error
@@ -51,7 +52,7 @@ type Question struct {
 	Answer                string         `json:"answer"`
 	AnswerCensorMetadata  datatypes.JSON `json:"-"`
 	ReceiveReplyEmail     string         `json:"-"`
-	AskerUserID           uint           `json:"-"`
+	AskerUserID           uint           `gorm:"index:idx_question_asker_user_id" json:"-"`
 	IsPrivate             bool           `gorm:"default: FALSE; NOT NULL" json:"-"`
 }
 
@@ -240,11 +241,19 @@ type GetQuestionsCountOptions struct {
 }
 
 func (db *questions) Count(ctx context.Context, userID uint, opts GetQuestionsCountOptions) (int64, error) {
+	return db.countBy(ctx, "user_id", userID, opts)
+}
+
+func (db *questions) CountByAskUserID(ctx context.Context, userID uint, opts GetQuestionsCountOptions) (int64, error) {
+	return db.countBy(ctx, "asker_user_id", userID, opts)
+}
+
+func (db *questions) countBy(ctx context.Context, column string, userID uint, opts GetQuestionsCountOptions) (int64, error) {
 	q := db.WithContext(ctx).Model(&Question{})
 	if opts.FilterAnswered {
-		q = q.Where(`user_id = ? AND answer != ''`, userID)
+		q = q.Where(fmt.Sprintf("%s = ? AND answer != ''", column), userID)
 	} else {
-		q = q.Where(`user_id = ?`, userID)
+		q = q.Where(fmt.Sprintf("%s = ?", column), userID)
 	}
 	if !opts.ShowPrivate {
 		q = q.Where(`is_private = ?`, false)
