@@ -25,9 +25,9 @@ function waitForGetQuestionResponse(page: Page, domain: string, questionID: numb
 function buildAclUser(prefix: string) {
     const ts = Date.now().toString(36);
     const nonce = randomBytes(2).toString('hex');
-    const domainPrefix = prefix.toLowerCase().replace(/[^a-z0-9-]/g, '').slice(0, 8) || 'user';
-    let domain = `${domainPrefix}-${ts}${nonce}`.slice(0, 20);
-    if (domain.endsWith('-')) {
+    const domainPrefix = prefix.toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 8) || 'user';
+    let domain = `${domainPrefix}_${ts}${nonce}`.slice(0, 20);
+    if (domain.endsWith('_')) {
         domain = `${domain.slice(0, -1)}a`;
     }
 
@@ -285,4 +285,3 @@ test('can post a question with an image (MinIO upload)', async ({ page }) => {
     await expect(page.locator('.uk-alert-success')).toBeVisible({ timeout: 30_000 });
     await expect(page.locator('.uk-alert-success')).toContainText('发送问题成功');
 });
-
