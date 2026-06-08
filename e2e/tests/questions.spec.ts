@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
+import { randomBytes } from 'node:crypto';
 import { clickSubmitWhenReady, registerAndLogin, waitForMailhogEmail } from './helpers';
 
 function waitForAnswerResponse(page: Page) {
@@ -12,6 +13,62 @@ function waitForPostQuestionResponse(page: Page, domain: string) {
         resp.request().method() === 'POST' &&
         new RegExp(`/api/users/${domain}/questions$`).test(new URL(resp.url()).pathname)
     );
+}
+
+function waitForGetQuestionResponse(page: Page, domain: string, questionID: number) {
+    return page.waitForResponse(resp =>
+        resp.request().method() === 'GET' &&
+        new RegExp(`/api/users/${domain}/questions/${questionID}$`).test(new URL(resp.url()).pathname)
+    );
+}
+
+function buildAclUser(prefix: string) {
+    const ts = Date.now().toString(36);
+    const nonce = randomBytes(2).toString('hex');
+    const domainPrefix = prefix.toLowerCase().replace(/[^a-z0-9-]/g, '').slice(0, 8) || 'user';
+    let domain = `${domainPrefix}-${ts}${nonce}`.slice(0, 20);
+    if (domain.endsWith('-')) {
+        domain = `${domain.slice(0, -1)}a`;
+    }
+
+    return {
+        email: `${domain}@example.com`,
+        domain,
+        name: `${prefix}-${nonce}`,
+        password: 'Password123!',
+    };
+}
+
+async function registerAndLoginAcl(page: Page, prefix: string) {
+    const user = buildAclUser(prefix);
+
+    await page.goto('/sign-up');
+    await page.locator('input[name="email"]').fill(user.email);
+    await page.locator('input[name="domain"]').fill(user.domain);
+    await page.locator('input[name="name"]').fill(user.name);
+    await page.locator('input[name="password"]').fill(user.password);
+    await page.locator('input[name="repeatPassword"]').fill(user.password);
+
+    const signUpRespPromise = page.waitForResponse(resp =>
+        new URL(resp.url()).pathname.endsWith('/api/auth/sign-up') && resp.request().method() === 'POST',
+    );
+    await clickSubmitWhenReady(page);
+    const signUpResp = await signUpRespPromise;
+    expect(signUpResp.status()).toBe(200);
+    await expect(page).toHaveURL(/\/sign-in$/);
+
+    await page.locator('input[name="email"]').fill(user.email);
+    await page.locator('input[name="password"]').fill(user.password);
+
+    const signInRespPromise = page.waitForResponse(resp =>
+        new URL(resp.url()).pathname.endsWith('/api/auth/sign-in') && resp.request().method() === 'POST',
+    );
+    await clickSubmitWhenReady(page);
+    const signInResp = await signInRespPromise;
+    expect(signInResp.status()).toBe(200);
+    await expect(page).toHaveURL(new RegExp(`/_/${user.domain}$`));
+
+    return user;
 }
 
 // ─── Post a question ──────────────────────────────────────────────────────────
@@ -62,6 +119,80 @@ test('owner can answer a question and the answer is shown publicly', async ({ pa
 
     // 5. The answer text is now rendered in the card body.
     await expect(page.locator('.uk-card-body p.uk-text-small').first()).toContainText('Go is my favorite!');
+});
+
+test('access control for unanswered private question is enforced for owner/asker/token holder', async ({ browser }) => {
+    const ownerContext = await browser.newContext();
+    const askerContext = await browser.newContext();
+    const otherContext = await browser.newContext();
+    const anonymousContext = await browser.newContext();
+    const tokenHolderContext = await browser.newContext();
+
+    const ownerPage = await ownerContext.newPage();
+    const askerPage = await askerContext.newPage();
+    const otherPage = await otherContext.newPage();
+    const anonymousPage = await anonymousContext.newPage();
+    const tokenHolderPage = await tokenHolderContext.newPage();
+
+    try {
+        const owner = await registerAndLoginAcl(ownerPage, 'owneracl');
+        await registerAndLoginAcl(askerPage, 'askeracl');
+        await registerAndLoginAcl(otherPage, 'otheracl');
+
+        // Asker posts an unanswered private question to the owner's box.
+        await askerPage.goto(`/_/${owner.domain}`);
+        await askerPage.locator('textarea[name="content"]').fill('private-access-control-check');
+        await askerPage.locator('input[name="private"]').check();
+        const postQuestionResponsePromise = waitForPostQuestionResponse(askerPage, owner.domain);
+        await clickSubmitWhenReady(askerPage);
+        const postQuestionResponse = await postQuestionResponsePromise;
+        expect(postQuestionResponse.status()).toBe(200);
+
+        const privateLink = await askerPage.locator('.uk-alert-success a[target="_blank"]').getAttribute('href');
+        expect(privateLink).toBeTruthy();
+
+        const privateURL = new URL(privateLink!);
+        const questionID = Number(privateURL.pathname.split('/').at(-1));
+        const token = privateURL.searchParams.get('t');
+        expect(Number.isFinite(questionID)).toBe(true);
+        expect(token).toBeTruthy();
+
+        const noTokenPath = `/_/${owner.domain}/${questionID}`;
+        const withTokenPath = `${noTokenPath}?t=${token}`;
+
+        // Owner can access without token.
+        const ownerRespPromise = waitForGetQuestionResponse(ownerPage, owner.domain, questionID);
+        await ownerPage.goto(noTokenPath);
+        expect((await ownerRespPromise).status()).toBe(200);
+
+        // Asker can access without token (the behavior introduced in this branch).
+        const askerRespPromise = waitForGetQuestionResponse(askerPage, owner.domain, questionID);
+        await askerPage.goto(noTokenPath);
+        expect((await askerRespPromise).status()).toBe(200);
+
+        // Another signed-in user cannot access without token.
+        const otherRespPromise = waitForGetQuestionResponse(otherPage, owner.domain, questionID);
+        await otherPage.goto(noTokenPath);
+        expect((await otherRespPromise).status()).toBe(404);
+
+        // Anonymous user cannot access without token.
+        const anonymousRespPromise = waitForGetQuestionResponse(anonymousPage, owner.domain, questionID);
+        await anonymousPage.goto(noTokenPath);
+        expect((await anonymousRespPromise).status()).toBe(404);
+
+        // Token holder can access even without sign-in.
+        const tokenHolderRespPromise = waitForGetQuestionResponse(tokenHolderPage, owner.domain, questionID);
+        await tokenHolderPage.goto(withTokenPath);
+        expect((await tokenHolderRespPromise).status()).toBe(200);
+    } finally {
+        await Promise.all([
+            ownerContext.close(),
+            askerContext.close(),
+            otherContext.close(),
+            anonymousContext.close(),
+            tokenHolderContext.close(),
+        ]);
+    }
 });
 
 // ─── Email notifications ──────────────────────────────────────────────────────
