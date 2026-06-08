@@ -522,7 +522,7 @@ func testQuestionsCountByAskUserID(t *testing.T, ctx context.Context, db *questi
 		got, err := db.CountByAskUserID(ctx, 9, GetQuestionsCountOptions{})
 		require.Nil(t, err)
 
-		want := int64(2)
+		want := int64(1)
 		require.Equal(t, want, got)
 	})
 
@@ -531,6 +531,14 @@ func testQuestionsCountByAskUserID(t *testing.T, ctx context.Context, db *questi
 		require.Nil(t, err)
 
 		want := int64(1)
+		require.Equal(t, want, got)
+	})
+
+	t.Run("show private", func(t *testing.T) {
+		got, err := db.CountByAskUserID(ctx, 9, GetQuestionsCountOptions{ShowPrivate: true})
+		require.Nil(t, err)
+
+		want := int64(2)
 		require.Equal(t, want, got)
 	})
 
