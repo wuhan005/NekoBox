@@ -81,7 +81,7 @@
 </template>
 
 <script setup lang="ts">
-import {reactive, ref, onMounted} from "vue";
+import {computed, reactive, ref, onMounted} from "vue";
 import {type MineQuestionItem, type MineSentQuestionItem, mineQuestions, mineSentQuestions} from "@/api/mine.ts";
 import {useRouter} from "vue-router";
 import {humanizeDate} from "@/utils/humanize.ts";
@@ -93,10 +93,12 @@ const router = useRouter()
 const authStore = useAuthStore()
 
 const PAGE_SIZE = 20
-const TABS = [
-  {name: 'received', label: '我收到的问题'},
-  {name: 'sent', label: '我的提问'},
-]
+const receivedTotal = ref<number>(0)
+const sentTotal = ref<number>(0)
+const TABS = computed(() => [
+  {name: 'received', label: `我收到的问题 (${receivedTotal.value})`},
+  {name: 'sent', label: `我的提问 (${sentTotal.value})`},
+])
 
 const currentTab = ref<string>('received')
 
@@ -128,6 +130,7 @@ const fetchReceivedQuestions = () => {
   received.isLoading = true
   mineQuestions(received.cursor, PAGE_SIZE)
       .then(res => {
+        receivedTotal.value = res.total
         received.questions = received.questions.concat(res.questions)
         received.cursor = res.cursor
         if (res.questions.length < PAGE_SIZE) {
@@ -144,6 +147,7 @@ const fetchSentQuestions = () => {
   sent.isLoading = true
   mineSentQuestions(sent.cursor, PAGE_SIZE)
       .then(res => {
+        sentTotal.value = res.total
         sent.questions = sent.questions.concat(res.questions)
         sent.cursor = res.cursor
         if (res.questions.length < PAGE_SIZE) {
