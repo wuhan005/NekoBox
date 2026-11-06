@@ -1,6 +1,6 @@
 <template>
   <Header/>
-  <div class="uk-container uk-container-xsmall">
+  <div class="uk-container" :class="$route.name === 'pixel' ? 'uk-container-expand' : 'uk-container-xsmall'">
     <router-view/>
     <Footer/>
   </div>

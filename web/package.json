@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@e99p1ant/neko-pixel-umd": "0.1.1",
     "@types/file-saver": "^2.0.7",
     "@types/node": "^24.3.0",
     "@types/uikit": "^3.23.0",
