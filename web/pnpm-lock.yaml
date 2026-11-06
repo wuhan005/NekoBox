@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@e99p1ant/neko-pixel-umd':
-        specifier: 0.1.1
-        version: 0.1.1
+        specifier: 0.1.2
+        version: 0.1.2
       '@types/file-saver':
         specifier: ^2.0.7
         version: 2.0.7
@@ -110,8 +110,8 @@ packages:
     resolution: {integrity: sha512-ruv7Ae4J5dUYULmeXw1gmb7rYRz57OWCPM57pHojnLq/3Z1CK2lNSLTCVjxVk1F/TZHwOZZrOWi0ur95BbLxNQ==}
     engines: {node: '>=6.9.0'}
 
-  '@e99p1ant/neko-pixel-umd@0.1.1':
-    resolution: {integrity: sha512-pB16www81W1k/lntmfQtbMfLHAbN26UvWtTo5L1YBYZ9X0jhn0DWLH+GWjjIheyyB+FOtRz9K2h4NksxenstvQ==}
+  '@e99p1ant/neko-pixel-umd@0.1.2':
+    resolution: {integrity: sha512-DDam1pfbop8tYInJ+2esocqFvQYc7AKvcs2J675Ys7csrQ6qEXEptQYm7w5F1/T4RCqC2Jq/OUJSWdFbYK3lMg==}
 
   '@esbuild/aix-ppc64@0.25.9':
     resolution: {integrity: sha512-OaGtL73Jck6pBKjNIe24BnFE6agGl+6KxDtTfHhy1HmhthfKouEcOhqpSL64K4/0WCtbKFLOdzD/44cJ4k9opA==}
@@ -1089,7 +1089,7 @@ snapshots:
       '@babel/helper-string-parser': 7.27.1
       '@babel/helper-validator-identifier': 7.27.1
 
-  '@e99p1ant/neko-pixel-umd@0.1.1': {}
+  '@e99p1ant/neko-pixel-umd@0.1.2': {}
 
   '@esbuild/aix-ppc64@0.25.9':
     optional: true
