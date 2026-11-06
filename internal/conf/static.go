@@ -70,10 +70,6 @@ var (
 		TokenTTL      int `ini:"token_ttl"`
 	}
 
-	Pixel struct {
-		Host string `ini:"host"`
-	}
-
 	Upload struct {
 		DefaultAvatarURL    string `ini:"default_avatar"`
 		DefaultBackground   string `ini:"default_background"`

@@ -75,10 +75,6 @@ func Init() error {
 		GoCaptcha.TokenTTL = 300
 	}
 
-	if err := File.Section("pixel").MapTo(&Pixel); err != nil {
-		return errors.Wrap(err, "map 'pixel'")
-	}
-
 	if err := File.Section("upload").MapTo(&Upload); err != nil {
 		return errors.Wrap(err, "map 'upload'")
 	}
