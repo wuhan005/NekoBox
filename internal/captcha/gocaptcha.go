@@ -8,6 +8,7 @@ import (
 	"context"
 	"encoding/json"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/flamego/cache"
@@ -31,6 +32,7 @@ const (
 type goCaptchaService struct {
 	captcha       slide.Captcha
 	tokens        *tokenStore
+	challengeMu   sync.Mutex
 	verifyPadding int
 	challengeTTL  time.Duration
 	tokenTTL      time.Duration
@@ -148,6 +150,10 @@ func (s *goCaptchaService) VerifyChallenge(ctx context.Context, c cache.Cache, k
 	if key == "" {
 		return "", ErrVerifyFailed
 	}
+	if s.tokens.redis == nil {
+		s.challengeMu.Lock()
+		defer s.challengeMu.Unlock()
+	}
 
 	cacheKey := challengeCacheKeyPrefix + key
 	raw, err := c.Get(ctx, cacheKey)
@@ -168,9 +174,18 @@ func (s *goCaptchaService) VerifyChallenge(ctx context.Context, c cache.Cache, k
 		return "", errors.Wrap(ErrInternal, err.Error())
 	}
 
-	// The challenge is single-use: drop it before the bound check so a wrong answer can't be
-	// brute-forced against the same cached coordinates.
-	_ = c.Delete(ctx, cacheKey)
+	// Only the request that deletes the challenge may validate the answer and issue a token.
+	if s.tokens.redis != nil {
+		deleted, err := s.tokens.redis.Del(ctx, cacheKey).Result()
+		if err != nil {
+			return "", errors.Wrap(ErrInternal, err.Error())
+		}
+		if deleted != 1 {
+			return "", ErrVerifyFailed
+		}
+	} else if err := c.Delete(ctx, cacheKey); err != nil {
+		return "", errors.Wrap(ErrInternal, err.Error())
+	}
 
 	if !slide.Validate(x, y, v.X, v.Y, s.verifyPadding) {
 		return "", ErrVerifyFailed
