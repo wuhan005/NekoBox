@@ -81,7 +81,7 @@ func TestServeWebDrainsRequestsAndNotifications(t *testing.T) {
 			status <- 0
 			return
 		}
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 		status <- resp.StatusCode
 	}()
 
