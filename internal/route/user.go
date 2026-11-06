@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -34,10 +35,8 @@ import (
 	"github.com/wuhan005/NekoBox/internal/security/censor"
 )
 
-type UserHandler struct{}
-
-func NewUserHandler() *UserHandler {
-	return &UserHandler{}
+type UserHandler struct {
+	notifications *sync.WaitGroup
 }
 
 func (*UserHandler) Domainer(ctx context.Context) error {
@@ -122,7 +121,7 @@ func (*UserHandler) ListQuestions(ctx context.Context, pageUser *db.User) error 
 	})
 }
 
-func (*UserHandler) PostQuestion(ctx context.Context, pageUser *db.User, v captcha.Verifier, c cache.Cache, tx dbutil.Transactor, f form.PostQuestion) error {
+func (h *UserHandler) PostQuestion(ctx context.Context, pageUser *db.User, v captcha.Verifier, c cache.Cache, tx dbutil.Transactor, f form.PostQuestion) error {
 	if !ctx.IsSignedIn && pageUser.HarassmentSetting == db.HarassmentSettingTypeRegisterOnly {
 		return ctx.Error(http.StatusBadRequest, "提问箱的主人设置了仅注册用户才能提问，请先登录。")
 	}
@@ -237,14 +236,16 @@ func (*UserHandler) PostQuestion(ctx context.Context, pageUser *db.User, v captc
 		return ctx.ServerError()
 	}
 
-	go func() {
-		if pageUser.Notify == db.NotifyTypeEmail {
-			// Send notification to page user.
+	if pageUser.Notify == db.NotifyTypeEmail {
+		requestCtx := ctx.Request().Context()
+		h.notifications.Add(1)
+		go func() {
+			defer h.notifications.Done()
 			if err := mail.SendNewQuestionMail(pageUser.Email, pageUser.Domain, question.ID, question.Content); err != nil {
-				logrus.WithContext(ctx.Request().Context()).WithError(err).Error("Failed to send new question mail to user")
+				logrus.WithContext(requestCtx).WithError(err).Error("Failed to send new question mail to user")
 			}
-		}
-	}()
+		}()
+	}
 
 	questionPrivateURL := fmt.Sprintf("/_/%s/%d?t=%s", pageUser.Domain, question.ID, question.Token)
 	questionPrivateAbsURL := fmt.Sprintf("%s%s", strings.TrimRight(conf.App.ExternalURL, "/"), questionPrivateURL)

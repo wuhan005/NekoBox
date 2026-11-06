@@ -7,6 +7,7 @@ package conf
 import (
 	"os"
 	"strings"
+	"time"
 
 	"github.com/pkg/errors"
 	"gopkg.in/ini.v1"
@@ -42,8 +43,20 @@ func Init() error {
 		return errors.Wrap(err, "map 'security'")
 	}
 
-	if err := File.Section("server").MapTo(&Server); err != nil {
+	server := File.Section("server")
+	if err := server.MapTo(&Server); err != nil {
 		return errors.Wrap(err, "map 'server'")
+	}
+	Server.DrainDelay, err = time.ParseDuration(server.Key("drain_delay").MustString("5s"))
+	if err != nil {
+		return errors.Wrap(err, "parse server.drain_delay")
+	}
+	Server.ShutdownTimeout, err = time.ParseDuration(server.Key("shutdown_timeout").MustString("30s"))
+	if err != nil {
+		return errors.Wrap(err, "parse server.shutdown_timeout")
+	}
+	if Server.DrainDelay < 0 || Server.ShutdownTimeout <= Server.DrainDelay {
+		return errors.New("server requires 0 <= drain_delay < shutdown_timeout")
 	}
 
 	if err := File.Section("database").MapTo(&Database); err != nil {

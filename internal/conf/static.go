@@ -4,6 +4,8 @@
 
 package conf
 
+import "time"
+
 // Build time and commit information.
 //
 // ⚠️ WARNING: should only be set by "-ldflags".
@@ -30,9 +32,11 @@ var (
 	}
 
 	Server struct {
-		Port    int    `ini:"port"`
-		Salt    string `ini:"salt"`
-		XSRFKey string `ini:"xsrf_key"`
+		Port            int           `ini:"port"`
+		Salt            string        `ini:"salt"`
+		XSRFKey         string        `ini:"xsrf_key"`
+		DrainDelay      time.Duration `ini:"-"`
+		ShutdownTimeout time.Duration `ini:"-"`
 	}
 
 	Database struct {

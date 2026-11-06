@@ -7,6 +7,7 @@ package route
 import (
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/flamego/cache"
@@ -28,7 +29,7 @@ import (
 	"github.com/wuhan005/NekoBox/route/service"
 )
 
-func New(db *gorm.DB) (*flamego.Flame, error) {
+func New(db *gorm.DB, notifications *sync.WaitGroup) (*flamego.Flame, error) {
 	f := flamego.Classic()
 	if conf.App.Production {
 		flamego.SetEnv(flamego.EnvTypeProd)
@@ -125,7 +126,7 @@ func New(db *gorm.DB) (*flamego.Flame, error) {
 			f.Combo("/recover-password").Get(authHandler.GetRecoverPasswordCode).Post(form.Bind(form.RecoverPassword{}), authHandler.RecoverPassword)
 		}, reqUserSignOut)
 
-		userHandler := NewUserHandler()
+		userHandler := &UserHandler{notifications: notifications}
 		f.Group("/users/{domain}", func() {
 			f.Get("/profile", userHandler.Profile)
 			f.Group("/questions", func() {
@@ -136,7 +137,7 @@ func New(db *gorm.DB) (*flamego.Flame, error) {
 			})
 		}, userHandler.Domainer)
 
-		mineHandler := NewMineHandler()
+		mineHandler := &MineHandler{notifications: notifications}
 		f.Group("/mine", func() {
 			f.Group("/questions", func() {
 				f.Get("", mineHandler.ListQuestions)

@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/flamego/session"
@@ -25,10 +26,8 @@ import (
 	"github.com/wuhan005/NekoBox/internal/security/censor"
 )
 
-type MineHandler struct{}
-
-func NewMineHandler() *MineHandler {
-	return &MineHandler{}
+type MineHandler struct {
+	notifications *sync.WaitGroup
 }
 
 func (*MineHandler) ListQuestions(ctx context.Context) error {
@@ -167,7 +166,7 @@ func (*MineHandler) Questioner(ctx context.Context) error {
 	return nil
 }
 
-func (*MineHandler) AnswerQuestion(ctx context.Context, question *db.Question, tx dbutil.Transactor, f form.AnswerQuestion) error {
+func (h *MineHandler) AnswerQuestion(ctx context.Context, question *db.Question, tx dbutil.Transactor, f form.AnswerQuestion) error {
 	answer := f.Answer
 
 	// 🚨 Content security check.
@@ -226,14 +225,16 @@ func (*MineHandler) AnswerQuestion(ctx context.Context, question *db.Question, t
 		return ctx.ServerError()
 	}
 
-	go func() {
-		if question.ReceiveReplyEmail != "" && question.Answer == "" { // We only send the email when the question has not been answered.
-			// Send notification to questioner.
-			if err := mail.SendNewAnswerMail(question.ReceiveReplyEmail, ctx.User.Domain, question.ID, question.IsPrivate, question.Token, question.Content, f.Answer); err != nil {
-				logrus.WithContext(ctx.Request().Context()).WithError(err).Error("Failed to send receive reply mail to questioner")
+	if question.ReceiveReplyEmail != "" && question.Answer == "" {
+		requestCtx, domain := ctx.Request().Context(), ctx.User.Domain
+		h.notifications.Add(1)
+		go func() {
+			defer h.notifications.Done()
+			if err := mail.SendNewAnswerMail(question.ReceiveReplyEmail, domain, question.ID, question.IsPrivate, question.Token, question.Content, f.Answer); err != nil {
+				logrus.WithContext(requestCtx).WithError(err).Error("Failed to send receive reply mail to questioner")
 			}
-		}
-	}()
+		}()
+	}
 	return ctx.Success("提问回复成功")
 }
 
