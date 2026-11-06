@@ -1,4 +1,10 @@
 <template>
+  <div class="uk-container uk-container-large">
+    <div class="uk-padding uk-padding-remove-vertical uk-margin-small-left uk-margin-small-right">
+      <NekoPixelApp class="pixel-board" :editable="authStore.isSignedIn"/>
+    </div>
+  </div>
+
   <div class="uk-alert-warning uk-text-small" uk-alert>
     <p>
       请各位用户知悉并确认在使用画板功能时，不会发起及/或参与以下内容：
@@ -8,12 +14,6 @@
       4. 其他在法律法规中禁止的或不适宜的内容。
       如果您实施了违反上述规范的行为，我们将视情况采取相关措施，并保留移交司法机关或者行政机关的权利。
     </p>
-  </div>
-
-  <div class="uk-container">
-    <div class="uk-padding-large uk-padding-remove-vertical">
-      <NekoPixelApp class="pixel-board" :editable="authStore.isSignedIn"/>
-    </div>
   </div>
 </template>
 
