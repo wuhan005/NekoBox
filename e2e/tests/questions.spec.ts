@@ -246,9 +246,9 @@ test('questioner receives a reply email when their question is answered', async 
     expect(received).toBe(true);
 });
 
-// ─── Image upload (MinIO / S3) ────────────────────────────────────────────────
+// ─── Image upload (S3) ────────────────────────────────────────────────────────
 
-test('can post a question with an image (MinIO upload)', async ({ page }) => {
+test('can post a question with an image (S3 upload)', async ({ page }) => {
     const user = await registerAndLogin(page, 'imgupload');
 
     await page.goto(`/_/${user.domain}`);
@@ -281,7 +281,6 @@ test('can post a question with an image (MinIO upload)', async ({ page }) => {
     expect(postQuestionResponse.status(), `Post question failed: ${JSON.stringify(postQuestionBody)}`).toBe(200);
     expect(postQuestionBody?.data ?? '').toContain('发送问题成功');
 
-    // Success message must appear (image upload in CI can take longer due to MinIO initialization).
     await expect(page.locator('.uk-alert-success')).toBeVisible({ timeout: 30_000 });
     await expect(page.locator('.uk-alert-success')).toContainText('发送问题成功');
 });

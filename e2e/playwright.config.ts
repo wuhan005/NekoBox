@@ -17,7 +17,7 @@ export default defineConfig({
     ],
 
     // Real reCAPTCHA + remote verify can take longer than default 5s in CI.
-    // Image upload (MinIO) can be slow during initialization.
+    // Allow time for S3 image uploads in CI.
     expect: {
         timeout: process.env.CI ? 30_000 : 10_000,
     },
