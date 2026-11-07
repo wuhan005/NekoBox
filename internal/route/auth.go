@@ -139,7 +139,7 @@ func (*AuthHandler) ForgotPassword(ctx context.Context, v captcha.Verifier, cach
 		return ctx.Error(http.StatusInternalServerError, "邮件发送失败，请稍后再试")
 	}
 
-	if err := cache.Set(ctx.Request().Context(), emailSentCacheKey, time.Now(), 2*time.Minute); err != nil {
+	if err := cache.Set(ctx.Request().Context(), emailSentCacheKey, true, 2*time.Minute); err != nil {
 		logrus.WithContext(ctx.Request().Context()).WithError(err).Error("Failed to set password recovery email cache")
 	}
 
