@@ -5,7 +5,7 @@
         <div class="uk-text-left uk-text-small uk-text-muted">
           <Skeleton :loading="!question.createdAt" width="20%">{{ humanizeDate(question.createdAt) }}</Skeleton>
         </div>
-        <h4 class="uk-text-center uk-margin-top uk-margin-bottom uk-text-break">
+        <h4 class="uk-text-center uk-margin-top uk-margin-bottom uk-text-break pre-wrap">
           <Skeleton>{{ question.content }}</Skeleton>
         </h4>
         <ul v-if="question.questionImageURLs.length > 0" class="uk-thumbnav" uk-margin>
@@ -28,7 +28,7 @@
             </a>
           </li>
         </ul>
-        <p class="uk-text-small uk-text-right uk-text-muted">-来自@{{ profile.name }}的回答</p>
+        <p v-if="profile" class="uk-text-small uk-text-right uk-text-muted">-来自@{{ profile.name }}的回答</p>
       </div>
 
       <div class="uk-card-footer">
@@ -84,22 +84,31 @@
           </Form>
         </div>
 
-        <div v-else-if="!isLoading">
+        <div v-else-if="!isLoading && question.id && profile">
           <h5 class="uk-text-center">再问点别的问题？</h5>
           <NewQuestion
               :page-profile-domain="profile.domain"
               :harassment-setting="profile.harassmentSetting"
           />
         </div>
-        <Skeleton v-else :count="3"></Skeleton>
+        <Skeleton v-else-if="isLoading || isInitalLoading" :count="3"></Skeleton>
+
+        <div v-if="!isLoading && !question.id" class="uk-alert uk-alert-danger" role="alert">
+          问题加载失败，请重试。
+          <button type="button" class="uk-button uk-button-default" @click="fetchQuestion">重新加载问题</button>
+        </div>
+        <div v-if="!isInitalLoading && !profile" class="uk-alert uk-alert-danger" role="alert">
+          箱主资料加载失败，请重试。
+          <button type="button" class="uk-button uk-button-default" @click="fetchProfile">重新加载箱主资料</button>
+        </div>
 
         <hr class="uk-divider-icon">
-        <Skeleton :loading="isInitalLoading" :count="5">
-          <PageQuestions
-              :page-profile-name="profile.name"
-              :page-profile-domain="profile.domain"
-          />
-        </Skeleton>
+        <Skeleton v-if="isInitalLoading" :count="5"/>
+        <PageQuestions
+            v-else-if="profile"
+            :page-profile-name="profile.name"
+            :page-profile-domain="profile.domain"
+        />
       </div>
     </div>
   </div>
@@ -124,7 +133,7 @@ const questionID = ref<string>(route.params.questionID as string || '')
 const questionToken = ref<string>(route.query.t as string || '')
 
 const isLoading = ref<boolean>(true)
-const profile = ref<Profile>({} as Profile)
+const profile = ref<Profile | null>(null)
 const EMPTY_QUESTION: PageQuestion = {
   id: 0,
   isOwner: false,
@@ -244,9 +253,9 @@ const fetchQuestion = () => {
 }
 
 const isInitalLoading = ref<boolean>(true)
-onMounted(() => {
+const fetchProfile = () => {
   isInitalLoading.value = true
-  getUserProfile(domain.value)
+  return getUserProfile(domain.value)
       .then(res => {
         if (isUnmounted) return
         profile.value = res
@@ -259,9 +268,12 @@ onMounted(() => {
         }
       })
       .finally(() => {
+        if (isUnmounted) return
         isInitalLoading.value = false
       })
-
+}
+onMounted(() => {
+  fetchProfile()
   fetchQuestion()
 })
 </script>

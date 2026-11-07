@@ -14,7 +14,7 @@
             <span v-if="!question.isAnswered" class="uk-label uk-float-right uk-margin-small-right">未回答</span>
             <span v-if="question.isPrivate" class="uk-label uk-label-warning uk-float-right uk-margin-small-right">私密</span>
             <div class="uk-text-left uk-text-small uk-text-muted">{{ humanizeDate(question.createdAt) }}</div>
-            <p class="uk-text-small">{{ question.content }}</p>
+            <p class="uk-text-small uk-text-break">{{ question.content }}</p>
           </div>
         </a>
       </div>
@@ -54,7 +54,7 @@
             <div class="uk-text-left uk-text-small uk-text-muted">
               {{ humanizeDate(question.createdAt) }} · @{{ question.targetDomain || '已失效提问箱' }}
             </div>
-            <p class="uk-text-small">{{ question.content }}</p>
+            <p class="uk-text-small uk-text-break">{{ question.content }}</p>
           </div>
         </a>
       </div>

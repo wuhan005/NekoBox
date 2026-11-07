@@ -62,9 +62,6 @@ importers:
       vue-loading-skeleton:
         specifier: 2.0.0-beta.1
         version: 2.0.0-beta.1(typescript@5.8.3)
-      vue-recaptcha-v3:
-        specifier: ^2.0.1
-        version: 2.0.1(vue@3.5.20(typescript@5.8.3))
       vue-router:
         specifier: ^4.5.1
         version: 4.5.1(vue@3.5.20(typescript@5.8.3))
@@ -895,9 +892,6 @@ packages:
     engines: {node: '>=10.13.0'}
     hasBin: true
 
-  recaptcha-v3@1.11.3:
-    resolution: {integrity: sha512-sEE6J0RzUkS+sKEBpgCD/AqCU0ffrAVOADGjvAx9vcttN+VLK42SWMkj/J/I6vHu3Kew+xcfbBqDVb65N0QGDw==}
-
   require-directory@2.1.1:
     resolution: {integrity: sha512-fGxEI7+wsG9xrvdjsrlmL22OMTTiHRwAMroiEeMgq8gzoLC/PQr7RsRDSTLUg/bZAZtF+TVIkHc6/4RIKrui+Q==}
     engines: {node: '>=0.10.0'}
@@ -1022,11 +1016,6 @@ packages:
 
   vue-loading-skeleton@2.0.0-beta.1:
     resolution: {integrity: sha512-cBrc47qB20zINd4v8rGM56bSvhSkcZx6IT+gFIMR0ezoKa6RE108bewDcocJW11JmencbQ2mljjAD0U9dKCNNg==}
-
-  vue-recaptcha-v3@2.0.1:
-    resolution: {integrity: sha512-isEDtOfHU4wWRrZZuxciAELtQmPOeEEdicPNa0f1AOyLPy3sCcBEcpFt+FOcO3RQv5unJ3Yn5NlsWtXv9rXqjg==}
-    peerDependencies:
-      vue: ^3.0.11
 
   vue-router@4.5.1:
     resolution: {integrity: sha512-ogAF3P97NPm8fJsE4by9dwSYtDwXIY1nFY9T6DyQnGHd1E2Da94w9JIolpe42LJGIl0DwOHBi8TcRPlPGwbTtw==}
@@ -1722,8 +1711,6 @@ snapshots:
       pngjs: 5.0.0
       yargs: 15.4.1
 
-  recaptcha-v3@1.11.3: {}
-
   require-directory@2.1.1: {}
 
   require-main-filename@2.0.0: {}
@@ -1831,11 +1818,6 @@ snapshots:
       vue: 3.5.20(typescript@5.8.3)
     transitivePeerDependencies:
       - typescript
-
-  vue-recaptcha-v3@2.0.1(vue@3.5.20(typescript@5.8.3)):
-    dependencies:
-      recaptcha-v3: 1.11.3
-      vue: 3.5.20(typescript@5.8.3)
 
   vue-router@4.5.1(vue@3.5.20(typescript@5.8.3)):
     dependencies:

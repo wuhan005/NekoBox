@@ -4,13 +4,13 @@
       <p>提问箱的主人设置了仅注册用户才能提问，你需要先登录 NekoBox 才能向他提问。</p>
     </div>
     <div class="uk-margin uk-text-center">
-      <a class="uk-button uk-button-primary" :href="`/sign-in?to=${route.path}`">前往登录</a>
+      <RouterLink class="uk-button uk-button-primary" :to="{name: 'sign-in', query: {to: route.fullPath}}">前往登录</RouterLink>
     </div>
   </div>
 
   <div v-else class="uk-margin">
-    <div v-if="successMessageVisible" class="uk-alert-success" uk-alert>
-      <a href="#" class="uk-alert-close" uk-close></a>
+    <div v-if="successMessageVisible" class="uk-alert uk-alert-success">
+      <button type="button" class="uk-alert-close" uk-close aria-label="关闭提示" @click="successMessageVisible = false"></button>
       <p v-html="successMessage"></p>
     </div>
 
@@ -108,44 +108,38 @@ const successMessageVisible = ref<boolean>(false)
 const successMessage = ref<string>('')
 
 const handleSubmit = async () => {
+  if (isLoading.value || !captchaReady.value) return
   if (!captchaRef.value) {
     ToastError('验证码加载失败，请刷新页面重试')
     return
   }
 
-  try {
-    postQuestionForm.value.captcha = await captchaRef.value.acquire('post_question')
-  } catch (error) {
-    ToastError('验证码校验未完成，请重试')
-    return
-  }
-
-  if (!postQuestionForm.value.captcha.trim()) {
-    ToastError('验证码获取失败，请稍后再试（可能是提交过于频繁）')
-    return
-  }
-
   isLoading.value = true
-  postQuestion(props.pageProfileDomain, postQuestionForm.value)
-      .then(res => {
-        successMessage.value = res
-        successMessageVisible.value = true
-
-        if (imageUploader.value) {
-          imageUploader.value.value = ''
-        }
-        receiveReplyViaEmail.value = false
-        postQuestionForm.value = {
-          content: '',
-          receiveReplyEmail: '',
-          images: [],
-          isPrivate: false,
-          captcha: '',
-        }
-      })
-      .finally(() => {
-        isLoading.value = false
-      })
+  try {
+    try {
+      postQuestionForm.value.captcha = await captchaRef.value.acquire('post_question')
+    } catch {
+      ToastError('验证码校验未完成，请重试')
+      return
+    }
+    if (!postQuestionForm.value.captcha.trim()) {
+      ToastError('验证码获取失败，请稍后再试（可能是提交过于频繁）')
+      return
+    }
+    const res = await postQuestion(props.pageProfileDomain, {
+      ...postQuestionForm.value,
+      receiveReplyEmail: receiveReplyViaEmail.value ? postQuestionForm.value.receiveReplyEmail : '',
+    })
+    successMessage.value = res
+    successMessageVisible.value = true
+    if (imageUploader.value) imageUploader.value.value = ''
+    receiveReplyViaEmail.value = false
+    postQuestionForm.value = {content: '', receiveReplyEmail: '', images: [], isPrivate: false, captcha: ''}
+  } catch {
+    // API errors are displayed by the interceptor; retain the draft for retry.
+  } finally {
+    isLoading.value = false
+  }
 }
 
 const imageUploader = ref<HTMLInputElement | null>(null)

@@ -70,32 +70,31 @@ const signUpForm = ref<SignUpRequest>({
 })
 
 const handleSignUp = async () => {
+  if (isLoading.value || !captchaReady.value) return
   if (!captchaRef.value) {
     ToastError('验证码加载失败，请刷新页面重试')
     return
   }
 
-  try {
-    signUpForm.value.captcha = await captchaRef.value.acquire('sign_up')
-  } catch (error) {
-    ToastError('验证码校验未完成，请重试')
-    return
-  }
-
-  if (!signUpForm.value.captcha.trim()) {
-    ToastError('验证码获取失败，请稍后再试（可能是提交过于频繁）')
-    return
-  }
-
   isLoading.value = true
-  signUp(signUpForm.value)
-      .then(res => {
-        ToastSuccess(res)
-        router.push({name: 'sign-in'})
-      })
-      .finally(() => {
-        isLoading.value = false
-      })
+  try {
+    try {
+      signUpForm.value.captcha = await captchaRef.value.acquire('sign_up')
+    } catch {
+      ToastError('验证码校验未完成，请重试')
+      return
+    }
+    if (!signUpForm.value.captcha.trim()) {
+      ToastError('验证码获取失败，请稍后再试（可能是提交过于频繁）')
+      return
+    }
+    ToastSuccess(await signUp(signUpForm.value))
+    await router.push({name: 'sign-in'})
+  } catch {
+    // API errors are displayed by the interceptor.
+  } finally {
+    isLoading.value = false
+  }
 }
 </script>
 

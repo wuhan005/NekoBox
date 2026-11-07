@@ -5,7 +5,7 @@
         <ul class="uk-navbar-nav">
           <li><a :href="router.resolve({name: 'profile', params: {domain: authStore.profile.domain}}).href"
                  @click.prevent="router.push({name: 'profile', params: {domain: authStore.profile.domain}})">
-            {{ authStore.profile.name }}
+            <span class="profile-name" :title="authStore.profile.name">{{ authStore.profile.name }}</span>
           </a></li>
         </ul>
       </div>
@@ -47,5 +47,48 @@ const router = useRouter()
 </script>
 
 <style scoped>
-
+@media (max-width: 767px) {
+  .uk-navbar-center {
+    width: 100%;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    gap: 0;
+    padding: 0 10px;
+    box-sizing: border-box;
+  }
+  .uk-navbar-center-left,
+  .uk-navbar-center-right {
+    position: static;
+    min-width: 0;
+    transform: none;
+  }
+  .uk-navbar-center-right {
+    grid-column: 3;
+    grid-row: 1;
+    justify-self: end;
+  }
+  .uk-navbar-center-left {
+    grid-column: 1;
+    grid-row: 1;
+    width: 100%;
+  }
+  .uk-navbar-center-left .uk-navbar-nav,
+  .uk-navbar-center-left li,
+  .profile-name {
+    min-width: 0;
+  }
+  .profile-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .uk-navbar-nav > li > a,
+  .uk-logo {
+    padding: 0 6px;
+  }
+  .uk-logo {
+    grid-column: 2;
+    grid-row: 1;
+  }
+}
 </style>

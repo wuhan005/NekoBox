@@ -44,7 +44,9 @@ axios.interceptors.response.use(
             const authStore = useAuthStore()
             authStore.signOut()
 
-            router.push({name: 'sign-in'})
+            if (router.currentRoute.value.name !== 'sign-in') {
+                router.push({name: 'sign-in', query: {to: router.currentRoute.value.fullPath}})
+            }
             return Promise.reject(error);
         }
 

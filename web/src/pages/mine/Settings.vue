@@ -18,26 +18,26 @@
         <div class="uk-margin">
           <label class="uk-form-label" for="name">昵称</label>
           <Field v-model="updateProfileForm.name" id="name" name="name" class="uk-input" type="text" rules="required"
-                 label="昵称"/>
+                 label="昵称" :disabled="profileSaving"/>
           <ErrorMessage class="field-error-message" name="name"/>
         </div>
         <div class="uk-margin">
           <label class="uk-form-label" for="oldPassword">旧密码</label>
           <Field v-model="updateProfileForm.oldPassword" class="uk-input" id="oldPassword" name="oldPassword"
-                 type="password"
+                 type="password" :disabled="profileSaving"
                  placeholder="修改密码使用，留空则不修改"/>
           <ErrorMessage class="field-error-message" name="oldPassword"/>
         </div>
         <div class="uk-margin">
           <label class="uk-form-label" for="newPassword">新密码</label>
           <Field v-model="updateProfileForm.newPassword" class="uk-input" id="newPassword" name="newPassword"
-                 type="password"
+                 type="password" :disabled="profileSaving"
                  placeholder="修改密码使用，留空则不修改"/>
           <ErrorMessage class="field-error-message" name="newPassword"/>
         </div>
 
         <div class="uk-margin">
-          <button type="submit" class="uk-button uk-button-primary">修改信息</button>
+          <button type="submit" class="uk-button uk-button-primary" :disabled="profileSaving">修改信息</button>
           <button type="button" class="uk-button uk-button-danger" @click="handleSignOut">退出登录</button>
         </div>
       </Form>
@@ -52,14 +52,14 @@
       <Form v-else @submit="updateBoxSettings">
         <div class="uk-margin">
           <label class="uk-form-label" for="intro">提问箱介绍</label>
-          <input v-model="updateMineBoxSettingsForm.intro" id="intro" name="intro" class="uk-input" type="text">
+          <input v-model="updateMineBoxSettingsForm.intro" id="intro" name="intro" class="uk-input" type="text" :disabled="boxSettingsLoading">
         </div>
         <div class="uk-margin">
           <label class="uk-form-label" for="form-stacked-text">新提问通知方式</label>
           <br/>
           <label class="uk-text-small">
             <input v-model="notifyTypeEmail" name="notifyType" type="checkbox"
-                   class="uk-checkbox"/> 邮件
+                   class="uk-checkbox" :disabled="boxSettingsLoading"/> 邮件
           </label>
         </div>
         <div class="uk-margin">
@@ -67,7 +67,7 @@
           <br/>
           <div uk-form-custom="target: true">
             <input ref="avatarImageUploader" name="avatar" type="file" accept="image/*"
-                   @change="handleSelectAvatarImage">
+                   @change="handleSelectAvatarImage" :disabled="boxSettingsLoading">
             <input class="uk-input uk-form-width-large" type="text" placeholder="点击选择个人提问箱头像" disabled>
           </div>
         </div>
@@ -76,7 +76,7 @@
           <br/>
           <div uk-form-custom="target: true">
             <input ref="backgroundImageUploader" name="avatar" type="file" accept="image/*"
-                   @change="handleSelectBackgroundImage">
+                   @change="handleSelectBackgroundImage" :disabled="boxSettingsLoading">
             <input class="uk-input uk-form-width-large" type="text" placeholder="点击选择提问箱背景" disabled>
           </div>
         </div>
@@ -101,16 +101,16 @@
             <br/>
             <label class="uk-text-small">
               <input v-model="harassmentSettingTypeRegisterOnly" name="notifyType" type="checkbox"
-                     class="uk-checkbox"/> 仅允许注册用户向我提问
+                     class="uk-checkbox" :disabled="harassmentSettingsSaving"/> 仅允许注册用户向我提问
             </label>
           </div>
           <div class="uk-margin">
             <label class="uk-form-label">屏蔽词设置（使用半角逗号 <code>,</code> 分隔，最多支持 10 个屏蔽词，每个屏蔽词最大长度为
               10）</label>
-            <input v-model="updateMineHarassmentSettingForm.blockWords" name="blockWords" class="uk-input" type="text"/>
+            <input v-model="updateMineHarassmentSettingForm.blockWords" name="blockWords" class="uk-input" type="text" :disabled="harassmentSettingsSaving"/>
           </div>
           <div class="uk-margin">
-            <button type="submit" class="uk-button uk-button-primary">更新防骚扰设置</button>
+            <button type="submit" class="uk-button uk-button-primary" :disabled="harassmentSettingsSaving">更新防骚扰设置</button>
           </div>
         </Form>
       </div>
@@ -141,7 +141,7 @@
 </template>
 
 <script setup lang="ts">
-import {ref, onMounted} from "vue";
+import {ref, onMounted, onUnmounted} from "vue";
 import UkTabs from "@/components/UkTabs.vue";
 import {
   getMineBoxSettings,
@@ -161,6 +161,8 @@ import {saveAs} from 'file-saver';
 
 const router = useRouter()
 const authStore = useAuthStore();
+let isUnmounted = false
+onUnmounted(() => { isUnmounted = true })
 
 const TABS = [
   {name: 'profile', label: '个人信息'},
@@ -185,10 +187,12 @@ const updateProfileForm = ref<UpdateMineProfileRequest>({
 })
 const profileLoading = ref<boolean>(true)
 const profileLoaded = ref<boolean>(false)
+const profileSaving = ref<boolean>(false)
 const fetchProfile = () => {
   profileLoading.value = true
   profileLoaded.value = false
   return getMineProfile().then(res => {
+    if (isUnmounted) return
     profile.value = res
     updateProfileForm.value.name = res.name
     authStore.setProfileName(res.name)
@@ -200,13 +204,18 @@ const fetchProfile = () => {
   })
 }
 const updateProfile = () => {
-  if (!profileLoaded.value) return
-  updateMineProfile(updateProfileForm.value).then(res => {
+  if (!profileLoaded.value || profileSaving.value) return
+  profileSaving.value = true
+  return updateMineProfile(updateProfileForm.value).then(res => {
+    if (isUnmounted) return
     ToastSuccess(res)
-  }).finally(() => {
     updateProfileForm.value.oldPassword = ''
     updateProfileForm.value.newPassword = ''
-    fetchProfile()
+    return fetchProfile()
+  }).catch(() => {
+    // Retain the user's input so a failed save can be retried.
+  }).finally(() => {
+    profileSaving.value = false
   })
 }
 const handleSignOut = () => {
@@ -240,6 +249,7 @@ const fetchBoxSettings = () => {
   boxSettingsFetching.value = true
   boxSettingsLoaded.value = false
   return getMineBoxSettings().then(res => {
+    if (isUnmounted) return
     boxSettings.value = res
     updateMineBoxSettingsForm.value.intro = res.intro
     notifyTypeEmail.value = res.notifyType === 'email' // TODO: Find a better way to handle this
@@ -259,11 +269,9 @@ const updateBoxSettings = () => {
   }
 
   boxSettingsLoading.value = true
-  updateMineBoxSettings(updateMineBoxSettingsForm.value).then(res => {
+  return updateMineBoxSettings(updateMineBoxSettingsForm.value).then(res => {
+    if (isUnmounted) return
     ToastSuccess(res)
-  }).finally(() => {
-    boxSettingsLoading.value = false
-
     updateMineBoxSettingsForm.value.avatar = null
     updateMineBoxSettingsForm.value.background = null
     if (avatarImageUploader.value) {
@@ -272,7 +280,11 @@ const updateBoxSettings = () => {
     if (backgroundImageUploader.value) {
       backgroundImageUploader.value.value = ''
     }
-    fetchBoxSettings()
+    return fetchBoxSettings()
+  }).catch(() => {
+    // Retain the user's input and files so a failed save can be retried.
+  }).finally(() => {
+    boxSettingsLoading.value = false
   })
 }
 const handleSelectAvatarImage = (event: Event) => {
@@ -300,10 +312,12 @@ const updateMineHarassmentSettingForm = ref<UpdateMineHarassmentSettingsRequest>
 const harassmentSettingTypeRegisterOnly = ref<boolean>(false)
 const harassmentSettingsLoading = ref<boolean>(true)
 const harassmentSettingsLoaded = ref<boolean>(false)
+const harassmentSettingsSaving = ref<boolean>(false)
 const fetchHarassmentSettings = () => {
   harassmentSettingsLoading.value = true
   harassmentSettingsLoaded.value = false
   return getMineHarassmentSettings().then(res => {
+    if (isUnmounted) return
     harassmentSettingTypeRegisterOnly.value = res.harassmentSettingType === 'register_only'
     updateMineHarassmentSettingForm.value.harassmentSettingType = res.harassmentSettingType
     updateMineHarassmentSettingForm.value.blockWords = res.blockWords
@@ -315,17 +329,22 @@ const fetchHarassmentSettings = () => {
   })
 }
 const updateHarassmentSettings = () => {
-  if (!harassmentSettingsLoaded.value) return
+  if (!harassmentSettingsLoaded.value || harassmentSettingsSaving.value) return
   if (harassmentSettingTypeRegisterOnly.value) {
     updateMineHarassmentSettingForm.value.harassmentSettingType = 'register_only'
   } else {
     updateMineHarassmentSettingForm.value.harassmentSettingType = 'none'
   }
 
-  updateMineHarassmentSettings(updateMineHarassmentSettingForm.value).then(res => {
+  harassmentSettingsSaving.value = true
+  return updateMineHarassmentSettings(updateMineHarassmentSettingForm.value).then(res => {
+    if (isUnmounted) return
     ToastSuccess(res)
+    return fetchHarassmentSettings()
+  }).catch(() => {
+    // Retain the user's input so a failed save can be retried.
   }).finally(() => {
-    fetchHarassmentSettings()
+    harassmentSettingsSaving.value = false
   })
 }
 

@@ -39,30 +39,31 @@ const forgotPasswordForm = ref<ForgotPasswordRequest>({
 })
 
 const handleForgotPassword = async () => {
+  if (isLoading.value || !captchaReady.value) return
   if (!captchaRef.value) {
     ToastError('验证码加载失败，请刷新页面重试')
     return
   }
 
-  try {
-    forgotPasswordForm.value.captcha = await captchaRef.value.acquire('forgot_password')
-  } catch (error) {
-    ToastError('验证码校验未完成，请重试')
-    return
-  }
-
-  if (!forgotPasswordForm.value.captcha.trim()) {
-    ToastError('验证码获取失败，请稍后再试（可能是提交过于频繁）')
-    return
-  }
-
   isLoading.value = true
-  forgotPassword(forgotPasswordForm.value).then(res => {
-    ToastSuccess(res)
-    router.push({name: 'home'})
-  }).finally(() => {
+  try {
+    try {
+      forgotPasswordForm.value.captcha = await captchaRef.value.acquire('forgot_password')
+    } catch {
+      ToastError('验证码校验未完成，请重试')
+      return
+    }
+    if (!forgotPasswordForm.value.captcha.trim()) {
+      ToastError('验证码获取失败，请稍后再试（可能是提交过于频繁）')
+      return
+    }
+    ToastSuccess(await forgotPassword(forgotPasswordForm.value))
+    await router.push({name: 'home'})
+  } catch {
+    // API errors are displayed by the interceptor.
+  } finally {
     isLoading.value = false
-  })
+  }
 }
 </script>
 

@@ -1,4 +1,8 @@
 <template>
+  <div v-if="loadError" class="uk-alert uk-alert-danger uk-text-small" role="alert">
+    验证码加载失败，请重试。
+    <button type="button" class="uk-button uk-button-default uk-button-small" @click="initialize">重新加载验证码</button>
+  </div>
   <div v-if="config?.type === 'go_captcha'" class="captcha-popover" :class="{ 'captcha-popover-visible': popoverVisible }">
     <div class="captcha-popover-mask" @click="cancelChallenge"></div>
     <div class="captcha-popover-panel">
@@ -11,25 +15,26 @@
 </template>
 
 <script setup lang="ts">
-import {onMounted, ref, shallowRef} from 'vue'
+import {onMounted, onUnmounted, ref, shallowRef} from 'vue'
 import {Slide} from 'go-captcha-vue'
 import 'go-captcha-vue/dist/style.css'
-import {type IReCaptchaComposition, useReCaptcha} from 'vue-recaptcha-v3'
 import {getCaptchaChallenge, verifyCaptchaSlide} from '@/api/captcha.ts'
 import {E2E_BYPASS_TOKEN, isE2EMode, loadCaptchaConfig} from '@/utils/captcha.ts'
 import type {CaptchaConfig} from '@/api/captcha.ts'
+import {executeRecaptcha, loadRecaptcha} from '@/utils/recaptcha.ts'
 
 interface SlidePoint {
   x: number;
   y: number;
 }
 
-// useReCaptcha returns undefined when main.ts skipped registering the plugin (e.g. site_key empty);
-// only used when type === 'recaptcha'.
-const recaptchaApi = useReCaptcha() as IReCaptchaComposition | undefined
-
 const config = shallowRef<CaptchaConfig | null>(null)
 const ready = ref<boolean>(false)
+const initializing = ref<boolean>(false)
+const loadError = ref<boolean>(false)
+let isUnmounted = false
+let challengeRequest = 0
+let verifyingKey = ''
 
 // State for the go-captcha slide widget.
 const popoverVisible = ref<boolean>(false)
@@ -54,32 +59,38 @@ let pendingResolver: { resolve: (token: string) => void; reject: (err: Error) =>
 // Bound to the slide widget's :key so a new challenge remounts the widget and resets its drag state.
 const challengeKey = ref('')
 
-onMounted(async () => {
-  config.value = await loadCaptchaConfig()
-  if (isE2EMode) {
-    ready.value = true
-    return
-  }
-
-  if (config.value.type === 'recaptcha') {
-    if (!recaptchaApi) {
-      console.warn('reCAPTCHA not initialized')
-      return
-    }
-    try {
-      await recaptchaApi.recaptchaLoaded()
-      ready.value = true
-    } catch (err) {
-      console.warn('Failed to initialize reCAPTCHA', err)
-    }
-    return
-  }
-
-  ready.value = true
+onMounted(initialize)
+onUnmounted(() => {
+  isUnmounted = true
+  cancelChallenge()
 })
 
+async function initialize() {
+  if (initializing.value) return
+  initializing.value = true
+  ready.value = false
+  loadError.value = false
+  try {
+    config.value = await loadCaptchaConfig()
+    if (!isE2EMode && config.value.type === 'recaptcha') await loadRecaptcha()
+    if (!isUnmounted) ready.value = true
+  } catch {
+    if (!isUnmounted) loadError.value = true
+  } finally {
+    initializing.value = false
+  }
+}
+
 async function loadChallenge() {
-  const data = await getCaptchaChallenge()
+  const request = ++challengeRequest
+  let data
+  try {
+    data = await getCaptchaChallenge()
+  } catch (error) {
+    if (isUnmounted || request !== challengeRequest) return
+    throw error
+  }
+  if (isUnmounted || request !== challengeRequest) return
   challengeKey.value = data.key
   slideData.value = {
     image: data.image,
@@ -91,9 +102,19 @@ async function loadChallenge() {
   }
 }
 
+async function refreshChallenge() {
+  try {
+    await loadChallenge()
+  } catch {
+    cancelChallenge()
+    ready.value = false
+    loadError.value = true
+  }
+}
+
 const slideEvents = {
   refresh: () => {
-    void loadChallenge()
+    void refreshChallenge()
   },
   close: () => {
     cancelChallenge()
@@ -102,21 +123,29 @@ const slideEvents = {
   // remounts the widget and is the only way to reliably reset both the drag block and the tile
   // when the underlying data is also being swapped asynchronously.
   confirm: (point: SlidePoint) => {
+    const resolver = pendingResolver
+    const key = challengeKey.value
+    if (!resolver || verifyingKey === key) return
+    verifyingKey = key
     void (async () => {
       try {
-        const resp = await verifyCaptchaSlide({key: challengeKey.value, x: point.x, y: point.y})
-        const resolver = pendingResolver
+        const resp = await verifyCaptchaSlide({key, x: point.x, y: point.y})
+        if (pendingResolver !== resolver || challengeKey.value !== key) return
         pendingResolver = null
         popoverVisible.value = false
-        resolver?.resolve(resp.token)
-      } catch (err) {
-        await loadChallenge()
+        resolver.resolve(resp.token)
+      } catch {
+        if (pendingResolver === resolver) await refreshChallenge()
+      } finally {
+        if (verifyingKey === key) verifyingKey = ''
       }
     })()
   },
 }
 
 function cancelChallenge() {
+  challengeRequest++
+  verifyingKey = ''
   if (!pendingResolver) {
     popoverVisible.value = false
     return
@@ -133,16 +162,10 @@ async function acquire(action = 'submit'): Promise<string> {
     return E2E_BYPASS_TOKEN
   }
 
-  if (!config.value) {
-    config.value = await loadCaptchaConfig()
-  }
+  if (!ready.value || !config.value) throw new Error('验证码尚未就绪')
 
   if (config.value.type === 'recaptcha') {
-    if (!recaptchaApi) {
-      throw new Error('reCAPTCHA 未初始化，请刷新页面重试')
-    }
-    await recaptchaApi.recaptchaLoaded()
-    return await recaptchaApi.executeRecaptcha(action)
+    return await executeRecaptcha(action)
   }
 
   // go-captcha mode: open the slide panel and wait for user interaction.
@@ -150,11 +173,18 @@ async function acquire(action = 'submit'): Promise<string> {
     return Promise.reject(new Error('captcha_busy'))
   }
 
-  await loadChallenge()
-  popoverVisible.value = true
-
   return new Promise<string>((resolve, reject) => {
     pendingResolver = {resolve, reject}
+    const resolver = pendingResolver
+    void loadChallenge().then(() => {
+      if (pendingResolver === resolver) popoverVisible.value = true
+    }).catch(error => {
+      if (pendingResolver !== resolver) return
+      pendingResolver = null
+      ready.value = false
+      loadError.value = true
+      reject(error)
+    })
   })
 }
 

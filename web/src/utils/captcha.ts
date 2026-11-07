@@ -1,4 +1,4 @@
-import {type CaptchaConfig, type CaptchaType, getCaptchaConfig} from '@/api/captcha.ts'
+import {type CaptchaConfig, getCaptchaConfig} from '@/api/captcha.ts'
 
 // E2E bypasses the captcha entirely: a fixed token is returned from the frontend, while the
 // backend's e2e config uses reCAPTCHA universal test keys that accept any token.
@@ -11,15 +11,22 @@ export const isUsingRecaptchaTestKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY =
 
 let configPromise: Promise<CaptchaConfig> | null = null
 
-// loadCaptchaConfig fetches the active captcha driver from the backend and caches the result for
-// the lifetime of the page. On failure it falls back to "recaptcha" to preserve the legacy UX.
+// Cache only a confirmed driver so a temporary outage cannot select the wrong captcha.
 export function loadCaptchaConfig(): Promise<CaptchaConfig> {
     if (configPromise) {
         return configPromise
     }
     configPromise = getCaptchaConfig()
-        .then(config => config ?? {type: 'recaptcha' as CaptchaType})
-        .catch(() => ({type: 'recaptcha' as CaptchaType}))
+        .then(config => {
+            if (config?.type !== 'recaptcha' && config?.type !== 'go_captcha') {
+                throw new Error('未知的验证码类型')
+            }
+            return config
+        })
+        .catch(error => {
+            configPromise = null
+            throw error
+        })
     return configPromise
 }
 

@@ -53,42 +53,38 @@ const signInForm = ref<SignInRequest>({
 })
 
 const handleSignIn = async () => {
+  if (isLoading.value || !captchaReady.value) return
   if (!captchaRef.value) {
     ToastError('验证码加载失败，请刷新页面重试')
     return
   }
 
-  try {
-    signInForm.value.captcha = await captchaRef.value.acquire('sign_in')
-  } catch (error) {
-    ToastError('验证码校验未完成，请重试')
-    return
-  }
-
-  if (!signInForm.value.captcha.trim()) {
-    ToastError('验证码获取失败，请稍后再试（可能是提交过于频繁）')
-    return
-  }
-
   isLoading.value = true
-  signIn(signInForm.value)
-      .then(res => {
-        ToastSuccess('登录成功，欢迎回来~')
-        authStore.signIn(res.profile, res.sessionID)
-
-        if (route.query.to) {
-          try {
-            router.push(route.query.to as string)
-          } catch (error) {
-            router.push({name: 'profile', params: {domain: res.profile.domain}})
-          }
-        } else {
-          router.push({name: 'profile', params: {domain: res.profile.domain}})
-        }
-      })
-      .finally(() => {
-        isLoading.value = false
-      })
+  try {
+    try {
+      signInForm.value.captcha = await captchaRef.value.acquire('sign_in')
+    } catch {
+      ToastError('验证码校验未完成，请重试')
+      return
+    }
+    if (!signInForm.value.captcha.trim()) {
+      ToastError('验证码获取失败，请稍后再试（可能是提交过于频繁）')
+      return
+    }
+    const res = await signIn(signInForm.value)
+    ToastSuccess('登录成功，欢迎回来~')
+    authStore.signIn(res.profile, res.sessionID)
+    const target = typeof route.query.to === 'string' ? route.query.to : ''
+    try {
+      await router.push(target || {name: 'profile', params: {domain: res.profile.domain}})
+    } catch {
+      await router.push({name: 'profile', params: {domain: res.profile.domain}})
+    }
+  } catch {
+    // API errors are displayed by the interceptor.
+  } finally {
+    isLoading.value = false
+  }
 }
 
 const handleForgotPassword = () => {

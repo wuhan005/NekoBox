@@ -1,74 +1,9 @@
-import { test, expect, type Page, type Route } from '@playwright/test';
+import { test, expect } from '@playwright/test';
+import { image, question, respond, holdNextRequest, mockFrontend } from '../frontend/helpers';
 
-const avatar = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/lp8AAAAASUVORK5CYII=';
-const image = { name: 'first-answer.png', mimeType: 'image/png', buffer: Buffer.from(avatar.split(',')[1], 'base64') };
-const profile = (domain: string) => ({
-    uid: domain, domain, name: domain === 'alice' ? 'Alice' : 'Bob',
-    intro: 'Existing introduction', avatar, background: avatar, harassmentSetting: 'none',
-});
-const question = (id: number) => ({
-    id, isOwner: true, content: `Question ${id}`, answer: `Answer ${id}`,
-    createdAt: '2026-11-07T12:00:00+08:00', answeredAt: '2026-11-07T13:00:00+08:00',
-    questionImageURLs: [], answerImageURLs: [], isPrivate: id === 1, hasReplyEmail: false,
-});
+const questionLink = (page: import('@playwright/test').Page, id: number) => page.locator(`#question-list a[href="/_/alice/${id}"]`);
 
-function respond(route: Route, data: unknown, status = 200) {
-    return route.fulfill({ status, json: { data, msg: status >= 400 ? 'Request failed' : '' } });
-}
-
-async function holdNextRequest(page: Page, url: string | RegExp) {
-    let capture!: (route: Route) => void;
-    const request = new Promise<Route>(resolve => { capture = resolve; });
-    await page.route(url, capture, { times: 1 });
-    return { request };
-}
-
-const questionLink = (page: Page, id: number) => page.locator(`#question-list a[href="/_/alice/${id}"]`);
-
-// These tests exercise browser state without depending on a database, mail server or storage.
-test.beforeEach(async ({ page, baseURL }) => {
-    await page.addInitScript(() => localStorage.setItem('auth', JSON.stringify({
-        isSignedIn: true, sessionID: 'test-session', profile: { uid: 'alice', domain: 'alice', name: 'Alice' },
-    })));
-    const origin = new URL(baseURL!).origin;
-    await page.route('**/*', async route => {
-        const request = route.request();
-        const url = new URL(request.url());
-        const path = url.pathname;
-        if (path.startsWith('/api/')) {
-            if (path === '/api/captcha/config') return respond(route, { type: 'go_captcha' });
-            if (path === '/api/mine/settings/profile') {
-                return respond(route, request.method() === 'GET' ? { name: 'Alice', email: 'alice@example.com' } : 'Saved');
-            }
-            if (path === '/api/mine/settings/box') {
-                return respond(route, request.method() === 'GET' ? {
-                    intro: 'Existing introduction', notifyType: 'email', avatarURL: avatar, backgroundURL: avatar,
-                } : 'Saved');
-            }
-            if (path === '/api/mine/settings/harassment') {
-                return respond(route, request.method() === 'GET' ? {
-                    harassmentSettingType: 'register_only', blockWords: 'blocked',
-                } : 'Saved');
-            }
-            if (/^\/api\/users\/\w+\/profile$/.test(path)) return respond(route, profile(path.split('/')[3]));
-            if (/^\/api\/users\/\w+\/questions$/.test(path)) {
-                return respond(route, request.method() === 'GET' ? {
-                    total: 3, cursor: '1', questions: [3, 2, 1].map(question),
-                } : '发送问题成功！');
-            }
-            if (/^\/api\/users\/\w+\/questions\/\d+$/.test(path)) {
-                return respond(route, question(Number(path.split('/').at(-1))));
-            }
-            if (/^\/api\/mine\/questions\/\d+\/(answer|visible)$/.test(path)) return respond(route, 'Saved');
-            return respond(route, null, 404);
-        }
-        if (url.hostname === 'json.n3ko.cc') {
-            return route.fulfill({ json: { data: [{ content: 'Test log', date: '2026-11-07' }] } });
-        }
-        if (url.origin !== origin) return route.abort();
-        return route.continue();
-    });
-});
+test.beforeEach(mockFrontend);
 
 test('switching box owners reloads the recipient and clears the previous draft', async ({ page }) => {
     await page.goto('/_/bob');

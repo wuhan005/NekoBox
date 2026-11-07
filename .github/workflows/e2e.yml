@@ -10,6 +10,50 @@ permissions:
   contents: read
 
 jobs:
+  frontend:
+    name: Frontend regression tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install frontend dependencies
+        working-directory: web
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright dependencies
+        working-directory: e2e
+        run: npm ci
+
+      - name: Install Playwright browsers
+        working-directory: e2e
+        run: npx playwright install --with-deps chromium
+
+      - name: Run frontend state and captcha tests
+        working-directory: e2e
+        run: npm run test:frontend
+
+      - name: Upload frontend Playwright report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: frontend-playwright-report
+          path: |
+            e2e/playwright-report/frontend/
+            e2e/test-results/frontend/
+          retention-days: 30
+
   e2e:
     name: Run E2E Tests
     runs-on: ubuntu-latest
