@@ -5,7 +5,12 @@
       @change="handleChangeTab"
   >
     <template #profile>
-      <Form @submit="updateProfile">
+      <p v-if="profileLoading" role="status">正在加载个人信息...</p>
+      <div v-else-if="!profileLoaded" role="alert">
+        个人信息加载失败。
+        <button type="button" class="uk-button uk-button-default" @click="fetchProfile">重新加载</button>
+      </div>
+      <Form v-else @submit="updateProfile">
         <div class="uk-margin">
           <label class="uk-form-label" for="email">电子邮箱</label>
           <input v-model="profile.email" class="uk-input" type="text" disabled/>
@@ -39,7 +44,12 @@
     </template>
 
     <template #box>
-      <Form @submit="updateBoxSettings">
+      <p v-if="boxSettingsFetching" role="status">正在加载提问箱设置...</p>
+      <div v-else-if="!boxSettingsLoaded" role="alert">
+        提问箱设置加载失败。
+        <button type="button" class="uk-button uk-button-default" @click="fetchBoxSettings">重新加载</button>
+      </div>
+      <Form v-else @submit="updateBoxSettings">
         <div class="uk-margin">
           <label class="uk-form-label" for="intro">提问箱介绍</label>
           <input v-model="updateMineBoxSettingsForm.intro" id="intro" name="intro" class="uk-input" type="text">
@@ -79,7 +89,12 @@
     </template>
 
     <template #harassment>
-      <div class="uk-margin">
+      <p v-if="harassmentSettingsLoading" role="status">正在加载防骚扰设置...</p>
+      <div v-else-if="!harassmentSettingsLoaded" role="alert">
+        防骚扰设置加载失败。
+        <button type="button" class="uk-button uk-button-default" @click="fetchHarassmentSettings">重新加载</button>
+      </div>
+      <div v-else class="uk-margin">
         <Form @submit="updateHarassmentSettings">
           <div class="uk-margin">
             <label class="uk-form-label" for="form-stacked-text">提问限制</label>
@@ -168,14 +183,24 @@ const updateProfileForm = ref<UpdateMineProfileRequest>({
   oldPassword: '',
   newPassword: '',
 })
+const profileLoading = ref<boolean>(true)
+const profileLoaded = ref<boolean>(false)
 const fetchProfile = () => {
-  getMineProfile().then(res => {
+  profileLoading.value = true
+  profileLoaded.value = false
+  return getMineProfile().then(res => {
     profile.value = res
     updateProfileForm.value.name = res.name
     authStore.setProfileName(res.name)
+    profileLoaded.value = true
+  }).catch(() => {
+    // Keep the form unavailable until its existing settings can be read.
+  }).finally(() => {
+    profileLoading.value = false
   })
 }
 const updateProfile = () => {
+  if (!profileLoaded.value) return
   updateMineProfile(updateProfileForm.value).then(res => {
     ToastSuccess(res)
   }).finally(() => {
@@ -207,16 +232,26 @@ const updateMineBoxSettingsForm = ref<UpdateMineBoxSettingsRequest>({
   background: null,
 })
 const boxSettingsLoading = ref<boolean>(false)
+const boxSettingsFetching = ref<boolean>(true)
+const boxSettingsLoaded = ref<boolean>(false)
 const avatarImageUploader = ref<HTMLInputElement | null>(null)
 const backgroundImageUploader = ref<HTMLInputElement | null>(null)
 const fetchBoxSettings = () => {
-  getMineBoxSettings().then(res => {
+  boxSettingsFetching.value = true
+  boxSettingsLoaded.value = false
+  return getMineBoxSettings().then(res => {
     boxSettings.value = res
     updateMineBoxSettingsForm.value.intro = res.intro
     notifyTypeEmail.value = res.notifyType === 'email' // TODO: Find a better way to handle this
+    boxSettingsLoaded.value = true
+  }).catch(() => {
+    // Keep the form unavailable until its existing settings can be read.
+  }).finally(() => {
+    boxSettingsFetching.value = false
   })
 }
 const updateBoxSettings = () => {
+  if (!boxSettingsLoaded.value || boxSettingsLoading.value) return
   if (notifyTypeEmail.value) {
     updateMineBoxSettingsForm.value.notifyType = 'email'
   } else {
@@ -263,14 +298,24 @@ const updateMineHarassmentSettingForm = ref<UpdateMineHarassmentSettingsRequest>
   blockWords: '',
 } as UpdateMineHarassmentSettingsRequest)
 const harassmentSettingTypeRegisterOnly = ref<boolean>(false)
+const harassmentSettingsLoading = ref<boolean>(true)
+const harassmentSettingsLoaded = ref<boolean>(false)
 const fetchHarassmentSettings = () => {
-  getMineHarassmentSettings().then(res => {
+  harassmentSettingsLoading.value = true
+  harassmentSettingsLoaded.value = false
+  return getMineHarassmentSettings().then(res => {
     harassmentSettingTypeRegisterOnly.value = res.harassmentSettingType === 'register_only'
     updateMineHarassmentSettingForm.value.harassmentSettingType = res.harassmentSettingType
     updateMineHarassmentSettingForm.value.blockWords = res.blockWords
+    harassmentSettingsLoaded.value = true
+  }).catch(() => {
+    // Keep the form unavailable until its existing settings can be read.
+  }).finally(() => {
+    harassmentSettingsLoading.value = false
   })
 }
 const updateHarassmentSettings = () => {
+  if (!harassmentSettingsLoaded.value) return
   if (harassmentSettingTypeRegisterOnly.value) {
     updateMineHarassmentSettingForm.value.harassmentSettingType = 'register_only'
   } else {

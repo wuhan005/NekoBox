@@ -35,7 +35,7 @@
 </template>
 
 <script setup lang="ts">
-import {ref, onMounted} from "vue";
+import {ref, onMounted, onUnmounted} from "vue";
 import {type Profile, getUserProfile} from "@/api/user.ts";
 import {useRoute, useRouter} from "vue-router";
 import {ExternalURL} from "@/utils/consts.ts";
@@ -51,16 +51,20 @@ const domain = ref<string>(route.params.domain as string || '')
 
 const isLoading = ref<boolean>(true)
 const profile = ref<Profile>({} as Profile)
+let isUnmounted = false
+onUnmounted(() => { isUnmounted = true })
 
 onMounted(() => {
   isLoading.value = true
   getUserProfile(domain.value)
       .then(res => {
+        if (isUnmounted) return
         profile.value = res
 
         document.title = `${profile.value.name} - NekoBox`
       })
       .catch(err => {
+        if (isUnmounted) return
         const statusCode = err.response?.status
         if (statusCode === 404) {
           router.push({name: 'home'})

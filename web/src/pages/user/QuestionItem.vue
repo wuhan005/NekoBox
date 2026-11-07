@@ -34,7 +34,8 @@
       <div class="uk-card-footer">
         <div v-if="question.isOwner">
           <div class="uk-float-right">
-            <button type="button" class="uk-button uk-button-default uk-button-small" @click="handleSetVisible">
+            <button type="button" class="uk-button uk-button-default uk-button-small"
+                    :disabled="isSettingVisible || isSubmitting" @click="handleSetVisible">
               设为{{ question.isPrivate ? '公开' : '私密' }}
             </button>
           </div>
@@ -73,7 +74,7 @@
             </div>
 
             <div class="uk-margin uk-text-center">
-              <button type="submit" class="uk-button uk-button-primary" :disabled="isSubmitting">
+              <button type="submit" class="uk-button uk-button-primary" :disabled="isSubmitting || isSettingVisible">
                 <span v-if="isSubmitting">提交中...</span>
                 <span v-else>
                   <span v-if="question.answer">更新</span>回答
@@ -105,7 +106,7 @@
 </template>
 
 <script setup lang="ts">
-import {ref, onMounted, watch} from "vue";
+import {ref, onMounted, onUnmounted, watch} from "vue";
 import PageQuestions from "@/components/PageQuestions.vue";
 import {getUserProfile, getUserQuestion, type PageQuestion, type Profile} from "@/api/user.ts";
 import {useRoute, useRouter} from "vue-router";
@@ -137,19 +138,29 @@ const EMPTY_QUESTION: PageQuestion = {
   hasReplyEmail: false,
 }
 const question = ref<PageQuestion>(EMPTY_QUESTION)
+let questionRequest = 0
+let isUnmounted = false
+onUnmounted(() => { isUnmounted = true })
 
 const isSubmitting = ref<boolean>(false)
+const isSettingVisible = ref<boolean>(false)
 const answerQuestionForm = ref<AnswerQuestionRequest>({
   answer: '',
   images: [],
 })
 const handleAnswer = () => {
+  if (isSubmitting.value || isSettingVisible.value || isLoading.value || !question.value.isOwner) return
+  const request = questionRequest
+  const images = answerQuestionForm.value.images
   isSubmitting.value = true
   answerQuestion(questionID.value, answerQuestionForm.value)
       .then(res => {
+        if (isUnmounted || request !== questionRequest) return
         ToastSuccess(res)
-        fetchQuestion()
+        if (answerQuestionForm.value.images === images) handleRemoveSelectedImage()
+        return fetchQuestion()
       })
+      .catch(() => {}) // API errors are displayed by the interceptor.
       .finally(() => {
         isSubmitting.value = false
       })
@@ -185,11 +196,18 @@ const handleDelete = () => {
 }
 
 const handleSetVisible = () => {
-  // isPrivate -> set public -> true
-  // !isPrivate -> set private -> false
-  setQuestionVisible(questionID.value, question.value.isPrivate).then(res => {
-    question.value.isPrivate = !question.value.isPrivate
+  if (isSettingVisible.value || isSubmitting.value || isLoading.value || !question.value.isOwner) return
+  const request = questionRequest
+  const visible = question.value.isPrivate
+  isSettingVisible.value = true
+  setQuestionVisible(questionID.value, visible).then(res => {
+    if (isUnmounted || request !== questionRequest) return
+    question.value.isPrivate = !visible
     ToastSuccess(res)
+  }).catch(() => {
+    // API errors are displayed by the interceptor.
+  }).finally(() => {
+    isSettingVisible.value = false
   })
 }
 
@@ -197,25 +215,30 @@ watch(() => [route.params, route.query], () => {
   domain.value = route.params.domain as string || ''
   questionID.value = route.params.questionID as string || ''
   questionToken.value = route.query.t as string || ''
+  handleRemoveSelectedImage()
   fetchQuestion()
 })
 
 const fetchQuestion = () => {
+  const request = ++questionRequest
   isLoading.value = true
   question.value = { ...EMPTY_QUESTION }
 
-  getUserQuestion(domain.value, questionID.value, questionToken.value)
+  return getUserQuestion(domain.value, questionID.value, questionToken.value)
       .then(res => {
+        if (isUnmounted || request !== questionRequest) return
         question.value = res
         answerQuestionForm.value.answer = res.answer || ''
       })
       .catch(err => {
+        if (isUnmounted || request !== questionRequest) return
         const statusCode = err.response?.status
         if (statusCode === 404) {
           router.push({name: 'home'})
         }
       })
       .finally(() => {
+        if (isUnmounted || request !== questionRequest) return
         isLoading.value = false
       })
 }
@@ -225,9 +248,11 @@ onMounted(() => {
   isInitalLoading.value = true
   getUserProfile(domain.value)
       .then(res => {
+        if (isUnmounted) return
         profile.value = res
       })
       .catch(err => {
+        if (isUnmounted) return
         const statusCode = err.response?.status
         if (statusCode === 404) {
           router.push({name: 'home'})
