@@ -22,7 +22,8 @@
 <script setup lang="ts">
 import {computed, ref} from 'vue'
 import {Form, Field, ErrorMessage} from "vee-validate";
-import {type ForgotPasswordRequest, forgotPassword} from "@/api/auth.ts";
+import {api} from "@/api/client.ts";
+import type {ForgotPassword} from "@/api/api.ts";
 import {useRouter} from "vue-router";
 import {ToastError, ToastSuccess} from "@/utils/notify.ts";
 import Captcha from "@/components/Captcha.vue";
@@ -33,7 +34,7 @@ const captchaRef = ref<InstanceType<typeof Captcha> | null>(null)
 const captchaReady = computed(() => captchaRef.value?.ready ?? false)
 
 const isLoading = ref<boolean>(false);
-const forgotPasswordForm = ref<ForgotPasswordRequest>({
+const forgotPasswordForm = ref<ForgotPassword>({
   email: '',
   captcha: '',
 })
@@ -57,7 +58,8 @@ const handleForgotPassword = async () => {
       ToastError('验证码获取失败，请稍后再试（可能是提交过于频繁）')
       return
     }
-    ToastSuccess(await forgotPassword(forgotPasswordForm.value))
+    const {data} = await api.auth.forgotPassword(forgotPasswordForm.value)
+    ToastSuccess(data)
     await router.push({name: 'home'})
   } catch {
     // API errors are displayed by the interceptor.

@@ -1,18 +1,18 @@
 import {defineStore} from "pinia";
 import {type AuthState} from "./types";
-import type {UserProfile} from "@/api/auth.ts";
+import type {SignInUserProfile} from "@/api/api.ts";
 
 const useAuthStore = defineStore('auth', {
     persist: true,
 
     state: (): AuthState => ({
         isSignedIn: false,
-        profile: {} as UserProfile,
+        profile: {} as SignInUserProfile,
         sessionID: '',
     }),
 
     actions: {
-        signIn(profile: UserProfile, sessionID: string) {
+        signIn(profile: SignInUserProfile, sessionID: string) {
             this.isSignedIn = true;
             this.profile = profile;
             this.sessionID = sessionID;
@@ -22,7 +22,7 @@ const useAuthStore = defineStore('auth', {
         },
         signOut() {
             this.isSignedIn = false;
-            this.profile = {} as UserProfile;
+            this.profile = {} as SignInUserProfile;
             this.sessionID = '';
         }
     }

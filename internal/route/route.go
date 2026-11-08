@@ -29,6 +29,16 @@ import (
 	"github.com/wuhan005/NekoBox/route/service"
 )
 
+// New creates the router of the application.
+// @Title NekoBox API
+// @Version 1.0
+// @Description The successful responses wrap the documented schema as `{"data": ...}`, and the errors respond `{"error": <status code>, "msg": "<message>"}`.
+// @BasePath /api
+// @Security SessionToken
+// @SecurityDefinitions.apikey SessionToken
+// @In header
+// @Name Authorization
+// @Description The session ID returned by signing in, sent as `Token <sessionID>`. The public routes also accept it to respond according to the signed-in user.
 func New(db *gorm.DB, notifications *sync.WaitGroup) (*flamego.Flame, error) {
 	f := flamego.Classic()
 	if conf.App.Production {

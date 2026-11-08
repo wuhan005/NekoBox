@@ -1,0 +1,1808 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "The successful responses wrap the documented schema as `{\"data\": ...}`, and the errors respond `{\"error\": \u003cstatus code\u003e, \"msg\": \"\u003cmessage\u003e\"}`.",
+        "title": "NekoBox API",
+        "contact": {},
+        "version": "1.0"
+    },
+    "basePath": "/api",
+    "paths": {
+        "/auth/forgot-password": {
+            "post": {
+                "description": "The recovery code in the email expires in 24 hours, and the email can be sent once every 2 minutes.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Send the password recovery email",
+                "operationId": "forgotPassword",
+                "parameters": [
+                    {
+                        "description": "Email of the account",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/ForgotPassword"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Message of the email sent",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request body or captcha failed",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "403": {
+                        "description": "Already signed in",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "The email is not registered",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "429": {
+                        "description": "The email was sent too recently",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/recover-password": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Check a password recovery code",
+                "operationId": "getRecoverPasswordCode",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Recovery code in the email",
+                        "name": "code",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/RecoverPasswordResp"
+                        }
+                    },
+                    "400": {
+                        "description": "The code is invalid or expired",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "403": {
+                        "description": "Already signed in",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "The user does not exist",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Reset the password with a recovery code",
+                "operationId": "recoverPassword",
+                "parameters": [
+                    {
+                        "description": "New password and recovery code",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/RecoverPassword"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Message of the password reset",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request body, or the code is invalid or expired",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "403": {
+                        "description": "Already signed in",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "The user does not exist",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/sign-in": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Sign in with email and password",
+                "operationId": "signIn",
+                "parameters": [
+                    {
+                        "description": "Credential",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/SignIn"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/SignInResp"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request body, captcha failed, or wrong email or password",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "403": {
+                        "description": "Already signed in",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/sign-up": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Sign up",
+                "operationId": "signUp",
+                "parameters": [
+                    {
+                        "description": "Account to create",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/SignUp"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Welcome message",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request body, captcha failed, or the email or domain has been used",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "403": {
+                        "description": "Already signed in",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/captcha/challenge": {
+            "get": {
+                "description": "Only available for the go-captcha driver.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Captcha"
+                ],
+                "summary": "Generate a slide captcha challenge",
+                "operationId": "getCaptchaChallenge",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/CaptchaChallenge"
+                        }
+                    },
+                    "400": {
+                        "description": "The captcha driver does not support slide challenges",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "429": {
+                        "description": "Too many requests",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/captcha/config": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Captcha"
+                ],
+                "summary": "Get the captcha config",
+                "operationId": "getCaptchaConfig",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/CaptchaConfig"
+                        }
+                    }
+                }
+            }
+        },
+        "/captcha/verify": {
+            "post": {
+                "description": "Only available for the go-captcha driver. The returned token is passed as the captcha of the business endpoints.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Captcha"
+                ],
+                "summary": "Verify a slide captcha challenge",
+                "operationId": "verifyCaptcha",
+                "parameters": [
+                    {
+                        "description": "Slide answer",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/VerifyCaptcha"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/VerifyCaptchaResp"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request body, wrong answer, or the captcha driver does not support slide challenges",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/mine/questions": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "My Questions"
+                ],
+                "summary": "List the questions received by the signed-in user",
+                "operationId": "listMineQuestions",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Cursor returned by the previous page, empty for the first page",
+                        "name": "cursor",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page size, defaults to 20 and at most 100",
+                        "name": "pageSize",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/MineQuestions"
+                        }
+                    },
+                    "401": {
+                        "description": "Not signed in",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/mine/questions/sent": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "My Questions"
+                ],
+                "summary": "List the questions asked by the signed-in user",
+                "operationId": "listMineSentQuestions",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Cursor returned by the previous page, empty for the first page",
+                        "name": "cursor",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page size, defaults to 20 and at most 100",
+                        "name": "pageSize",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/MineSentQuestions"
+                        }
+                    },
+                    "401": {
+                        "description": "Not signed in",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/mine/questions/{questionID}": {
+            "delete": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "My Questions"
+                ],
+                "summary": "Delete a received question",
+                "operationId": "deleteQuestion",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Question ID",
+                        "name": "questionID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Message of the question deleted",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "401": {
+                        "description": "Not signed in",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "The question does not exist",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/mine/questions/{questionID}/answer": {
+            "put": {
+                "description": "The asker is notified by email on the first answer if they left an email.",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "My Questions"
+                ],
+                "summary": "Answer a received question",
+                "operationId": "answerQuestion",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Question ID",
+                        "name": "questionID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Answer, at most 1000 characters",
+                        "name": "answer",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "Image of the answer, at most 5 MiB",
+                        "name": "images[]",
+                        "in": "formData"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Message of the question answered",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid form, the image is too large, or the answer is blocked",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "401": {
+                        "description": "Not signed in",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "The question does not exist",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/mine/questions/{questionID}/visible": {
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "My Questions"
+                ],
+                "summary": "Set whether a received question is public",
+                "operationId": "setQuestionVisible",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Question ID",
+                        "name": "questionID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Visibility",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/QuestionVisible"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Message of the visibility changed",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request body",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "401": {
+                        "description": "Not signed in",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "The question does not exist",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/mine/settings/box": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Settings"
+                ],
+                "summary": "Get the question box settings of the signed-in user",
+                "operationId": "getMineBoxSettings",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/MineBoxSettings"
+                        }
+                    },
+                    "401": {
+                        "description": "Not signed in",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "The avatar and the background are kept if they are not uploaded.",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Settings"
+                ],
+                "summary": "Update the question box settings of the signed-in user",
+                "operationId": "updateMineBoxSettings",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Introduction, at most 100 characters",
+                        "name": "intro",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "enum": [
+                            "none",
+                            "email"
+                        ],
+                        "type": "string",
+                        "description": "Notification of the new questions",
+                        "name": "notifyType",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "Avatar, at most 5 MiB",
+                        "name": "avatar",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "file",
+                        "description": "Background, at most 5 MiB",
+                        "name": "background",
+                        "in": "formData"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Message of the settings updated",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid form, unknown notification type, or the image is too large",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "401": {
+                        "description": "Not signed in",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/mine/settings/deactivate": {
+            "post": {
+                "description": "The account can no longer sign in, its question box is no longer accessible, and the session is signed out.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Settings"
+                ],
+                "summary": "Deactivate the signed-in user",
+                "operationId": "deactivateAccount",
+                "responses": {
+                    "200": {
+                        "description": "Farewell message",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "401": {
+                        "description": "Not signed in",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/mine/settings/export-data": {
+            "post": {
+                "description": "Export the profile and the received questions as an Excel workbook.",
+                "produces": [
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                ],
+                "tags": [
+                    "Settings"
+                ],
+                "summary": "Export the data of the signed-in user",
+                "operationId": "exportMineData",
+                "responses": {
+                    "200": {
+                        "description": "Excel workbook",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "401": {
+                        "description": "Not signed in",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/mine/settings/harassment": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Settings"
+                ],
+                "summary": "Get the harassment settings of the signed-in user",
+                "operationId": "getMineHarassmentSettings",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/HarassmentSettings"
+                        }
+                    },
+                    "401": {
+                        "description": "Not signed in",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Settings"
+                ],
+                "summary": "Update the harassment settings of the signed-in user",
+                "operationId": "updateMineHarassmentSettings",
+                "parameters": [
+                    {
+                        "description": "Harassment settings",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/UpdateHarassmentSettings"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Message of the settings updated",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request body, or too many or too long block words",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "401": {
+                        "description": "Not signed in",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/mine/settings/profile": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Settings"
+                ],
+                "summary": "Get the profile settings of the signed-in user",
+                "operationId": "getMineProfile",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/MineProfile"
+                        }
+                    },
+                    "401": {
+                        "description": "Not signed in",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "The password is changed only if the new password is not empty.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Settings"
+                ],
+                "summary": "Update the profile settings of the signed-in user",
+                "operationId": "updateMineProfile",
+                "parameters": [
+                    {
+                        "description": "Profile",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/UpdateProfile"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Message of the profile updated",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request body or wrong old password",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "401": {
+                        "description": "Not signed in",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/{domain}/profile": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Question Box"
+                ],
+                "summary": "Get the profile of a question box",
+                "operationId": "getUserProfile",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Domain of the question box",
+                        "name": "domain",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/UserProfile"
+                        }
+                    },
+                    "404": {
+                        "description": "The question box does not exist",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/{domain}/questions": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Question Box"
+                ],
+                "summary": "List the answered public questions of a question box",
+                "operationId": "listUserQuestions",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Domain of the question box",
+                        "name": "domain",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Cursor returned by the previous page, empty for the first page",
+                        "name": "cursor",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page size, defaults to 20 and at most 100",
+                        "name": "pageSize",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/PageQuestions"
+                        }
+                    },
+                    "404": {
+                        "description": "The question box does not exist",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Signing in is required if the owner only allows registered users to ask.",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Question Box"
+                ],
+                "summary": "Ask a question",
+                "operationId": "postQuestion",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Domain of the question box",
+                        "name": "domain",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Content of the question, at most 1000 characters",
+                        "name": "content",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Email to notify when the question is answered",
+                        "name": "receiveReplyEmail",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Whether to keep the question private after it is answered",
+                        "name": "isPrivate",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "file",
+                        "description": "Image of the question, at most 5 MiB",
+                        "name": "images[]",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Captcha token",
+                        "name": "captcha",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Message with the HTML link to view the question privately",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid form, captcha failed, signing in is required, or the content is blocked",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "The question box does not exist",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/{domain}/questions/{questionID}": {
+            "get": {
+                "description": "Unanswered or private questions are only visible to the owner, the asker, or with the token of the private link.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Question Box"
+                ],
+                "summary": "Get a question of a question box",
+                "operationId": "getUserQuestion",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Domain of the question box",
+                        "name": "domain",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Question ID",
+                        "name": "questionID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Token of the private link",
+                        "name": "t",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/PageQuestion"
+                        }
+                    },
+                    "404": {
+                        "description": "The question box or the question does not exist",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "CaptchaChallenge": {
+            "type": "object",
+            "required": [
+                "image",
+                "key",
+                "thumb",
+                "thumbHeight",
+                "thumbWidth",
+                "thumbX",
+                "thumbY"
+            ],
+            "properties": {
+                "image": {
+                    "type": "string"
+                },
+                "key": {
+                    "type": "string"
+                },
+                "thumb": {
+                    "type": "string"
+                },
+                "thumbHeight": {
+                    "type": "integer"
+                },
+                "thumbWidth": {
+                    "type": "integer"
+                },
+                "thumbX": {
+                    "type": "integer"
+                },
+                "thumbY": {
+                    "type": "integer"
+                }
+            }
+        },
+        "CaptchaConfig": {
+            "type": "object",
+            "required": [
+                "type"
+            ],
+            "properties": {
+                "type": {
+                    "description": "Type is the captcha driver in use, the frontend renders the matching UI.",
+                    "type": "string",
+                    "enum": [
+                        "recaptcha",
+                        "go_captcha"
+                    ]
+                }
+            }
+        },
+        "ForgotPassword": {
+            "type": "object",
+            "required": [
+                "captcha",
+                "email"
+            ],
+            "properties": {
+                "captcha": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                }
+            }
+        },
+        "HarassmentSettings": {
+            "type": "object",
+            "required": [
+                "blockWords",
+                "harassmentSettingType"
+            ],
+            "properties": {
+                "blockWords": {
+                    "type": "string"
+                },
+                "harassmentSettingType": {
+                    "type": "string",
+                    "enum": [
+                        "none",
+                        "register_only"
+                    ]
+                }
+            }
+        },
+        "MineBoxSettings": {
+            "type": "object",
+            "required": [
+                "avatarURL",
+                "backgroundURL",
+                "intro",
+                "notifyType"
+            ],
+            "properties": {
+                "avatarURL": {
+                    "type": "string"
+                },
+                "backgroundURL": {
+                    "type": "string"
+                },
+                "intro": {
+                    "type": "string"
+                },
+                "notifyType": {
+                    "type": "string",
+                    "enum": [
+                        "none",
+                        "email"
+                    ]
+                }
+            }
+        },
+        "MineProfile": {
+            "type": "object",
+            "required": [
+                "email",
+                "name"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "MineQuestions": {
+            "type": "object",
+            "required": [
+                "cursor",
+                "questions",
+                "total"
+            ],
+            "properties": {
+                "cursor": {
+                    "description": "Cursor is passed to get the next page, empty if there are no questions.",
+                    "type": "string"
+                },
+                "questions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/MineQuestionsItem"
+                    }
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "MineQuestionsItem": {
+            "type": "object",
+            "required": [
+                "content",
+                "createdAt",
+                "id",
+                "isAnswered",
+                "isPrivate"
+            ],
+            "properties": {
+                "content": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "isAnswered": {
+                    "type": "boolean"
+                },
+                "isPrivate": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "MineSentQuestions": {
+            "type": "object",
+            "required": [
+                "cursor",
+                "questions",
+                "total"
+            ],
+            "properties": {
+                "cursor": {
+                    "description": "Cursor is passed to get the next page, empty if there are no questions.",
+                    "type": "string"
+                },
+                "questions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/MineSentQuestionsItem"
+                    }
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "MineSentQuestionsItem": {
+            "type": "object",
+            "required": [
+                "content",
+                "createdAt",
+                "id",
+                "isAnswered",
+                "isPrivate",
+                "targetDomain",
+                "targetName"
+            ],
+            "properties": {
+                "content": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "isAnswered": {
+                    "type": "boolean"
+                },
+                "isPrivate": {
+                    "type": "boolean"
+                },
+                "targetDomain": {
+                    "description": "TargetDomain and TargetName are empty if the receiver no longer exists.",
+                    "type": "string"
+                },
+                "targetName": {
+                    "type": "string"
+                }
+            }
+        },
+        "PageQuestion": {
+            "type": "object",
+            "required": [
+                "answer",
+                "answerImageURLs",
+                "answeredAt",
+                "content",
+                "createdAt",
+                "hasReplyEmail",
+                "id",
+                "isOwner",
+                "isPrivate",
+                "questionImageURLs"
+            ],
+            "properties": {
+                "answer": {
+                    "type": "string"
+                },
+                "answerImageURLs": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "answeredAt": {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "content": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "hasReplyEmail": {
+                    "type": "boolean"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "isOwner": {
+                    "type": "boolean"
+                },
+                "isPrivate": {
+                    "type": "boolean"
+                },
+                "questionImageURLs": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "PageQuestions": {
+            "type": "object",
+            "required": [
+                "cursor",
+                "questions",
+                "total"
+            ],
+            "properties": {
+                "cursor": {
+                    "description": "Cursor is passed to get the next page, empty if there are no questions.",
+                    "type": "string"
+                },
+                "questions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/PageQuestionsItem"
+                    }
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "PageQuestionsItem": {
+            "type": "object",
+            "required": [
+                "answer",
+                "content",
+                "createdAt",
+                "id"
+            ],
+            "properties": {
+                "answer": {
+                    "type": "string"
+                },
+                "content": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "QuestionVisible": {
+            "type": "object",
+            "required": [
+                "visible"
+            ],
+            "properties": {
+                "visible": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "RecoverPassword": {
+            "type": "object",
+            "required": [
+                "code",
+                "newPassword",
+                "repeatPassword"
+            ],
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "newPassword": {
+                    "type": "string"
+                },
+                "repeatPassword": {
+                    "type": "string"
+                }
+            }
+        },
+        "RecoverPasswordResp": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "SignIn": {
+            "type": "object",
+            "required": [
+                "captcha",
+                "email",
+                "password"
+            ],
+            "properties": {
+                "captcha": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                }
+            }
+        },
+        "SignInResp": {
+            "type": "object",
+            "required": [
+                "profile",
+                "sessionID"
+            ],
+            "properties": {
+                "profile": {
+                    "$ref": "#/definitions/SignInUserProfile"
+                },
+                "sessionID": {
+                    "description": "SessionID is sent back as the `Authorization: Token \u003csessionID\u003e` header to authenticate the later requests.",
+                    "type": "string"
+                }
+            }
+        },
+        "SignInUserProfile": {
+            "type": "object",
+            "required": [
+                "domain",
+                "name",
+                "uid"
+            ],
+            "properties": {
+                "domain": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "uid": {
+                    "type": "string"
+                }
+            }
+        },
+        "SignUp": {
+            "type": "object",
+            "required": [
+                "captcha",
+                "domain",
+                "email",
+                "name",
+                "password",
+                "repeatPassword"
+            ],
+            "properties": {
+                "captcha": {
+                    "type": "string"
+                },
+                "domain": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                },
+                "repeatPassword": {
+                    "type": "string"
+                }
+            }
+        },
+        "UpdateHarassmentSettings": {
+            "type": "object",
+            "required": [
+                "blockWords",
+                "harassmentSettingType"
+            ],
+            "properties": {
+                "blockWords": {
+                    "description": "BlockWords are at most 10 words separated by commas, each of them is at most 10 bytes.",
+                    "type": "string"
+                },
+                "harassmentSettingType": {
+                    "description": "HarassmentSettingType falls back to none if it is unknown.",
+                    "type": "string",
+                    "enum": [
+                        "none",
+                        "register_only"
+                    ]
+                }
+            }
+        },
+        "UpdateProfile": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "newPassword": {
+                    "description": "NewPassword changes the password if it is not empty.",
+                    "type": "string"
+                },
+                "oldPassword": {
+                    "description": "OldPassword is required only when changing the password.",
+                    "type": "string"
+                }
+            }
+        },
+        "UserProfile": {
+            "type": "object",
+            "required": [
+                "avatar",
+                "background",
+                "domain",
+                "harassmentSetting",
+                "intro",
+                "name",
+                "uid"
+            ],
+            "properties": {
+                "avatar": {
+                    "type": "string"
+                },
+                "background": {
+                    "type": "string"
+                },
+                "domain": {
+                    "type": "string"
+                },
+                "harassmentSetting": {
+                    "type": "string",
+                    "enum": [
+                        "none",
+                        "register_only"
+                    ]
+                },
+                "intro": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "uid": {
+                    "type": "string"
+                }
+            }
+        },
+        "VerifyCaptcha": {
+            "type": "object",
+            "required": [
+                "key",
+                "x",
+                "y"
+            ],
+            "properties": {
+                "key": {
+                    "type": "string"
+                },
+                "x": {
+                    "type": "integer"
+                },
+                "y": {
+                    "type": "integer"
+                }
+            }
+        },
+        "VerifyCaptchaResp": {
+            "type": "object",
+            "required": [
+                "token"
+            ],
+            "properties": {
+                "token": {
+                    "description": "Token is the one-shot token passed as the captcha of the business endpoints.",
+                    "type": "string"
+                }
+            }
+        }
+    },
+    "securityDefinitions": {
+        "SessionToken": {
+            "description": "The session ID returned by signing in, sent as `Token \u003csessionID\u003e`. The public routes also accept it to respond according to the signed-in user.",
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
+        }
+    },
+    "security": [
+        {
+            "SessionToken": []
+        }
+    ]
+}

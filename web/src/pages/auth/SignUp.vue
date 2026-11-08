@@ -48,7 +48,8 @@
 <script setup lang="ts">
 import {computed, ref} from 'vue'
 import {Form, Field, ErrorMessage} from 'vee-validate';
-import {signUp, type SignUpRequest} from "@/api/auth.ts";
+import {api} from "@/api/client.ts";
+import type {SignUp} from "@/api/api.ts";
 import {ToastError, ToastSuccess} from "@/utils/notify.ts";
 import {useRouter} from "vue-router";
 import {ExternalURL} from "@/utils/consts.ts";
@@ -60,7 +61,7 @@ const captchaRef = ref<InstanceType<typeof Captcha> | null>(null)
 const captchaReady = computed(() => captchaRef.value?.ready ?? false)
 
 const isLoading = ref<boolean>(false)
-const signUpForm = ref<SignUpRequest>({
+const signUpForm = ref<SignUp>({
   email: '',
   domain: '',
   name: '',
@@ -88,7 +89,8 @@ const handleSignUp = async () => {
       ToastError('验证码获取失败，请稍后再试（可能是提交过于频繁）')
       return
     }
-    ToastSuccess(await signUp(signUpForm.value))
+    const {data} = await api.auth.signUp(signUpForm.value)
+    ToastSuccess(data)
     await router.push({name: 'sign-in'})
   } catch {
     // API errors are displayed by the interceptor.

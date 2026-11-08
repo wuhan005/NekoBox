@@ -11,13 +11,15 @@ type AnswerQuestion struct {
 
 type QuestionVisible struct {
 	Visible bool `json:"visible"`
-}
+} // @name QuestionVisible
 
 type UpdateProfile struct {
-	Name        string `json:"name" valid:"required;maxlen:20" label:"昵称"`
-	OldPassword string `json:"oldPassword" label:"旧密码"`
-	NewPassword string `json:"newPassword" valid:"maxlen:30" label:"新密码"`
-}
+	Name string `json:"name" valid:"required;maxlen:20" label:"昵称"`
+	// OldPassword is required only when changing the password.
+	OldPassword string `json:"oldPassword,omitempty" label:"旧密码"`
+	// NewPassword changes the password if it is not empty.
+	NewPassword string `json:"newPassword,omitempty" valid:"maxlen:30" label:"新密码"`
+} // @name UpdateProfile
 
 type UpdateBoxSettings struct {
 	Intro      string                `form:"intro" valid:"required;maxlen:100" label:"提问箱介绍"`
@@ -27,6 +29,8 @@ type UpdateBoxSettings struct {
 }
 
 type UpdateHarassmentSettings struct {
-	HarassmentSettingType string `json:"harassmentSettingType"`
-	BlockWords            string `json:"blockWords"`
-}
+	// HarassmentSettingType falls back to none if it is unknown.
+	HarassmentSettingType string `json:"harassmentSettingType" enums:"none,register_only"`
+	// BlockWords are at most 10 words separated by commas, each of them is at most 10 bytes.
+	BlockWords string `json:"blockWords"`
+} // @name UpdateHarassmentSettings

@@ -32,7 +32,8 @@
 <script setup lang="ts">
 import {computed, ref} from 'vue'
 import {Form, Field, ErrorMessage} from 'vee-validate';
-import {signIn, type SignInRequest} from "@/api/auth.ts";
+import {api} from "@/api/client.ts";
+import type {SignIn} from "@/api/api.ts";
 import {useRoute, useRouter} from "vue-router";
 import {ToastError, ToastSuccess} from "@/utils/notify.ts";
 import {useAuthStore} from "@/store";
@@ -46,7 +47,7 @@ const captchaRef = ref<InstanceType<typeof Captcha> | null>(null)
 const captchaReady = computed(() => captchaRef.value?.ready ?? false)
 
 const isLoading = ref<boolean>(false)
-const signInForm = ref<SignInRequest>({
+const signInForm = ref<SignIn>({
   email: '',
   password: '',
   captcha: '',
@@ -71,7 +72,7 @@ const handleSignIn = async () => {
       ToastError('验证码获取失败，请稍后再试（可能是提交过于频繁）')
       return
     }
-    const res = await signIn(signInForm.value)
+    const {data: res} = await api.auth.signIn(signInForm.value)
     ToastSuccess('登录成功，欢迎回来~')
     authStore.signIn(res.profile, res.sessionID)
     const target = typeof route.query.to === 'string' ? route.query.to : ''

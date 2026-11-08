@@ -1,0 +1,1239 @@
+basePath: /api
+definitions:
+  CaptchaChallenge:
+    properties:
+      image:
+        type: string
+      key:
+        type: string
+      thumb:
+        type: string
+      thumbHeight:
+        type: integer
+      thumbWidth:
+        type: integer
+      thumbX:
+        type: integer
+      thumbY:
+        type: integer
+    required:
+    - image
+    - key
+    - thumb
+    - thumbHeight
+    - thumbWidth
+    - thumbX
+    - thumbY
+    type: object
+  CaptchaConfig:
+    properties:
+      type:
+        description: Type is the captcha driver in use, the frontend renders the matching
+          UI.
+        enum:
+        - recaptcha
+        - go_captcha
+        type: string
+    required:
+    - type
+    type: object
+  ForgotPassword:
+    properties:
+      captcha:
+        type: string
+      email:
+        type: string
+    required:
+    - captcha
+    - email
+    type: object
+  HarassmentSettings:
+    properties:
+      blockWords:
+        type: string
+      harassmentSettingType:
+        enum:
+        - none
+        - register_only
+        type: string
+    required:
+    - blockWords
+    - harassmentSettingType
+    type: object
+  MineBoxSettings:
+    properties:
+      avatarURL:
+        type: string
+      backgroundURL:
+        type: string
+      intro:
+        type: string
+      notifyType:
+        enum:
+        - none
+        - email
+        type: string
+    required:
+    - avatarURL
+    - backgroundURL
+    - intro
+    - notifyType
+    type: object
+  MineProfile:
+    properties:
+      email:
+        type: string
+      name:
+        type: string
+    required:
+    - email
+    - name
+    type: object
+  MineQuestions:
+    properties:
+      cursor:
+        description: Cursor is passed to get the next page, empty if there are no
+          questions.
+        type: string
+      questions:
+        items:
+          $ref: '#/definitions/MineQuestionsItem'
+        type: array
+      total:
+        type: integer
+    required:
+    - cursor
+    - questions
+    - total
+    type: object
+  MineQuestionsItem:
+    properties:
+      content:
+        type: string
+      createdAt:
+        format: date-time
+        type: string
+      id:
+        type: integer
+      isAnswered:
+        type: boolean
+      isPrivate:
+        type: boolean
+    required:
+    - content
+    - createdAt
+    - id
+    - isAnswered
+    - isPrivate
+    type: object
+  MineSentQuestions:
+    properties:
+      cursor:
+        description: Cursor is passed to get the next page, empty if there are no
+          questions.
+        type: string
+      questions:
+        items:
+          $ref: '#/definitions/MineSentQuestionsItem'
+        type: array
+      total:
+        type: integer
+    required:
+    - cursor
+    - questions
+    - total
+    type: object
+  MineSentQuestionsItem:
+    properties:
+      content:
+        type: string
+      createdAt:
+        format: date-time
+        type: string
+      id:
+        type: integer
+      isAnswered:
+        type: boolean
+      isPrivate:
+        type: boolean
+      targetDomain:
+        description: TargetDomain and TargetName are empty if the receiver no longer
+          exists.
+        type: string
+      targetName:
+        type: string
+    required:
+    - content
+    - createdAt
+    - id
+    - isAnswered
+    - isPrivate
+    - targetDomain
+    - targetName
+    type: object
+  PageQuestion:
+    properties:
+      answer:
+        type: string
+      answerImageURLs:
+        items:
+          type: string
+        type: array
+      answeredAt:
+        format: date-time
+        type: string
+      content:
+        type: string
+      createdAt:
+        format: date-time
+        type: string
+      hasReplyEmail:
+        type: boolean
+      id:
+        type: integer
+      isOwner:
+        type: boolean
+      isPrivate:
+        type: boolean
+      questionImageURLs:
+        items:
+          type: string
+        type: array
+    required:
+    - answer
+    - answerImageURLs
+    - answeredAt
+    - content
+    - createdAt
+    - hasReplyEmail
+    - id
+    - isOwner
+    - isPrivate
+    - questionImageURLs
+    type: object
+  PageQuestions:
+    properties:
+      cursor:
+        description: Cursor is passed to get the next page, empty if there are no
+          questions.
+        type: string
+      questions:
+        items:
+          $ref: '#/definitions/PageQuestionsItem'
+        type: array
+      total:
+        type: integer
+    required:
+    - cursor
+    - questions
+    - total
+    type: object
+  PageQuestionsItem:
+    properties:
+      answer:
+        type: string
+      content:
+        type: string
+      createdAt:
+        format: date-time
+        type: string
+      id:
+        type: integer
+    required:
+    - answer
+    - content
+    - createdAt
+    - id
+    type: object
+  QuestionVisible:
+    properties:
+      visible:
+        type: boolean
+    required:
+    - visible
+    type: object
+  RecoverPassword:
+    properties:
+      code:
+        type: string
+      newPassword:
+        type: string
+      repeatPassword:
+        type: string
+    required:
+    - code
+    - newPassword
+    - repeatPassword
+    type: object
+  RecoverPasswordResp:
+    properties:
+      name:
+        type: string
+    required:
+    - name
+    type: object
+  SignIn:
+    properties:
+      captcha:
+        type: string
+      email:
+        type: string
+      password:
+        type: string
+    required:
+    - captcha
+    - email
+    - password
+    type: object
+  SignInResp:
+    properties:
+      profile:
+        $ref: '#/definitions/SignInUserProfile'
+      sessionID:
+        description: 'SessionID is sent back as the `Authorization: Token <sessionID>`
+          header to authenticate the later requests.'
+        type: string
+    required:
+    - profile
+    - sessionID
+    type: object
+  SignInUserProfile:
+    properties:
+      domain:
+        type: string
+      name:
+        type: string
+      uid:
+        type: string
+    required:
+    - domain
+    - name
+    - uid
+    type: object
+  SignUp:
+    properties:
+      captcha:
+        type: string
+      domain:
+        type: string
+      email:
+        type: string
+      name:
+        type: string
+      password:
+        type: string
+      repeatPassword:
+        type: string
+    required:
+    - captcha
+    - domain
+    - email
+    - name
+    - password
+    - repeatPassword
+    type: object
+  UpdateHarassmentSettings:
+    properties:
+      blockWords:
+        description: BlockWords are at most 10 words separated by commas, each of
+          them is at most 10 bytes.
+        type: string
+      harassmentSettingType:
+        description: HarassmentSettingType falls back to none if it is unknown.
+        enum:
+        - none
+        - register_only
+        type: string
+    required:
+    - blockWords
+    - harassmentSettingType
+    type: object
+  UpdateProfile:
+    properties:
+      name:
+        type: string
+      newPassword:
+        description: NewPassword changes the password if it is not empty.
+        type: string
+      oldPassword:
+        description: OldPassword is required only when changing the password.
+        type: string
+    required:
+    - name
+    type: object
+  UserProfile:
+    properties:
+      avatar:
+        type: string
+      background:
+        type: string
+      domain:
+        type: string
+      harassmentSetting:
+        enum:
+        - none
+        - register_only
+        type: string
+      intro:
+        type: string
+      name:
+        type: string
+      uid:
+        type: string
+    required:
+    - avatar
+    - background
+    - domain
+    - harassmentSetting
+    - intro
+    - name
+    - uid
+    type: object
+  VerifyCaptcha:
+    properties:
+      key:
+        type: string
+      x:
+        type: integer
+      "y":
+        type: integer
+    required:
+    - key
+    - x
+    - "y"
+    type: object
+  VerifyCaptchaResp:
+    properties:
+      token:
+        description: Token is the one-shot token passed as the captcha of the business
+          endpoints.
+        type: string
+    required:
+    - token
+    type: object
+info:
+  contact: {}
+  description: 'The successful responses wrap the documented schema as `{"data": ...}`,
+    and the errors respond `{"error": <status code>, "msg": "<message>"}`.'
+  title: NekoBox API
+  version: "1.0"
+paths:
+  /auth/forgot-password:
+    post:
+      consumes:
+      - application/json
+      description: The recovery code in the email expires in 24 hours, and the email
+        can be sent once every 2 minutes.
+      operationId: forgotPassword
+      parameters:
+      - description: Email of the account
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/ForgotPassword'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Message of the email sent
+          schema:
+            type: string
+        "400":
+          description: Invalid request body or captcha failed
+          schema:
+            type: string
+        "403":
+          description: Already signed in
+          schema:
+            type: string
+        "404":
+          description: The email is not registered
+          schema:
+            type: string
+        "429":
+          description: The email was sent too recently
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Send the password recovery email
+      tags:
+      - Authentication
+  /auth/recover-password:
+    get:
+      operationId: getRecoverPasswordCode
+      parameters:
+      - description: Recovery code in the email
+        in: query
+        name: code
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/RecoverPasswordResp'
+        "400":
+          description: The code is invalid or expired
+          schema:
+            type: string
+        "403":
+          description: Already signed in
+          schema:
+            type: string
+        "404":
+          description: The user does not exist
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Check a password recovery code
+      tags:
+      - Authentication
+    post:
+      consumes:
+      - application/json
+      operationId: recoverPassword
+      parameters:
+      - description: New password and recovery code
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/RecoverPassword'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Message of the password reset
+          schema:
+            type: string
+        "400":
+          description: Invalid request body, or the code is invalid or expired
+          schema:
+            type: string
+        "403":
+          description: Already signed in
+          schema:
+            type: string
+        "404":
+          description: The user does not exist
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Reset the password with a recovery code
+      tags:
+      - Authentication
+  /auth/sign-in:
+    post:
+      consumes:
+      - application/json
+      operationId: signIn
+      parameters:
+      - description: Credential
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/SignIn'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/SignInResp'
+        "400":
+          description: Invalid request body, captcha failed, or wrong email or password
+          schema:
+            type: string
+        "403":
+          description: Already signed in
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Sign in with email and password
+      tags:
+      - Authentication
+  /auth/sign-up:
+    post:
+      consumes:
+      - application/json
+      operationId: signUp
+      parameters:
+      - description: Account to create
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/SignUp'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Welcome message
+          schema:
+            type: string
+        "400":
+          description: Invalid request body, captcha failed, or the email or domain
+            has been used
+          schema:
+            type: string
+        "403":
+          description: Already signed in
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Sign up
+      tags:
+      - Authentication
+  /captcha/challenge:
+    get:
+      description: Only available for the go-captcha driver.
+      operationId: getCaptchaChallenge
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/CaptchaChallenge'
+        "400":
+          description: The captcha driver does not support slide challenges
+          schema:
+            type: string
+        "429":
+          description: Too many requests
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Generate a slide captcha challenge
+      tags:
+      - Captcha
+  /captcha/config:
+    get:
+      operationId: getCaptchaConfig
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/CaptchaConfig'
+      summary: Get the captcha config
+      tags:
+      - Captcha
+  /captcha/verify:
+    post:
+      consumes:
+      - application/json
+      description: Only available for the go-captcha driver. The returned token is
+        passed as the captcha of the business endpoints.
+      operationId: verifyCaptcha
+      parameters:
+      - description: Slide answer
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/VerifyCaptcha'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/VerifyCaptchaResp'
+        "400":
+          description: Invalid request body, wrong answer, or the captcha driver does
+            not support slide challenges
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Verify a slide captcha challenge
+      tags:
+      - Captcha
+  /mine/questions:
+    get:
+      operationId: listMineQuestions
+      parameters:
+      - description: Cursor returned by the previous page, empty for the first page
+        in: query
+        name: cursor
+        type: string
+      - description: Page size, defaults to 20 and at most 100
+        in: query
+        name: pageSize
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/MineQuestions'
+        "401":
+          description: Not signed in
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: List the questions received by the signed-in user
+      tags:
+      - My Questions
+  /mine/questions/{questionID}:
+    delete:
+      operationId: deleteQuestion
+      parameters:
+      - description: Question ID
+        in: path
+        name: questionID
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Message of the question deleted
+          schema:
+            type: string
+        "401":
+          description: Not signed in
+          schema:
+            type: string
+        "404":
+          description: The question does not exist
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Delete a received question
+      tags:
+      - My Questions
+  /mine/questions/{questionID}/answer:
+    put:
+      consumes:
+      - multipart/form-data
+      description: The asker is notified by email on the first answer if they left
+        an email.
+      operationId: answerQuestion
+      parameters:
+      - description: Question ID
+        in: path
+        name: questionID
+        required: true
+        type: integer
+      - description: Answer, at most 1000 characters
+        in: formData
+        name: answer
+        required: true
+        type: string
+      - description: Image of the answer, at most 5 MiB
+        in: formData
+        name: images[]
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Message of the question answered
+          schema:
+            type: string
+        "400":
+          description: Invalid form, the image is too large, or the answer is blocked
+          schema:
+            type: string
+        "401":
+          description: Not signed in
+          schema:
+            type: string
+        "404":
+          description: The question does not exist
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Answer a received question
+      tags:
+      - My Questions
+  /mine/questions/{questionID}/visible:
+    put:
+      consumes:
+      - application/json
+      operationId: setQuestionVisible
+      parameters:
+      - description: Question ID
+        in: path
+        name: questionID
+        required: true
+        type: integer
+      - description: Visibility
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/QuestionVisible'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Message of the visibility changed
+          schema:
+            type: string
+        "400":
+          description: Invalid request body
+          schema:
+            type: string
+        "401":
+          description: Not signed in
+          schema:
+            type: string
+        "404":
+          description: The question does not exist
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Set whether a received question is public
+      tags:
+      - My Questions
+  /mine/questions/sent:
+    get:
+      operationId: listMineSentQuestions
+      parameters:
+      - description: Cursor returned by the previous page, empty for the first page
+        in: query
+        name: cursor
+        type: string
+      - description: Page size, defaults to 20 and at most 100
+        in: query
+        name: pageSize
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/MineSentQuestions'
+        "401":
+          description: Not signed in
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: List the questions asked by the signed-in user
+      tags:
+      - My Questions
+  /mine/settings/box:
+    get:
+      operationId: getMineBoxSettings
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/MineBoxSettings'
+        "401":
+          description: Not signed in
+          schema:
+            type: string
+      summary: Get the question box settings of the signed-in user
+      tags:
+      - Settings
+    put:
+      consumes:
+      - multipart/form-data
+      description: The avatar and the background are kept if they are not uploaded.
+      operationId: updateMineBoxSettings
+      parameters:
+      - description: Introduction, at most 100 characters
+        in: formData
+        name: intro
+        required: true
+        type: string
+      - description: Notification of the new questions
+        enum:
+        - none
+        - email
+        in: formData
+        name: notifyType
+        required: true
+        type: string
+      - description: Avatar, at most 5 MiB
+        in: formData
+        name: avatar
+        type: file
+      - description: Background, at most 5 MiB
+        in: formData
+        name: background
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Message of the settings updated
+          schema:
+            type: string
+        "400":
+          description: Invalid form, unknown notification type, or the image is too
+            large
+          schema:
+            type: string
+        "401":
+          description: Not signed in
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Update the question box settings of the signed-in user
+      tags:
+      - Settings
+  /mine/settings/deactivate:
+    post:
+      description: The account can no longer sign in, its question box is no longer
+        accessible, and the session is signed out.
+      operationId: deactivateAccount
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Farewell message
+          schema:
+            type: string
+        "401":
+          description: Not signed in
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Deactivate the signed-in user
+      tags:
+      - Settings
+  /mine/settings/export-data:
+    post:
+      description: Export the profile and the received questions as an Excel workbook.
+      operationId: exportMineData
+      produces:
+      - application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+      responses:
+        "200":
+          description: Excel workbook
+          schema:
+            type: file
+        "401":
+          description: Not signed in
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Export the data of the signed-in user
+      tags:
+      - Settings
+  /mine/settings/harassment:
+    get:
+      operationId: getMineHarassmentSettings
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/HarassmentSettings'
+        "401":
+          description: Not signed in
+          schema:
+            type: string
+      summary: Get the harassment settings of the signed-in user
+      tags:
+      - Settings
+    put:
+      consumes:
+      - application/json
+      operationId: updateMineHarassmentSettings
+      parameters:
+      - description: Harassment settings
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/UpdateHarassmentSettings'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Message of the settings updated
+          schema:
+            type: string
+        "400":
+          description: Invalid request body, or too many or too long block words
+          schema:
+            type: string
+        "401":
+          description: Not signed in
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Update the harassment settings of the signed-in user
+      tags:
+      - Settings
+  /mine/settings/profile:
+    get:
+      operationId: getMineProfile
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/MineProfile'
+        "401":
+          description: Not signed in
+          schema:
+            type: string
+      summary: Get the profile settings of the signed-in user
+      tags:
+      - Settings
+    put:
+      consumes:
+      - application/json
+      description: The password is changed only if the new password is not empty.
+      operationId: updateMineProfile
+      parameters:
+      - description: Profile
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/UpdateProfile'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Message of the profile updated
+          schema:
+            type: string
+        "400":
+          description: Invalid request body or wrong old password
+          schema:
+            type: string
+        "401":
+          description: Not signed in
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Update the profile settings of the signed-in user
+      tags:
+      - Settings
+  /users/{domain}/profile:
+    get:
+      operationId: getUserProfile
+      parameters:
+      - description: Domain of the question box
+        in: path
+        name: domain
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/UserProfile'
+        "404":
+          description: The question box does not exist
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Get the profile of a question box
+      tags:
+      - Question Box
+  /users/{domain}/questions:
+    get:
+      operationId: listUserQuestions
+      parameters:
+      - description: Domain of the question box
+        in: path
+        name: domain
+        required: true
+        type: string
+      - description: Cursor returned by the previous page, empty for the first page
+        in: query
+        name: cursor
+        type: string
+      - description: Page size, defaults to 20 and at most 100
+        in: query
+        name: pageSize
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/PageQuestions'
+        "404":
+          description: The question box does not exist
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: List the answered public questions of a question box
+      tags:
+      - Question Box
+    post:
+      consumes:
+      - multipart/form-data
+      description: Signing in is required if the owner only allows registered users
+        to ask.
+      operationId: postQuestion
+      parameters:
+      - description: Domain of the question box
+        in: path
+        name: domain
+        required: true
+        type: string
+      - description: Content of the question, at most 1000 characters
+        in: formData
+        name: content
+        required: true
+        type: string
+      - description: Email to notify when the question is answered
+        in: formData
+        name: receiveReplyEmail
+        type: string
+      - description: Whether to keep the question private after it is answered
+        in: formData
+        name: isPrivate
+        type: boolean
+      - description: Image of the question, at most 5 MiB
+        in: formData
+        name: images[]
+        type: file
+      - description: Captcha token
+        in: formData
+        name: captcha
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Message with the HTML link to view the question privately
+          schema:
+            type: string
+        "400":
+          description: Invalid form, captcha failed, signing in is required, or the
+            content is blocked
+          schema:
+            type: string
+        "404":
+          description: The question box does not exist
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Ask a question
+      tags:
+      - Question Box
+  /users/{domain}/questions/{questionID}:
+    get:
+      description: Unanswered or private questions are only visible to the owner,
+        the asker, or with the token of the private link.
+      operationId: getUserQuestion
+      parameters:
+      - description: Domain of the question box
+        in: path
+        name: domain
+        required: true
+        type: string
+      - description: Question ID
+        in: path
+        name: questionID
+        required: true
+        type: integer
+      - description: Token of the private link
+        in: query
+        name: t
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/PageQuestion'
+        "404":
+          description: The question box or the question does not exist
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Get a question of a question box
+      tags:
+      - Question Box
+security:
+- SessionToken: []
+securityDefinitions:
+  SessionToken:
+    description: The session ID returned by signing in, sent as `Token <sessionID>`.
+      The public routes also accept it to respond according to the signed-in user.
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

@@ -1,8 +1,8 @@
-import type {UserProfile} from "@/api/auth.ts";
+import type {SignInUserProfile} from "@/api/api.ts";
 
 export interface AuthState {
     isSignedIn: boolean;
 
-    profile: UserProfile;
+    profile: SignInUserProfile;
     sessionID: string;
 }

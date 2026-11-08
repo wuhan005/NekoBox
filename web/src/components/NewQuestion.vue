@@ -66,7 +66,8 @@
 <script setup lang="ts">
 import {ref, computed, defineProps} from "vue";
 import {useAuthStore} from "@/store";
-import {postQuestion, type PostQuestionRequest} from "@/api/user.ts";
+import {api} from "@/api/client.ts";
+import type {PostQuestionPayload} from "@/api/api.ts";
 import {Form} from "vee-validate";
 import {ToastError} from "@/utils/notify.ts";
 import {useRoute} from "vue-router";
@@ -94,13 +95,19 @@ const props = defineProps({
   }
 })
 
+interface PostQuestionForm {
+  content: string;
+  receiveReplyEmail: string;
+  images: File[];
+  isPrivate: boolean;
+}
+
 const receiveReplyViaEmail = ref<boolean>(false)
-const postQuestionForm = ref<PostQuestionRequest>({
+const postQuestionForm = ref<PostQuestionForm>({
   content: '',
   receiveReplyEmail: '',
   images: [],
   isPrivate: false,
-  captcha: '',
 })
 
 const isLoading = ref<boolean>(false)
@@ -116,25 +123,32 @@ const handleSubmit = async () => {
 
   isLoading.value = true
   try {
+    let captcha: string
     try {
-      postQuestionForm.value.captcha = await captchaRef.value.acquire('post_question')
+      captcha = await captchaRef.value.acquire('post_question')
     } catch {
       ToastError('验证码校验未完成，请重试')
       return
     }
-    if (!postQuestionForm.value.captcha.trim()) {
+    if (!captcha.trim()) {
       ToastError('验证码获取失败，请稍后再试（可能是提交过于频繁）')
       return
     }
-    const res = await postQuestion(props.pageProfileDomain, {
-      ...postQuestionForm.value,
-      receiveReplyEmail: receiveReplyViaEmail.value ? postQuestionForm.value.receiveReplyEmail : '',
-    })
-    successMessage.value = res
+    const {content, receiveReplyEmail, images, isPrivate} = postQuestionForm.value
+    const payload: PostQuestionPayload = {
+      content,
+      receiveReplyEmail: receiveReplyViaEmail.value ? receiveReplyEmail : '',
+      isPrivate,
+      captcha,
+    }
+    // Leave out the absent image, the generated client would send `undefined` as a string in the form data.
+    if (images.length > 0) payload['images[]'] = images[0]
+    const {data} = await api.users.postQuestion(props.pageProfileDomain, payload)
+    successMessage.value = data
     successMessageVisible.value = true
     if (imageUploader.value) imageUploader.value.value = ''
     receiveReplyViaEmail.value = false
-    postQuestionForm.value = {content: '', receiveReplyEmail: '', images: [], isPrivate: false, captcha: ''}
+    postQuestionForm.value = {content: '', receiveReplyEmail: '', images: [], isPrivate: false}
   } catch {
     // API errors are displayed by the interceptor; retain the draft for retry.
   } finally {

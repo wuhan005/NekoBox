@@ -14,6 +14,7 @@ import (
 	"github.com/wuhan005/NekoBox/internal/captcha"
 	"github.com/wuhan005/NekoBox/internal/context"
 	"github.com/wuhan005/NekoBox/internal/form"
+	"github.com/wuhan005/NekoBox/internal/response"
 )
 
 type CaptchaHandler struct{}
@@ -22,17 +23,28 @@ func NewCaptchaHandler() *CaptchaHandler {
 	return &CaptchaHandler{}
 }
 
-// captchaConfigResponse is exposed to the frontend so it can decide which captcha UI to render.
-type captchaConfigResponse struct {
-	Type string `json:"type"`
-}
-
 // Config returns the active captcha driver so the frontend can switch UI accordingly.
+// @Summary Get the captcha config
+// @Tags Captcha
+// @Produce json
+// @Success 200 {object} response.CaptchaConfig
+// @ID getCaptchaConfig
+// @Router /captcha/config [get]
 func (*CaptchaHandler) Config(ctx context.Context, v captcha.Verifier) error {
-	return ctx.Success(captchaConfigResponse{Type: string(v.Type())})
+	return ctx.Success(response.CaptchaConfig{Type: v.Type()})
 }
 
 // Challenge generates a slide challenge image. Only available for the go-captcha driver.
+// @Summary Generate a slide captcha challenge
+// @Tags Captcha
+// @Description Only available for the go-captcha driver.
+// @Produce json
+// @Success 200 {object} captcha.ChallengeData
+// @Failure 400 {string} string "The captcha driver does not support slide challenges"
+// @Failure 429 {string} string "Too many requests"
+// @Failure 500 {string} string "Internal server error"
+// @ID getCaptchaChallenge
+// @Router /captcha/challenge [get]
 func (*CaptchaHandler) Challenge(ctx context.Context, svc captcha.Service, c cache.Cache) error {
 	if err := captcha.CheckChallengeRateLimit(ctx.Request().Context(), c, ctx.IP()); err != nil {
 		if errors.Is(err, captcha.ErrRateLimited) {
@@ -54,6 +66,17 @@ func (*CaptchaHandler) Challenge(ctx context.Context, svc captcha.Service, c cac
 }
 
 // Verify checks the slide answer and, on success, returns a one-shot token for business endpoints.
+// @Summary Verify a slide captcha challenge
+// @Tags Captcha
+// @Description Only available for the go-captcha driver. The returned token is passed as the captcha of the business endpoints.
+// @Accept json
+// @Produce json
+// @Param data body form.VerifyCaptcha true "Slide answer"
+// @Success 200 {object} response.VerifyCaptcha
+// @Failure 400 {string} string "Invalid request body, wrong answer, or the captcha driver does not support slide challenges"
+// @Failure 500 {string} string "Internal server error"
+// @ID verifyCaptcha
+// @Router /captcha/verify [post]
 func (*CaptchaHandler) Verify(ctx context.Context, svc captcha.Service, c cache.Cache, f form.VerifyCaptcha) error {
 	token, err := svc.VerifyChallenge(ctx.Request().Context(), c, f.Key, f.X, f.Y)
 	if err != nil {
@@ -67,5 +90,5 @@ func (*CaptchaHandler) Verify(ctx context.Context, svc captcha.Service, c cache.
 			return ctx.ServerError()
 		}
 	}
-	return ctx.Success(map[string]string{"token": token})
+	return ctx.Success(response.VerifyCaptcha{Token: token})
 }
