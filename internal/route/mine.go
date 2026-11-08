@@ -39,6 +39,7 @@ type MineHandler struct {
 // @Success 200 {object} response.MineQuestions
 // @Failure 401 {string} string "Not signed in"
 // @Failure 500 {string} string "Internal server error"
+// @Security SessionToken
 // @ID listMineQuestions
 // @Router /mine/questions [get]
 func (*MineHandler) ListQuestions(ctx context.Context) error {
@@ -98,6 +99,7 @@ func (*MineHandler) ListQuestions(ctx context.Context) error {
 // @Success 200 {object} response.MineSentQuestions
 // @Failure 401 {string} string "Not signed in"
 // @Failure 500 {string} string "Internal server error"
+// @Security SessionToken
 // @ID listMineSentQuestions
 // @Router /mine/questions/sent [get]
 func (*MineHandler) ListSentQuestions(ctx context.Context) error {
@@ -202,6 +204,7 @@ func (*MineHandler) Questioner(ctx context.Context) error {
 // @Failure 401 {string} string "Not signed in"
 // @Failure 404 {string} string "The question does not exist"
 // @Failure 500 {string} string "Internal server error"
+// @Security SessionToken
 // @ID answerQuestion
 // @Router /mine/questions/{questionID}/answer [put]
 func (h *MineHandler) AnswerQuestion(ctx context.Context, question *db.Question, tx dbutil.Transactor, f form.AnswerQuestion) error {
@@ -285,6 +288,7 @@ func (h *MineHandler) AnswerQuestion(ctx context.Context, question *db.Question,
 // @Failure 401 {string} string "Not signed in"
 // @Failure 404 {string} string "The question does not exist"
 // @Failure 500 {string} string "Internal server error"
+// @Security SessionToken
 // @ID deleteQuestion
 // @Router /mine/questions/{questionID} [delete]
 func (*MineHandler) DeleteQuestion(ctx context.Context, question *db.Question) error {
@@ -307,6 +311,7 @@ func (*MineHandler) DeleteQuestion(ctx context.Context, question *db.Question) e
 // @Failure 401 {string} string "Not signed in"
 // @Failure 404 {string} string "The question does not exist"
 // @Failure 500 {string} string "Internal server error"
+// @Security SessionToken
 // @ID setQuestionVisible
 // @Router /mine/questions/{questionID}/visible [put]
 func (*MineHandler) SetQuestionVisible(ctx context.Context, question *db.Question, f form.QuestionVisible) error {
@@ -332,6 +337,7 @@ func (*MineHandler) SetQuestionVisible(ctx context.Context, question *db.Questio
 // @Produce json
 // @Success 200 {object} response.MineProfile
 // @Failure 401 {string} string "Not signed in"
+// @Security SessionToken
 // @ID getMineProfile
 // @Router /mine/settings/profile [get]
 func (*MineHandler) Profile(ctx context.Context) error {
@@ -353,6 +359,7 @@ func (*MineHandler) Profile(ctx context.Context) error {
 // @Failure 400 {string} string "Invalid request body or wrong old password"
 // @Failure 401 {string} string "Not signed in"
 // @Failure 500 {string} string "Internal server error"
+// @Security SessionToken
 // @ID updateMineProfile
 // @Router /mine/settings/profile [put]
 func (*MineHandler) UpdateProfileSettings(ctx context.Context, tx dbutil.Transactor, f form.UpdateProfile) error {
@@ -386,6 +393,7 @@ func (*MineHandler) UpdateProfileSettings(ctx context.Context, tx dbutil.Transac
 // @Produce json
 // @Success 200 {object} response.MineBoxSettings
 // @Failure 401 {string} string "Not signed in"
+// @Security SessionToken
 // @ID getMineBoxSettings
 // @Router /mine/settings/box [get]
 func (*MineHandler) BoxSettings(ctx context.Context) error {
@@ -413,6 +421,7 @@ func (*MineHandler) BoxSettings(ctx context.Context) error {
 // @Failure 400 {string} string "Invalid form, unknown notification type, or the image is too large"
 // @Failure 401 {string} string "Not signed in"
 // @Failure 500 {string} string "Internal server error"
+// @Security SessionToken
 // @ID updateMineBoxSettings
 // @Router /mine/settings/box [put]
 func (*MineHandler) UpdateBoxSettings(ctx context.Context, f form.UpdateBoxSettings) error {
@@ -477,12 +486,13 @@ func (*MineHandler) UpdateBoxSettings(ctx context.Context, f form.UpdateBoxSetti
 // @Produce json
 // @Success 200 {object} response.HarassmentSettings
 // @Failure 401 {string} string "Not signed in"
+// @Security SessionToken
 // @ID getMineHarassmentSettings
 // @Router /mine/settings/harassment [get]
 func (*MineHandler) HarassmentSettings(ctx context.Context) error {
 	user := ctx.User
 	return ctx.Success(&response.HarassmentSettings{
-		HarassmentSettingType: user.HarassmentSetting,
+		HarassmentSettingType: user.EffectiveHarassmentSetting(),
 		BlockWords:            user.BlockWords,
 	})
 }
@@ -497,6 +507,7 @@ func (*MineHandler) HarassmentSettings(ctx context.Context) error {
 // @Failure 400 {string} string "Invalid request body, or too many or too long block words"
 // @Failure 401 {string} string "Not signed in"
 // @Failure 500 {string} string "Internal server error"
+// @Security SessionToken
 // @ID updateMineHarassmentSettings
 // @Router /mine/settings/harassment [put]
 func (*MineHandler) UpdateHarassmentSettings(ctx context.Context, f form.UpdateHarassmentSettings) error {
@@ -548,10 +559,11 @@ func (*MineHandler) UpdateHarassmentSettings(ctx context.Context, f form.UpdateH
 // @Summary Export the data of the signed-in user
 // @Tags Settings
 // @Description Export the profile and the received questions as an Excel workbook.
-// @Produce application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+// @Produce application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,json
 // @Success 200 {file} file "Excel workbook"
 // @Failure 401 {string} string "Not signed in"
 // @Failure 500 {string} string "Internal server error"
+// @Security SessionToken
 // @ID exportMineData
 // @Router /mine/settings/export-data [post]
 func (*MineHandler) ExportData(ctx context.Context) error {
@@ -591,6 +603,7 @@ func (*MineHandler) ExportData(ctx context.Context) error {
 // @Success 200 {string} string "Farewell message"
 // @Failure 401 {string} string "Not signed in"
 // @Failure 500 {string} string "Internal server error"
+// @Security SessionToken
 // @ID deactivateAccount
 // @Router /mine/settings/deactivate [post]
 func (*MineHandler) Deactivate(ctx context.Context, session session.Session) error {

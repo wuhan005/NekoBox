@@ -702,6 +702,8 @@ paths:
           description: Internal server error
           schema:
             type: string
+      security:
+      - SessionToken: []
       summary: List the questions received by the signed-in user
       tags:
       - My Questions
@@ -733,6 +735,8 @@ paths:
           description: Internal server error
           schema:
             type: string
+      security:
+      - SessionToken: []
       summary: Delete a received question
       tags:
       - My Questions
@@ -781,6 +785,8 @@ paths:
           description: Internal server error
           schema:
             type: string
+      security:
+      - SessionToken: []
       summary: Answer a received question
       tags:
       - My Questions
@@ -824,6 +830,8 @@ paths:
           description: Internal server error
           schema:
             type: string
+      security:
+      - SessionToken: []
       summary: Set whether a received question is public
       tags:
       - My Questions
@@ -854,6 +862,8 @@ paths:
           description: Internal server error
           schema:
             type: string
+      security:
+      - SessionToken: []
       summary: List the questions asked by the signed-in user
       tags:
       - My Questions
@@ -871,6 +881,8 @@ paths:
           description: Not signed in
           schema:
             type: string
+      security:
+      - SessionToken: []
       summary: Get the question box settings of the signed-in user
       tags:
       - Settings
@@ -921,6 +933,8 @@ paths:
           description: Internal server error
           schema:
             type: string
+      security:
+      - SessionToken: []
       summary: Update the question box settings of the signed-in user
       tags:
       - Settings
@@ -944,6 +958,8 @@ paths:
           description: Internal server error
           schema:
             type: string
+      security:
+      - SessionToken: []
       summary: Deactivate the signed-in user
       tags:
       - Settings
@@ -953,6 +969,7 @@ paths:
       operationId: exportMineData
       produces:
       - application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+      - application/json
       responses:
         "200":
           description: Excel workbook
@@ -966,6 +983,8 @@ paths:
           description: Internal server error
           schema:
             type: string
+      security:
+      - SessionToken: []
       summary: Export the data of the signed-in user
       tags:
       - Settings
@@ -983,6 +1002,8 @@ paths:
           description: Not signed in
           schema:
             type: string
+      security:
+      - SessionToken: []
       summary: Get the harassment settings of the signed-in user
       tags:
       - Settings
@@ -1016,6 +1037,8 @@ paths:
           description: Internal server error
           schema:
             type: string
+      security:
+      - SessionToken: []
       summary: Update the harassment settings of the signed-in user
       tags:
       - Settings
@@ -1033,6 +1056,8 @@ paths:
           description: Not signed in
           schema:
             type: string
+      security:
+      - SessionToken: []
       summary: Get the profile settings of the signed-in user
       tags:
       - Settings
@@ -1067,6 +1092,8 @@ paths:
           description: Internal server error
           schema:
             type: string
+      security:
+      - SessionToken: []
       summary: Update the profile settings of the signed-in user
       tags:
       - Settings
@@ -1227,12 +1254,11 @@ paths:
       summary: Get a question of a question box
       tags:
       - Question Box
-security:
-- SessionToken: []
 securityDefinitions:
   SessionToken:
     description: The session ID returned by signing in, sent as `Token <sessionID>`.
-      The public routes also accept it to respond according to the signed-in user.
+      It is required by the routes of the signed-in user, and the question box routes
+      also accept it to respond according to the signed-in user.
     in: header
     name: Authorization
     type: apiKey

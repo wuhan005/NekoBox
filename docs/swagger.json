@@ -394,6 +394,11 @@
         },
         "/mine/questions": {
             "get": {
+                "security": [
+                    {
+                        "SessionToken": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -440,6 +445,11 @@
         },
         "/mine/questions/sent": {
             "get": {
+                "security": [
+                    {
+                        "SessionToken": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -486,6 +496,11 @@
         },
         "/mine/questions/{questionID}": {
             "delete": {
+                "security": [
+                    {
+                        "SessionToken": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -533,6 +548,11 @@
         },
         "/mine/questions/{questionID}/answer": {
             "put": {
+                "security": [
+                    {
+                        "SessionToken": []
+                    }
+                ],
                 "description": "The asker is notified by email on the first answer if they left an email.",
                 "consumes": [
                     "multipart/form-data"
@@ -603,6 +623,11 @@
         },
         "/mine/questions/{questionID}/visible": {
             "put": {
+                "security": [
+                    {
+                        "SessionToken": []
+                    }
+                ],
                 "consumes": [
                     "application/json"
                 ],
@@ -668,6 +693,11 @@
         },
         "/mine/settings/box": {
             "get": {
+                "security": [
+                    {
+                        "SessionToken": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -692,6 +722,11 @@
                 }
             },
             "put": {
+                "security": [
+                    {
+                        "SessionToken": []
+                    }
+                ],
                 "description": "The avatar and the background are kept if they are not uploaded.",
                 "consumes": [
                     "multipart/form-data"
@@ -766,6 +801,11 @@
         },
         "/mine/settings/deactivate": {
             "post": {
+                "security": [
+                    {
+                        "SessionToken": []
+                    }
+                ],
                 "description": "The account can no longer sign in, its question box is no longer accessible, and the session is signed out.",
                 "produces": [
                     "application/json"
@@ -799,9 +839,15 @@
         },
         "/mine/settings/export-data": {
             "post": {
+                "security": [
+                    {
+                        "SessionToken": []
+                    }
+                ],
                 "description": "Export the profile and the received questions as an Excel workbook.",
                 "produces": [
-                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    "application/json"
                 ],
                 "tags": [
                     "Settings"
@@ -832,6 +878,11 @@
         },
         "/mine/settings/harassment": {
             "get": {
+                "security": [
+                    {
+                        "SessionToken": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -856,6 +907,11 @@
                 }
             },
             "put": {
+                "security": [
+                    {
+                        "SessionToken": []
+                    }
+                ],
                 "consumes": [
                     "application/json"
                 ],
@@ -908,6 +964,11 @@
         },
         "/mine/settings/profile": {
             "get": {
+                "security": [
+                    {
+                        "SessionToken": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -932,6 +993,11 @@
                 }
             },
             "put": {
+                "security": [
+                    {
+                        "SessionToken": []
+                    }
+                ],
                 "description": "The password is changed only if the new password is not empty.",
                 "consumes": [
                     "application/json"
@@ -1794,15 +1860,10 @@
     },
     "securityDefinitions": {
         "SessionToken": {
-            "description": "The session ID returned by signing in, sent as `Token \u003csessionID\u003e`. The public routes also accept it to respond according to the signed-in user.",
+            "description": "The session ID returned by signing in, sent as `Token \u003csessionID\u003e`. It is required by the routes of the signed-in user, and the question box routes also accept it to respond according to the signed-in user.",
             "type": "apiKey",
             "name": "Authorization",
             "in": "header"
         }
-    },
-    "security": [
-        {
-            "SessionToken": []
-        }
-    ]
+    }
 }

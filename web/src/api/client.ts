@@ -9,9 +9,33 @@ interface ErrorResponse {
     msg: string;
 }
 
-export const api = new Api({
+class ApiClient extends Api<unknown> {
+    // The generated client would send the absent values as "undefined" or "null" strings in the form data.
+    protected override createFormData(input: Record<string, unknown>): FormData {
+        if (input instanceof FormData) {
+            return input
+        }
+        return super.createFormData(Object.fromEntries(
+            Object.entries(input).filter(([, value]) => value !== undefined && value !== null),
+        ))
+    }
+}
+
+export const api = new ApiClient({
     baseURL: import.meta.env.VITE_BASE_URL || '/api',
 })
+
+// errorMessage returns the message of an error response, whose body is a Blob for the requests of files such as exporting the data.
+async function errorMessage(data: unknown): Promise<string | undefined> {
+    if (data instanceof Blob) {
+        try {
+            return (JSON.parse(await data.text()) as Partial<ErrorResponse>).msg
+        } catch {
+            return undefined
+        }
+    }
+    return (data as Partial<ErrorResponse> | undefined)?.msg
+}
 
 api.instance.interceptors.request.use((config) => {
     const authStore = useAuthStore()
@@ -31,8 +55,8 @@ api.instance.interceptors.response.use(
         // Return the whole `{ data }` body as the AxiosResponse, so `.data` of the result is the type declared in Swagger.
         return response.data as AxiosResponse
     },
-    (error: unknown) => {
-        if (!axios.isAxiosError<Partial<ErrorResponse>>(error) || !error.response) {
+    async (error: unknown) => {
+        if (!axios.isAxiosError(error) || !error.response) {
             ToastError('网络错误，请检查网络连接')
             return Promise.reject(error)
         }
@@ -53,7 +77,7 @@ api.instance.interceptors.response.use(
         // which the user must be told about.
         const isGetRequest = (error.config?.method ?? '').toLowerCase() === 'get'
         if (error.response.status !== 404 || !isGetRequest) {
-            ToastError(error.response.data?.msg || '未知错误')
+            ToastError(await errorMessage(error.response.data) || '未知错误')
         }
         return Promise.reject(error)
     }

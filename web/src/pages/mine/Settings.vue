@@ -225,13 +225,6 @@ const handleSignOut = () => {
 }
 
 // ===== BOX SETTINGS ===== //
-interface BoxSettingsForm {
-  intro: string;
-  notifyType: UpdateMineBoxSettingsPayload['notifyType'];
-  avatar: File | null;
-  background: File | null;
-}
-
 const boxSettings = ref<MineBoxSettings>({
   intro: '',
   notifyType: 'none',
@@ -239,11 +232,9 @@ const boxSettings = ref<MineBoxSettings>({
   backgroundURL: '',
 } as MineBoxSettings)
 const notifyTypeEmail = ref<boolean>(false)
-const updateMineBoxSettingsForm = ref<BoxSettingsForm>({
+const updateMineBoxSettingsForm = ref<UpdateMineBoxSettingsPayload>({
   intro: '',
   notifyType: 'none',
-  avatar: null,
-  background: null,
 })
 const boxSettingsLoading = ref<boolean>(false)
 const boxSettingsFetching = ref<boolean>(true)
@@ -273,18 +264,12 @@ const updateBoxSettings = () => {
     updateMineBoxSettingsForm.value.notifyType = 'none'
   }
 
-  const {intro, notifyType, avatar, background} = updateMineBoxSettingsForm.value
-  const payload: UpdateMineBoxSettingsPayload = {intro, notifyType}
-  // Leave out the images not chosen, the generated client would send `null` as a string in the form data.
-  if (avatar) payload.avatar = avatar
-  if (background) payload.background = background
-
   boxSettingsLoading.value = true
-  return api.mine.updateMineBoxSettings(payload).then(res => {
+  return api.mine.updateMineBoxSettings(updateMineBoxSettingsForm.value).then(res => {
     if (isUnmounted) return
     ToastSuccess(res.data)
-    updateMineBoxSettingsForm.value.avatar = null
-    updateMineBoxSettingsForm.value.background = null
+    updateMineBoxSettingsForm.value.avatar = undefined
+    updateMineBoxSettingsForm.value.background = undefined
     if (avatarImageUploader.value) {
       avatarImageUploader.value.value = ''
     }
@@ -303,7 +288,7 @@ const handleSelectAvatarImage = (event: Event) => {
   if (target.files && target.files.length > 0) {
     updateMineBoxSettingsForm.value.avatar = target.files[0]
   } else {
-    updateMineBoxSettingsForm.value.avatar = null
+    updateMineBoxSettingsForm.value.avatar = undefined
   }
 }
 const handleSelectBackgroundImage = (event: Event) => {
@@ -311,7 +296,7 @@ const handleSelectBackgroundImage = (event: Event) => {
   if (target.files && target.files.length > 0) {
     updateMineBoxSettingsForm.value.background = target.files[0]
   } else {
-    updateMineBoxSettingsForm.value.background = null
+    updateMineBoxSettingsForm.value.background = undefined
   }
 }
 

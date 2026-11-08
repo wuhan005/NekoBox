@@ -80,7 +80,7 @@ func (*UserHandler) Profile(ctx context.Context, pageUser *db.User) error {
 		Domain:            pageUser.Domain,
 		Background:        pageUser.Background,
 		Intro:             pageUser.Intro,
-		HarassmentSetting: string(pageUser.HarassmentSetting),
+		HarassmentSetting: string(pageUser.EffectiveHarassmentSetting()),
 	})
 }
 

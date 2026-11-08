@@ -471,14 +471,12 @@ export class Api<
      * @name ForgotPassword
      * @summary Send the password recovery email
      * @request POST:/auth/forgot-password
-     * @secure
      */
     forgotPassword: (data: ForgotPassword, params: RequestParams = {}) =>
       this.request<ForgotPasswordData, string>({
         path: `/auth/forgot-password`,
         method: "POST",
         body: data,
-        secure: true,
         type: ContentType.Json,
         format: "json",
         ...params,
@@ -491,7 +489,6 @@ export class Api<
      * @name GetRecoverPasswordCode
      * @summary Check a password recovery code
      * @request GET:/auth/recover-password
-     * @secure
      */
     getRecoverPasswordCode: (
       query: {
@@ -504,7 +501,6 @@ export class Api<
         path: `/auth/recover-password`,
         method: "GET",
         query: query,
-        secure: true,
         format: "json",
         ...params,
       }),
@@ -516,14 +512,12 @@ export class Api<
      * @name RecoverPassword
      * @summary Reset the password with a recovery code
      * @request POST:/auth/recover-password
-     * @secure
      */
     recoverPassword: (data: RecoverPassword, params: RequestParams = {}) =>
       this.request<RecoverPasswordData, string>({
         path: `/auth/recover-password`,
         method: "POST",
         body: data,
-        secure: true,
         type: ContentType.Json,
         format: "json",
         ...params,
@@ -536,14 +530,12 @@ export class Api<
      * @name SignIn
      * @summary Sign in with email and password
      * @request POST:/auth/sign-in
-     * @secure
      */
     signIn: (data: SignIn, params: RequestParams = {}) =>
       this.request<SignInData, string>({
         path: `/auth/sign-in`,
         method: "POST",
         body: data,
-        secure: true,
         type: ContentType.Json,
         format: "json",
         ...params,
@@ -556,14 +548,12 @@ export class Api<
      * @name SignUp
      * @summary Sign up
      * @request POST:/auth/sign-up
-     * @secure
      */
     signUp: (data: SignUp, params: RequestParams = {}) =>
       this.request<SignUpData, string>({
         path: `/auth/sign-up`,
         method: "POST",
         body: data,
-        secure: true,
         type: ContentType.Json,
         format: "json",
         ...params,
@@ -577,13 +567,11 @@ export class Api<
      * @name GetCaptchaChallenge
      * @summary Generate a slide captcha challenge
      * @request GET:/captcha/challenge
-     * @secure
      */
     getCaptchaChallenge: (params: RequestParams = {}) =>
       this.request<GetCaptchaChallengeData, string>({
         path: `/captcha/challenge`,
         method: "GET",
-        secure: true,
         format: "json",
         ...params,
       }),
@@ -595,13 +583,11 @@ export class Api<
      * @name GetCaptchaConfig
      * @summary Get the captcha config
      * @request GET:/captcha/config
-     * @secure
      */
     getCaptchaConfig: (params: RequestParams = {}) =>
       this.request<GetCaptchaConfigData, any>({
         path: `/captcha/config`,
         method: "GET",
-        secure: true,
         format: "json",
         ...params,
       }),
@@ -613,14 +599,12 @@ export class Api<
      * @name VerifyCaptcha
      * @summary Verify a slide captcha challenge
      * @request POST:/captcha/verify
-     * @secure
      */
     verifyCaptcha: (data: VerifyCaptcha, params: RequestParams = {}) =>
       this.request<VerifyCaptchaData, string>({
         path: `/captcha/verify`,
         method: "POST",
         body: data,
-        secure: true,
         type: ContentType.Json,
         format: "json",
         ...params,
@@ -820,6 +804,7 @@ export class Api<
         path: `/mine/settings/export-data`,
         method: "POST",
         secure: true,
+        format: "json",
         ...params,
       }),
 
@@ -910,13 +895,11 @@ export class Api<
      * @name GetUserProfile
      * @summary Get the profile of a question box
      * @request GET:/users/{domain}/profile
-     * @secure
      */
     getUserProfile: (domain: string, params: RequestParams = {}) =>
       this.request<GetUserProfileData, string>({
         path: `/users/${domain}/profile`,
         method: "GET",
-        secure: true,
         format: "json",
         ...params,
       }),
@@ -928,7 +911,6 @@ export class Api<
      * @name ListUserQuestions
      * @summary List the answered public questions of a question box
      * @request GET:/users/{domain}/questions
-     * @secure
      */
     listUserQuestions: (
       domain: string,
@@ -944,7 +926,6 @@ export class Api<
         path: `/users/${domain}/questions`,
         method: "GET",
         query: query,
-        secure: true,
         format: "json",
         ...params,
       }),
@@ -956,7 +937,6 @@ export class Api<
      * @name PostQuestion
      * @summary Ask a question
      * @request POST:/users/{domain}/questions
-     * @secure
      */
     postQuestion: (
       domain: string,
@@ -967,7 +947,6 @@ export class Api<
         path: `/users/${domain}/questions`,
         method: "POST",
         body: data,
-        secure: true,
         type: ContentType.FormData,
         format: "json",
         ...params,
@@ -980,7 +959,6 @@ export class Api<
      * @name GetUserQuestion
      * @summary Get a question of a question box
      * @request GET:/users/{domain}/questions/{questionID}
-     * @secure
      */
     getUserQuestion: (
       domain: string,
@@ -995,7 +973,6 @@ export class Api<
         path: `/users/${domain}/questions/${questionId}`,
         method: "GET",
         query: query,
-        secure: true,
         format: "json",
         ...params,
       }),

@@ -67,7 +67,6 @@
 import {ref, computed, defineProps} from "vue";
 import {useAuthStore} from "@/store";
 import {api} from "@/api/client.ts";
-import type {PostQuestionPayload} from "@/api/api.ts";
 import {Form} from "vee-validate";
 import {ToastError} from "@/utils/notify.ts";
 import {useRoute} from "vue-router";
@@ -135,15 +134,13 @@ const handleSubmit = async () => {
       return
     }
     const {content, receiveReplyEmail, images, isPrivate} = postQuestionForm.value
-    const payload: PostQuestionPayload = {
+    const {data} = await api.users.postQuestion(props.pageProfileDomain, {
       content,
       receiveReplyEmail: receiveReplyViaEmail.value ? receiveReplyEmail : '',
       isPrivate,
       captcha,
-    }
-    // Leave out the absent image, the generated client would send `undefined` as a string in the form data.
-    if (images.length > 0) payload['images[]'] = images[0]
-    const {data} = await api.users.postQuestion(props.pageProfileDomain, payload)
+      'images[]': images[0],
+    })
     successMessage.value = data
     successMessageVisible.value = true
     if (imageUploader.value) imageUploader.value.value = ''

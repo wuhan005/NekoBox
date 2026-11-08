@@ -118,7 +118,7 @@
 import {ref, onMounted, onUnmounted, watch} from "vue";
 import PageQuestions from "@/components/PageQuestions.vue";
 import {api} from "@/api/client.ts";
-import type {AnswerQuestionPayload, PageQuestion, UserProfile} from "@/api/api.ts";
+import type {PageQuestion, UserProfile} from "@/api/api.ts";
 import {useRoute, useRouter} from "vue-router";
 import {humanizeDate} from "@/utils/humanize.ts";
 import NewQuestion from "@/components/NewQuestion.vue";
@@ -166,11 +166,8 @@ const handleAnswer = () => {
   if (isSubmitting.value || isSettingVisible.value || isLoading.value || !question.value.isOwner) return
   const request = questionRequest
   const {answer, images} = answerQuestionForm.value
-  const payload: AnswerQuestionPayload = {answer}
-  // Leave out the absent image, the generated client would send `undefined` as a string in the form data.
-  if (images.length > 0) payload['images[]'] = images[0]
   isSubmitting.value = true
-  api.mine.answerQuestion(Number(questionID.value), payload)
+  api.mine.answerQuestion(Number(questionID.value), {answer, 'images[]': images[0]})
       .then(res => {
         if (isUnmounted || request !== questionRequest) return
         ToastSuccess(res.data)
