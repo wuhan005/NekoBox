@@ -13,7 +13,7 @@
 
 <script setup lang="ts">
 import {useRouter} from "vue-router";
-import {deactivateAccount} from "@/api/mine.ts";
+import {api} from "@/api/client.ts";
 import {ToastSuccess} from "@/utils/notify.ts";
 import {useAuthStore} from "@/store";
 
@@ -21,8 +21,8 @@ const authStore = useAuthStore()
 const router = useRouter()
 
 const handleDeactivateAccount = () => {
-  deactivateAccount().then(res => {
-    ToastSuccess(res)
+  api.mine.deactivateAccount().then(res => {
+    ToastSuccess(res.data)
     authStore.signOut()
     router.push({name: 'home'})
   })

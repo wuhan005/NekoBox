@@ -5,7 +5,7 @@
         <div class="uk-text-left uk-text-small uk-text-muted">
           <Skeleton :loading="!question.createdAt" width="20%">{{ humanizeDate(question.createdAt) }}</Skeleton>
         </div>
-        <h4 class="uk-text-center uk-margin-top uk-margin-bottom uk-text-break">
+        <h4 class="uk-text-center uk-margin-top uk-margin-bottom uk-text-break pre-wrap">
           <Skeleton>{{ question.content }}</Skeleton>
         </h4>
         <ul v-if="question.questionImageURLs.length > 0" class="uk-thumbnav" uk-margin>
@@ -18,7 +18,7 @@
       </div>
 
       <div v-if="question.answer" class="uk-card-body">
-        <p class="uk-text-small uk-text-break">
+        <p class="uk-text-small uk-text-break pre-wrap">
           <Skeleton>{{ question.answer }}</Skeleton>
         </p>
         <ul v-if="question.answerImageURLs.length > 0" class="uk-thumbnav" uk-margin>
@@ -28,13 +28,14 @@
             </a>
           </li>
         </ul>
-        <p class="uk-text-small uk-text-right uk-text-muted">-来自@{{ profile.name }}的回答</p>
+        <p v-if="profile" class="uk-text-small uk-text-right uk-text-muted">-来自@{{ profile.name }}的回答</p>
       </div>
 
       <div class="uk-card-footer">
         <div v-if="question.isOwner">
           <div class="uk-float-right">
-            <button type="button" class="uk-button uk-button-default uk-button-small" @click="handleSetVisible">
+            <button type="button" class="uk-button uk-button-default uk-button-small"
+                    :disabled="isSettingVisible || isSubmitting" @click="handleSetVisible">
               设为{{ question.isPrivate ? '公开' : '私密' }}
             </button>
           </div>
@@ -73,7 +74,7 @@
             </div>
 
             <div class="uk-margin uk-text-center">
-              <button type="submit" class="uk-button uk-button-primary" :disabled="isSubmitting">
+              <button type="submit" class="uk-button uk-button-primary" :disabled="isSubmitting || isSettingVisible">
                 <span v-if="isSubmitting">提交中...</span>
                 <span v-else>
                   <span v-if="question.answer">更新</span>回答
@@ -83,35 +84,44 @@
           </Form>
         </div>
 
-        <div v-else-if="!isLoading">
+        <div v-else-if="!isLoading && question.id && profile">
           <h5 class="uk-text-center">再问点别的问题？</h5>
           <NewQuestion
               :page-profile-domain="profile.domain"
               :harassment-setting="profile.harassmentSetting"
           />
         </div>
-        <Skeleton v-else :count="3"></Skeleton>
+        <Skeleton v-else-if="isLoading || isInitalLoading" :count="3"></Skeleton>
+
+        <div v-if="!isLoading && !question.id" class="uk-alert uk-alert-danger" role="alert">
+          问题加载失败，请重试。
+          <button type="button" class="uk-button uk-button-default" @click="fetchQuestion">重新加载问题</button>
+        </div>
+        <div v-if="!isInitalLoading && !profile" class="uk-alert uk-alert-danger" role="alert">
+          箱主资料加载失败，请重试。
+          <button type="button" class="uk-button uk-button-default" @click="fetchProfile">重新加载箱主资料</button>
+        </div>
 
         <hr class="uk-divider-icon">
-        <Skeleton :loading="isInitalLoading" :count="5">
-          <PageQuestions
-              :page-profile-name="profile.name"
-              :page-profile-domain="profile.domain"
-          />
-        </Skeleton>
+        <Skeleton v-if="isInitalLoading" :count="5"/>
+        <PageQuestions
+            v-else-if="profile"
+            :page-profile-name="profile.name"
+            :page-profile-domain="profile.domain"
+        />
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import {ref, onMounted, watch} from "vue";
+import {ref, onMounted, onUnmounted, watch} from "vue";
 import PageQuestions from "@/components/PageQuestions.vue";
-import {getUserProfile, getUserQuestion, type PageQuestion, type Profile} from "@/api/user.ts";
+import {api} from "@/api/client.ts";
+import type {PageQuestion, UserProfile} from "@/api/api.ts";
 import {useRoute, useRouter} from "vue-router";
 import {humanizeDate} from "@/utils/humanize.ts";
 import NewQuestion from "@/components/NewQuestion.vue";
-import {answerQuestion, type AnswerQuestionRequest, deleteQuestion, setQuestionVisible} from "@/api/mine.ts";
 import {ToastSuccess} from "@/utils/notify.ts";
 import {Form} from "vee-validate";
 import {Skeleton} from "vue-loading-skeleton";
@@ -123,12 +133,12 @@ const questionID = ref<string>(route.params.questionID as string || '')
 const questionToken = ref<string>(route.query.t as string || '')
 
 const isLoading = ref<boolean>(true)
-const profile = ref<Profile>({} as Profile)
+const profile = ref<UserProfile | null>(null)
 const EMPTY_QUESTION: PageQuestion = {
   id: 0,
   isOwner: false,
-  createdAt: null,
-  answeredAt: null,
+  createdAt: '',
+  answeredAt: '',
   content: '',
   answer: '',
   questionImageURLs: [],
@@ -137,19 +147,34 @@ const EMPTY_QUESTION: PageQuestion = {
   hasReplyEmail: false,
 }
 const question = ref<PageQuestion>(EMPTY_QUESTION)
+let questionRequest = 0
+let isUnmounted = false
+onUnmounted(() => { isUnmounted = true })
+
+interface AnswerQuestionForm {
+  answer: string;
+  images: File[];
+}
 
 const isSubmitting = ref<boolean>(false)
-const answerQuestionForm = ref<AnswerQuestionRequest>({
+const isSettingVisible = ref<boolean>(false)
+const answerQuestionForm = ref<AnswerQuestionForm>({
   answer: '',
   images: [],
 })
 const handleAnswer = () => {
+  if (isSubmitting.value || isSettingVisible.value || isLoading.value || !question.value.isOwner) return
+  const request = questionRequest
+  const {answer, images} = answerQuestionForm.value
   isSubmitting.value = true
-  answerQuestion(questionID.value, answerQuestionForm.value)
+  api.mine.answerQuestion(Number(questionID.value), {answer, 'images[]': images[0]})
       .then(res => {
-        ToastSuccess(res)
-        fetchQuestion()
+        if (isUnmounted || request !== questionRequest) return
+        ToastSuccess(res.data)
+        if (answerQuestionForm.value.images === images) handleRemoveSelectedImage()
+        return fetchQuestion()
       })
+      .catch(() => {}) // API errors are displayed by the interceptor.
       .finally(() => {
         isSubmitting.value = false
       })
@@ -173,8 +198,8 @@ const handleRemoveSelectedImage = () => {
 }
 
 const handleDelete = () => {
-  deleteQuestion(questionID.value).then(res => {
-    ToastSuccess(res)
+  api.mine.deleteQuestion(Number(questionID.value)).then(res => {
+    ToastSuccess(res.data)
     router.push({
       name: 'profile',
       params: {
@@ -185,11 +210,18 @@ const handleDelete = () => {
 }
 
 const handleSetVisible = () => {
-  // isPrivate -> set public -> true
-  // !isPrivate -> set private -> false
-  setQuestionVisible(questionID.value, question.value.isPrivate).then(res => {
-    question.value.isPrivate = !question.value.isPrivate
-    ToastSuccess(res)
+  if (isSettingVisible.value || isSubmitting.value || isLoading.value || !question.value.isOwner) return
+  const request = questionRequest
+  const visible = question.value.isPrivate
+  isSettingVisible.value = true
+  api.mine.setQuestionVisible(Number(questionID.value), {visible}).then(res => {
+    if (isUnmounted || request !== questionRequest) return
+    question.value.isPrivate = !visible
+    ToastSuccess(res.data)
+  }).catch(() => {
+    // API errors are displayed by the interceptor.
+  }).finally(() => {
+    isSettingVisible.value = false
   })
 }
 
@@ -197,46 +229,56 @@ watch(() => [route.params, route.query], () => {
   domain.value = route.params.domain as string || ''
   questionID.value = route.params.questionID as string || ''
   questionToken.value = route.query.t as string || ''
+  handleRemoveSelectedImage()
   fetchQuestion()
 })
 
 const fetchQuestion = () => {
+  const request = ++questionRequest
   isLoading.value = true
   question.value = { ...EMPTY_QUESTION }
 
-  getUserQuestion(domain.value, questionID.value, questionToken.value)
-      .then(res => {
+  return api.users.getUserQuestion(domain.value, Number(questionID.value), {t: questionToken.value})
+      .then(({data: res}) => {
+        if (isUnmounted || request !== questionRequest) return
         question.value = res
         answerQuestionForm.value.answer = res.answer || ''
       })
       .catch(err => {
+        if (isUnmounted || request !== questionRequest) return
         const statusCode = err.response?.status
         if (statusCode === 404) {
           router.push({name: 'home'})
         }
       })
       .finally(() => {
+        if (isUnmounted || request !== questionRequest) return
         isLoading.value = false
       })
 }
 
 const isInitalLoading = ref<boolean>(true)
-onMounted(() => {
+const fetchProfile = () => {
   isInitalLoading.value = true
-  getUserProfile(domain.value)
+  return api.users.getUserProfile(domain.value)
       .then(res => {
-        profile.value = res
+        if (isUnmounted) return
+        profile.value = res.data
       })
       .catch(err => {
+        if (isUnmounted) return
         const statusCode = err.response?.status
         if (statusCode === 404) {
           router.push({name: 'home'})
         }
       })
       .finally(() => {
+        if (isUnmounted) return
         isInitalLoading.value = false
       })
-
+}
+onMounted(() => {
+  fetchProfile()
   fetchQuestion()
 })
 </script>

@@ -22,7 +22,7 @@
 <script setup lang="ts">
 import {ref, onMounted} from "vue";
 import {humanizeDate} from "@/utils/humanize.ts";
-import {type ChangeLogItem, getChangeLogs} from "@/api/general.ts";
+import {type ChangeLogItem, getChangeLogs} from "@/utils/feeds.ts";
 
 const isLoading = ref<boolean>(true)
 const logs = ref<ChangeLogItem[]>([])

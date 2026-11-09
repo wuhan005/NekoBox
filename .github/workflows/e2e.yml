@@ -10,6 +10,50 @@ permissions:
   contents: read
 
 jobs:
+  frontend:
+    name: Frontend regression tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install frontend dependencies
+        working-directory: web
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright dependencies
+        working-directory: e2e
+        run: npm ci
+
+      - name: Install Playwright browsers
+        working-directory: e2e
+        run: npx playwright install --with-deps chromium
+
+      - name: Run frontend state and captcha tests
+        working-directory: e2e
+        run: npm run test:frontend
+
+      - name: Upload frontend Playwright report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: frontend-playwright-report
+          path: |
+            e2e/playwright-report/frontend/
+            e2e/test-results/frontend/
+          retention-days: 30
+
   e2e:
     name: Run E2E Tests
     runs-on: ubuntu-latest
@@ -62,49 +106,41 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
 
       - name: Set up pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: latest
+          version: 9
 
-      - name: Start MinIO (pgsty/minio)
+      - name: Start Silo
         run: |
           docker run -d \
-            --name minio \
-            --network host \
-            -e MINIO_ROOT_USER=minioadmin \
-            -e MINIO_ROOT_PASSWORD=minioadmin \
-            pgsty/minio \
+            --name nekobox-silo \
+            -p 127.0.0.1:9000:9000 \
+            -e MINIO_ROOT_USER=siloadmin \
+            -e MINIO_ROOT_PASSWORD=siloadmin \
+            pgsty/silo:RELEASE.2026-10-26T00-00-00Z \
             server /data --console-address ":9001"
 
-      - name: Wait for MinIO
+      - name: Wait for Silo
         run: |
-          echo "Waiting for MinIO S3 API to be ready..."
-          for i in $(seq 1 60); do
-            if curl -sf http://localhost:9000/minio/health/live > /dev/null 2>&1; then
-              echo "MinIO is ready (health check passed)"
-              sleep 2
+          for attempt in {1..60}; do
+            if curl -fsS --max-time 2 http://127.0.0.1:9000/minio/health/cluster > /dev/null 2>&1; then
               exit 0
             fi
-            echo "Waiting for MinIO ($i/60)..."
             sleep 2
           done
-          echo "MinIO did not become ready in time"
-          docker logs minio || true
+          echo "::error::Silo did not become ready in time"
+          docker logs nekobox-silo || true
           exit 1
 
-      - name: Create MinIO bucket
+      - name: Create and verify Silo bucket
         run: |
-          curl -fsSL https://dl.min.io/client/mc/release/linux-amd64/mc -o ./mc
-          chmod +x ./mc
-          ./mc alias set local http://localhost:9000 minioadmin minioadmin
-          ./mc mb --ignore-existing local/nekobox-e2e
-          ./mc ls local/nekobox-e2e
-          echo "minio-smoke" > /tmp/minio-smoke.txt
-          ./mc cp /tmp/minio-smoke.txt local/nekobox-e2e/health/smoke.txt
-          ./mc stat local/nekobox-e2e/health/smoke.txt
+          docker exec nekobox-silo mcli alias set local http://127.0.0.1:9000 siloadmin siloadmin
+          docker exec nekobox-silo mcli mb --ignore-existing local/nekobox-e2e
+          printf 'silo-smoke\n' | docker exec -i nekobox-silo mcli pipe local/nekobox-e2e/health/smoke.txt
+          docker exec nekobox-silo mcli stat local/nekobox-e2e/health/smoke.txt
 
       # ── Backend ────────────────────────────────────────────────────────────
 

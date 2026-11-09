@@ -35,7 +35,7 @@
 
 <script setup lang="ts">
 import {ref, onMounted} from "vue";
-import {getSponsors} from "@/api/general.ts";
+import {getSponsors} from "@/utils/feeds.ts";
 
 const sponsorHtml = ref<string>('')
 

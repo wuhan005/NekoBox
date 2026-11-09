@@ -7,9 +7,11 @@
     "dev": "vite",
     "dev:e2e": "vite --mode e2e",
     "build": "vue-tsc -b && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "swagger": "node scripts/swagger.js"
   },
   "dependencies": {
+    "@e99p1ant/neko-pixel-umd": "0.1.2",
     "@types/file-saver": "^2.0.7",
     "@types/node": "^24.3.0",
     "@types/uikit": "^3.23.0",
@@ -19,6 +21,7 @@
     "axios": "^1.11.0",
     "dayjs": "^1.11.18",
     "file-saver": "^2.0.5",
+    "go-captcha-vue": "^2.0.6",
     "pinia": "^3.0.3",
     "pinia-plugin-persistedstate": "^4.5.0",
     "qrcode": "^1.5.4",
@@ -26,7 +29,6 @@
     "vee-validate": "^4.15.1",
     "vue": "^3.5.18",
     "vue-loading-skeleton": "2.0.0-beta.1",
-    "vue-recaptcha-v3": "^2.0.1",
     "vue-router": "^4.5.1",
     "vue3-toastify": "^0.2.8"
   },
@@ -34,6 +36,7 @@
     "@vitejs/plugin-vue": "^6.0.1",
     "@vue/tsconfig": "^0.7.0",
     "less": "^4.4.1",
+    "swagger-typescript-api": "^13.13.0",
     "typescript": "~5.8.3",
     "vite": "^7.1.2",
     "vue-tsc": "^3.0.5"

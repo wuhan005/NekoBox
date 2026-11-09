@@ -4,13 +4,13 @@
       <p>提问箱的主人设置了仅注册用户才能提问，你需要先登录 NekoBox 才能向他提问。</p>
     </div>
     <div class="uk-margin uk-text-center">
-      <a class="uk-button uk-button-primary" :href="`/sign-in?to=${route.path}`">前往登录</a>
+      <RouterLink class="uk-button uk-button-primary" :to="{name: 'sign-in', query: {to: route.fullPath}}">前往登录</RouterLink>
     </div>
   </div>
 
   <div v-else class="uk-margin">
-    <div v-if="successMessageVisible" class="uk-alert-success" uk-alert>
-      <a href="#" class="uk-alert-close" uk-close></a>
+    <div v-if="successMessageVisible" class="uk-alert uk-alert-success">
+      <button type="button" class="uk-alert-close" uk-close aria-label="关闭提示" @click="successMessageVisible = false"></button>
       <p v-html="successMessage"></p>
     </div>
 
@@ -53,28 +53,31 @@
       </div>
 
       <div class="uk-margin uk-text-center">
-        <button type="submit" class="uk-button uk-button-primary" :disabled="isLoading || !recaptchaReady">
-          {{ isLoading ? '发送中...' : (recaptchaReady ? '发送提问' : '加载中...') }}
+        <button type="submit" class="uk-button uk-button-primary" :disabled="isLoading || !captchaReady">
+          {{ isLoading ? '发送中...' : (captchaReady ? '发送提问' : '加载中...') }}
         </button>
       </div>
     </Form>
+
+    <Captcha ref="captchaRef"/>
   </div>
 </template>
 
 <script setup lang="ts">
-import {ref, computed, defineProps, onMounted} from "vue";
+import {ref, computed, defineProps} from "vue";
 import {useAuthStore} from "@/store";
-import {postQuestion, type PostQuestionRequest} from "@/api/user.ts";
+import {api} from "@/api/client.ts";
 import {Form} from "vee-validate";
 import {ToastError} from "@/utils/notify.ts";
-import {type IReCaptchaComposition, useReCaptcha} from "vue-recaptcha-v3";
 import {useRoute} from "vue-router";
-import {ensureRecaptchaReady, getRecaptchaToken} from "@/utils/recaptcha.ts";
+import Captcha from "@/components/Captcha.vue";
 
 const route = useRoute();
 
 const authStore = useAuthStore()
-const {executeRecaptcha, recaptchaLoaded} = useReCaptcha() as IReCaptchaComposition
+
+const captchaRef = ref<InstanceType<typeof Captcha> | null>(null)
+const captchaReady = computed(() => captchaRef.value?.ready ?? false)
 
 const canPostQuestion = computed(() => {
   return props.harassmentSetting !== 'register_only' || authStore.isSignedIn
@@ -91,65 +94,63 @@ const props = defineProps({
   }
 })
 
+interface PostQuestionForm {
+  content: string;
+  receiveReplyEmail: string;
+  images: File[];
+  isPrivate: boolean;
+}
+
 const receiveReplyViaEmail = ref<boolean>(false)
-const postQuestionForm = ref<PostQuestionRequest>({
+const postQuestionForm = ref<PostQuestionForm>({
   content: '',
   receiveReplyEmail: '',
   images: [],
   isPrivate: false,
-  recaptcha: '',
 })
 
 const isLoading = ref<boolean>(false)
-const recaptchaReady = ref<boolean>(false)
 const successMessageVisible = ref<boolean>(false)
 const successMessage = ref<string>('')
 
-onMounted(async () => {
-  try {
-    await ensureRecaptchaReady({executeRecaptcha, recaptchaLoaded})
-    recaptchaReady.value = true
-  } catch (error) {
-    ToastError('无感验证码加载失败，请刷新页面重试')
-  }
-})
 const handleSubmit = async () => {
-  try {
-    postQuestionForm.value.recaptcha = await getRecaptchaToken({executeRecaptcha, recaptchaLoaded})
-  } catch (error) {
-    ToastError('无感验证码加载失败，请刷新页面重试')
-    return
-  }
-
-  // Check if recaptcha token is valid
-  if (!postQuestionForm.value.recaptcha || postQuestionForm.value.recaptcha.trim() === '') {
-    ToastError('验证码获取失败，请稍后再试（可能是提交过于频繁）')
+  if (isLoading.value || !captchaReady.value) return
+  if (!captchaRef.value) {
+    ToastError('验证码加载失败，请刷新页面重试')
     return
   }
 
   isLoading.value = true
-  postQuestion(props.pageProfileDomain, postQuestionForm.value)
-      .then(res => {
-        successMessage.value = res
-        successMessageVisible.value = true
-
-        // Clean up form
-        if (imageUploader.value) {
-          imageUploader.value.value = ''
-        }
-        receiveReplyViaEmail.value = false
-        postQuestionForm.value = {
-          content: '',
-          receiveReplyEmail: '',
-          images: [],
-          isPrivate: false,
-          recaptcha: '',
-        }
-        // No need to reload recaptcha - executeRecaptcha will generate a new token on next submit
-      })
-      .finally(() => {
-        isLoading.value = false
-      })
+  try {
+    let captcha: string
+    try {
+      captcha = await captchaRef.value.acquire('post_question')
+    } catch {
+      ToastError('验证码校验未完成，请重试')
+      return
+    }
+    if (!captcha.trim()) {
+      ToastError('验证码获取失败，请稍后再试（可能是提交过于频繁）')
+      return
+    }
+    const {content, receiveReplyEmail, images, isPrivate} = postQuestionForm.value
+    const {data} = await api.users.postQuestion(props.pageProfileDomain, {
+      content,
+      receiveReplyEmail: receiveReplyViaEmail.value ? receiveReplyEmail : '',
+      isPrivate,
+      captcha,
+      'images[]': images[0],
+    })
+    successMessage.value = data
+    successMessageVisible.value = true
+    if (imageUploader.value) imageUploader.value.value = ''
+    receiveReplyViaEmail.value = false
+    postQuestionForm.value = {content: '', receiveReplyEmail: '', images: [], isPrivate: false}
+  } catch {
+    // API errors are displayed by the interceptor; retain the draft for retry.
+  } finally {
+    isLoading.value = false
+  }
 }
 
 const imageUploader = ref<HTMLInputElement | null>(null)

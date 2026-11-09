@@ -35,70 +35,68 @@
       </div>
 
       <div class="uk-margin">
-        <button type="submit" class="uk-button uk-button-primary" :disabled="isLoading || !recaptchaReady">
-          {{ isLoading ? '注册中...' : (recaptchaReady ? '注册' : '加载中...') }}
+        <button type="submit" class="uk-button uk-button-primary" :disabled="isLoading || !captchaReady">
+          {{ isLoading ? '注册中...' : (captchaReady ? '注册' : '加载中...') }}
         </button>
       </div>
     </fieldset>
   </Form>
+
+  <Captcha ref="captchaRef"/>
 </template>
 
 <script setup lang="ts">
-import {ref, onMounted} from 'vue'
+import {computed, ref} from 'vue'
 import {Form, Field, ErrorMessage} from 'vee-validate';
-import {signUp, type SignUpRequest} from "@/api/auth.ts";
+import {api} from "@/api/client.ts";
+import type {SignUp} from "@/api/api.ts";
 import {ToastError, ToastSuccess} from "@/utils/notify.ts";
-import {type IReCaptchaComposition, useReCaptcha} from "vue-recaptcha-v3";
 import {useRouter} from "vue-router";
 import {ExternalURL} from "@/utils/consts.ts";
-import {ensureRecaptchaReady, getRecaptchaToken} from '@/utils/recaptcha.ts'
+import Captcha from "@/components/Captcha.vue";
 
 const router = useRouter()
-const {executeRecaptcha, recaptchaLoaded} = useReCaptcha() as IReCaptchaComposition
+
+const captchaRef = ref<InstanceType<typeof Captcha> | null>(null)
+const captchaReady = computed(() => captchaRef.value?.ready ?? false)
 
 const isLoading = ref<boolean>(false)
-const recaptchaReady = ref<boolean>(false)
-const signUpForm = ref<SignUpRequest>({
+const signUpForm = ref<SignUp>({
   email: '',
   domain: '',
   name: '',
   password: '',
   repeatPassword: '',
-  recaptcha: '',
-})
-
-onMounted(async () => {
-  try {
-    await ensureRecaptchaReady({executeRecaptcha, recaptchaLoaded})
-    recaptchaReady.value = true
-  } catch (error) {
-    ToastError('无感验证码加载失败，请刷新页面重试')
-  }
+  captcha: '',
 })
 
 const handleSignUp = async () => {
-  try {
-    signUpForm.value.recaptcha = await getRecaptchaToken({executeRecaptcha, recaptchaLoaded})
-  } catch (error) {
-    ToastError('无感验证码加载失败，请刷新页面重试')
-    return
-  }
-
-  // Check if recaptcha token is valid
-  if (!signUpForm.value.recaptcha || signUpForm.value.recaptcha.trim() === '') {
-    ToastError('验证码获取失败，请稍后再试（可能是提交过于频繁）')
+  if (isLoading.value || !captchaReady.value) return
+  if (!captchaRef.value) {
+    ToastError('验证码加载失败，请刷新页面重试')
     return
   }
 
   isLoading.value = true
-  signUp(signUpForm.value)
-      .then(res => {
-        ToastSuccess(res)
-        router.push({name: 'sign-in'})
-      })
-      .finally(() => {
-        isLoading.value = false
-      })
+  try {
+    try {
+      signUpForm.value.captcha = await captchaRef.value.acquire('sign_up')
+    } catch {
+      ToastError('验证码校验未完成，请重试')
+      return
+    }
+    if (!signUpForm.value.captcha.trim()) {
+      ToastError('验证码获取失败，请稍后再试（可能是提交过于频繁）')
+      return
+    }
+    const {data} = await api.auth.signUp(signUpForm.value)
+    ToastSuccess(data)
+    await router.push({name: 'sign-in'})
+  } catch {
+    // API errors are displayed by the interceptor.
+  } finally {
+    isLoading.value = false
+  }
 }
 </script>
 

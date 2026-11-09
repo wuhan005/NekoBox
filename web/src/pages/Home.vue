@@ -12,7 +12,9 @@
         <span class=uk-text-small v-html="log.content"></span>
       </div>
       <p class="uk-text-right uk-text-small">
-        <a class="uk-link-text" @click="handleViewChangeLogs">查看更多...</a>
+        <a class="uk-link-text"
+           :href="router.resolve({name: 'change-logs'}).href"
+           @click.prevent="handleViewChangeLogs">查看更多...</a>
       </p>
     </Skeleton>
   </div>
@@ -21,7 +23,7 @@
 <script setup lang="ts">
 import {ref, onMounted} from "vue";
 import {useRouter} from "vue-router";
-import {type ChangeLogItem, getChangeLogs} from "@/api/general.ts";
+import {type ChangeLogItem, getChangeLogs} from "@/utils/feeds.ts";
 import {humanizeDate} from "@/utils/humanize.ts";
 import {Skeleton} from 'vue-loading-skeleton';
 

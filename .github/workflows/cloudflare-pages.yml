@@ -1,0 +1,21 @@
+name: Cloudflare Pages
+
+on:
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Pages build
+        env:
+          CLOUDFLARE_PAGES_DEPLOY_HOOK: ${{ secrets.CLOUDFLARE_PAGES_DEPLOY_HOOK }}
+        run: |
+          if [ -z "$CLOUDFLARE_PAGES_DEPLOY_HOOK" ]; then
+            echo "::error::Set the CLOUDFLARE_PAGES_DEPLOY_HOOK Actions secret."
+            exit 1
+          fi
+          curl --fail --silent --show-error --max-time 30 --output /dev/null \
+            --request POST "$CLOUDFLARE_PAGES_DEPLOY_HOOK"

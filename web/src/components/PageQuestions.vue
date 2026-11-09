@@ -9,7 +9,8 @@
       <div v-for="question in questions" v-bind:key="question.id">
         <hr>
         <a class="uk-button uk-button-default uk-button-small uk-float-right"
-           @click="handleViewQuestion(question)">查看回答</a>
+           :href="router.resolve({name: 'question', params: {domain: props.pageProfileDomain, questionID: question.id}}).href"
+           @click.prevent="handleViewQuestion(question)">查看回答</a>
         <div class="uk-text-left uk-text-small uk-text-muted">{{ humanizeDate(question.createdAt) }}</div>
         <p class="uk-text-small uk-text-break">{{ question.content }}</p>
       </div>
@@ -33,7 +34,8 @@
 
 <script setup lang="ts">
 import {defineProps, watch, ref} from "vue";
-import {getUserQuestions, type PageQuestionItem} from '@/api/user.ts'
+import {api} from '@/api/client.ts'
+import type {PageQuestionsItem} from '@/api/api.ts'
 import {humanizeDate} from "@/utils/humanize.ts";
 import {useRouter} from "vue-router";
 import {Skeleton} from "vue-loading-skeleton";
@@ -56,14 +58,14 @@ const isInitLoading = ref<boolean>(true)
 const isLoading = ref<boolean>(false)
 const hasMore = ref<boolean>(true)
 const questionCursor = ref<string>('')
-const questions = ref<PageQuestionItem[]>([])
+const questions = ref<PageQuestionsItem[]>([])
 const questionCount = ref<number>(0);
 
 const fetchQuestions = () => {
   isLoading.value = true
 
-  getUserQuestions(props.pageProfileDomain, questionCursor.value, PAGE_SIZE)
-      .then(res => {
+  api.users.listUserQuestions(props.pageProfileDomain, {cursor: questionCursor.value, pageSize: PAGE_SIZE})
+      .then(({data: res}) => {
         questionCount.value = res.total
         questionCursor.value = res.cursor
         questions.value = questions.value.concat(res.questions)
@@ -77,7 +79,7 @@ const fetchQuestions = () => {
       })
 }
 
-const handleViewQuestion = (question: PageQuestionItem) => {
+const handleViewQuestion = (question: PageQuestionsItem) => {
   router.push({
     name: 'question',
     params: {

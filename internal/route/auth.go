@@ -8,12 +8,12 @@ import (
 	"time"
 
 	"github.com/flamego/cache"
-	"github.com/flamego/recaptcha"
 	"github.com/flamego/session"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/thanhpk/randstr"
 
+	"github.com/wuhan005/NekoBox/internal/captcha"
 	"github.com/wuhan005/NekoBox/internal/conf"
 	"github.com/wuhan005/NekoBox/internal/context"
 	"github.com/wuhan005/NekoBox/internal/db"
@@ -28,15 +28,38 @@ func NewAuthHandler() *AuthHandler {
 	return &AuthHandler{}
 }
 
-func (*AuthHandler) SignUp(ctx context.Context, recaptcha recaptcha.RecaptchaV3, f form.SignUp) error {
-	// Check recaptcha code.
-	resp, err := recaptcha.Verify(f.Recaptcha, ctx.IP())
-	if err != nil {
-		logrus.WithContext(ctx.Request().Context()).WithError(err).Error("Failed to check recaptcha")
-		return ctx.Error(http.StatusInternalServerError, "无感验证码请求失败，请稍后再试")
+// verifyCaptchaToken validates the captcha token; on failure it writes the error response
+// directly via ctx and returns. Callers MUST check ctx.ResponseWriter().Written() afterwards
+// and bail out before running any business logic, because ctx.Error itself returns nil.
+func verifyCaptchaToken(ctx context.Context, v captcha.Verifier, c cache.Cache, token string) {
+	err := v.Verify(ctx.Request().Context(), c, token, ctx.IP())
+	if err == nil {
+		return
 	}
-	if !resp.Success {
-		return ctx.Error(http.StatusBadRequest, "无感验证码校验失败，请重试")
+	if errors.Is(err, captcha.ErrVerifyFailed) {
+		_ = ctx.Error(http.StatusBadRequest, "验证码校验失败，请重试")
+		return
+	}
+	logrus.WithContext(ctx.Request().Context()).WithError(err).Error("Failed to verify captcha")
+	_ = ctx.Error(http.StatusInternalServerError, "验证码请求失败，请稍后再试")
+}
+
+// SignUp
+// @Summary Sign up
+// @Tags Authentication
+// @Accept json
+// @Produce json
+// @Param data body form.SignUp true "Account to create"
+// @Success 200 {string} string "Welcome message"
+// @Failure 400 {string} string "Invalid request body, captcha failed, or the email or domain has been used"
+// @Failure 403 {string} string "Already signed in"
+// @Failure 500 {string} string "Internal server error"
+// @ID signUp
+// @Router /auth/sign-up [post]
+func (*AuthHandler) SignUp(ctx context.Context, v captcha.Verifier, c cache.Cache, f form.SignUp) error {
+	verifyCaptchaToken(ctx, v, c, f.Captcha)
+	if ctx.ResponseWriter().Written() {
+		return nil
 	}
 
 	if err := db.Users.Create(ctx.Request().Context(), db.CreateUserOptions{
@@ -62,15 +85,22 @@ func (*AuthHandler) SignUp(ctx context.Context, recaptcha recaptcha.RecaptchaV3,
 	return ctx.Success("注册成功，欢迎来到 NekoBox！")
 }
 
-func (*AuthHandler) SignIn(ctx context.Context, sess session.Session, recaptcha recaptcha.RecaptchaV3, f form.SignIn) error {
-	// Check recaptcha code.
-	resp, err := recaptcha.Verify(f.Recaptcha, ctx.IP())
-	if err != nil {
-		logrus.WithContext(ctx.Request().Context()).WithError(err).Error("Failed to check recaptcha")
-		return ctx.Error(http.StatusInternalServerError, "无感验证码请求失败，请稍后再试")
-	}
-	if !resp.Success {
-		return ctx.Error(http.StatusBadRequest, "无感验证码校验失败，请重试")
+// SignIn
+// @Summary Sign in with email and password
+// @Tags Authentication
+// @Accept json
+// @Produce json
+// @Param data body form.SignIn true "Credential"
+// @Success 200 {object} response.SignIn
+// @Failure 400 {string} string "Invalid request body, captcha failed, or wrong email or password"
+// @Failure 403 {string} string "Already signed in"
+// @Failure 500 {string} string "Internal server error"
+// @ID signIn
+// @Router /auth/sign-in [post]
+func (*AuthHandler) SignIn(ctx context.Context, sess session.Session, v captcha.Verifier, c cache.Cache, f form.SignIn) error {
+	verifyCaptchaToken(ctx, v, c, f.Captcha)
+	if ctx.ResponseWriter().Written() {
+		return nil
 	}
 
 	user, err := db.Users.Authenticate(ctx.Request().Context(), f.Email, f.Password)
@@ -94,15 +124,25 @@ func (*AuthHandler) SignIn(ctx context.Context, sess session.Session, recaptcha 
 	})
 }
 
-func (*AuthHandler) ForgotPassword(ctx context.Context, recaptcha recaptcha.RecaptchaV3, cache cache.Cache, f form.ForgotPassword) error {
-	// Check recaptcha code.
-	resp, err := recaptcha.Verify(f.Recaptcha, ctx.IP())
-	if err != nil {
-		logrus.WithContext(ctx.Request().Context()).WithError(err).Error("Failed to check recaptcha")
-		return ctx.Error(http.StatusInternalServerError, "无感验证码请求失败，请稍后再试")
-	}
-	if !resp.Success {
-		return ctx.Error(http.StatusBadRequest, "无感验证码校验失败，请重试")
+// ForgotPassword
+// @Summary Send the password recovery email
+// @Tags Authentication
+// @Description The recovery code in the email expires in 24 hours, and the email can be sent once every 2 minutes.
+// @Accept json
+// @Produce json
+// @Param data body form.ForgotPassword true "Email of the account"
+// @Success 200 {string} string "Message of the email sent"
+// @Failure 400 {string} string "Invalid request body or captcha failed"
+// @Failure 403 {string} string "Already signed in"
+// @Failure 404 {string} string "The email is not registered"
+// @Failure 429 {string} string "The email was sent too recently"
+// @Failure 500 {string} string "Internal server error"
+// @ID forgotPassword
+// @Router /auth/forgot-password [post]
+func (*AuthHandler) ForgotPassword(ctx context.Context, v captcha.Verifier, cache cache.Cache, f form.ForgotPassword) error {
+	verifyCaptchaToken(ctx, v, cache, f.Captcha)
+	if ctx.ResponseWriter().Written() {
+		return nil
 	}
 
 	email := strings.TrimSpace(f.Email)
@@ -138,13 +178,25 @@ func (*AuthHandler) ForgotPassword(ctx context.Context, recaptcha recaptcha.Reca
 		return ctx.Error(http.StatusInternalServerError, "邮件发送失败，请稍后再试")
 	}
 
-	if err := cache.Set(ctx.Request().Context(), emailSentCacheKey, time.Now(), 2*time.Minute); err != nil {
+	if err := cache.Set(ctx.Request().Context(), emailSentCacheKey, true, 2*time.Minute); err != nil {
 		logrus.WithContext(ctx.Request().Context()).WithError(err).Error("Failed to set password recovery email cache")
 	}
 
 	return ctx.Success(fmt.Sprintf("邮件已发送至 %s，请查收。", user.Email))
 }
 
+// GetRecoverPasswordCode
+// @Summary Check a password recovery code
+// @Tags Authentication
+// @Produce json
+// @Param code query string true "Recovery code in the email"
+// @Success 200 {object} response.RecoverPassword
+// @Failure 400 {string} string "The code is invalid or expired"
+// @Failure 403 {string} string "Already signed in"
+// @Failure 404 {string} string "The user does not exist"
+// @Failure 500 {string} string "Internal server error"
+// @ID getRecoverPasswordCode
+// @Router /auth/recover-password [get]
 func (*AuthHandler) GetRecoverPasswordCode(ctx context.Context, cache cache.Cache) error {
 	code := ctx.Query("code")
 	user, ok := checkRecoverPasswordCode(ctx, code, cache)
@@ -157,6 +209,19 @@ func (*AuthHandler) GetRecoverPasswordCode(ctx context.Context, cache cache.Cach
 	})
 }
 
+// RecoverPassword
+// @Summary Reset the password with a recovery code
+// @Tags Authentication
+// @Accept json
+// @Produce json
+// @Param data body form.RecoverPassword true "New password and recovery code"
+// @Success 200 {string} string "Message of the password reset"
+// @Failure 400 {string} string "Invalid request body, or the code is invalid or expired"
+// @Failure 403 {string} string "Already signed in"
+// @Failure 404 {string} string "The user does not exist"
+// @Failure 500 {string} string "Internal server error"
+// @ID recoverPassword
+// @Router /auth/recover-password [post]
 func (*AuthHandler) RecoverPassword(ctx context.Context, cache cache.Cache, f form.RecoverPassword) error {
 	code := f.Code
 

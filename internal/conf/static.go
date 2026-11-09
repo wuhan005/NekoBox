@@ -4,6 +4,8 @@
 
 package conf
 
+import "time"
+
 // Build time and commit information.
 //
 // ⚠️ WARNING: should only be set by "-ldflags".
@@ -30,9 +32,11 @@ var (
 	}
 
 	Server struct {
-		Port    int    `ini:"port"`
-		Salt    string `ini:"salt"`
-		XSRFKey string `ini:"xsrf_key"`
+		Port            int           `ini:"port"`
+		Salt            string        `ini:"salt"`
+		XSRFKey         string        `ini:"xsrf_key"`
+		DrainDelay      time.Duration `ini:"-"`
+		ShutdownTimeout time.Duration `ini:"-"`
 	}
 
 	Database struct {
@@ -52,6 +56,10 @@ var (
 		Password string `ini:"password"`
 	}
 
+	Captcha struct {
+		Type string `ini:"type"`
+	}
+
 	Recaptcha struct {
 		Domain         string `ini:"domain"`
 		SiteKey        string `ini:"site_key"`
@@ -60,8 +68,10 @@ var (
 		VerifyURL      string `ini:"verify_url"` // Optional: override verify URL (e.g. for testing)
 	}
 
-	Pixel struct {
-		Host string `ini:"host"`
+	GoCaptcha struct {
+		VerifyPadding int `ini:"verify_padding"`
+		ChallengeTTL  int `ini:"challenge_ttl"`
+		TokenTTL      int `ini:"token_ttl"`
 	}
 
 	Upload struct {

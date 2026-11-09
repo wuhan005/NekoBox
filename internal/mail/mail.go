@@ -27,9 +27,14 @@ func SendNewQuestionMail(email, domain string, questionID uint, questionContent 
 	return sendTemplateMail(email, "【NekoBox】您有一个新的提问", templates.FS, "mail/new-question.html", params)
 }
 
-func SendNewAnswerMail(email, domain string, questionID uint, question, answer string) error {
+func SendNewAnswerMail(email, domain string, questionID uint, isPrivate bool, token, question, answer string) error {
+	link := fmt.Sprintf("%s/_/%s/%d", conf.App.ExternalURL, domain, questionID)
+	// Append token to the link so the questioner can access private questions.
+	if isPrivate && token != "" {
+		link = fmt.Sprintf("%s?t=%s", link, token)
+	}
 	params := map[string]string{
-		"link":     fmt.Sprintf("%s/_/%s/%d", conf.App.ExternalURL, domain, questionID),
+		"link":     link,
 		"question": question,
 		"answer":   answer,
 	}

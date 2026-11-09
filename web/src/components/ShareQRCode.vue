@@ -32,10 +32,8 @@ const props = defineProps({
 
 const qrcodeVal = useQRCode(computed(() => props.qrcode || ''), {
   width: 400,
-  height: 400,
-  colorDark: "#000000",
-  colorLight: "#ffffff",
-  correctLevel: 'H'
+  margin: 4,
+  errorCorrectionLevel: 'H'
 })
 </script>
 
@@ -69,16 +67,16 @@ const qrcodeVal = useQRCode(computed(() => props.qrcode || ''), {
       .code {
         width: 100%;
         height: 100%;
-        border: 8% solid #ffffff;
-        box-sizing: border-box;
       }
 
       .avatar {
         position: absolute;
-        width: 25%;
-        height: 25%;
-        top: 38%;
-        left: 38%;
+        width: 20%;
+        height: 20%;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        box-sizing: border-box;
         background: #fff;
         border: 2px solid #ffffff;
         border-radius: 5%;

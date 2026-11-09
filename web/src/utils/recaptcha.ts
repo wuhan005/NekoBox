@@ -1,27 +1,71 @@
-import type {IReCaptchaComposition} from 'vue-recaptcha-v3'
+import {CAPTCHA_TIMEOUT_MS} from '@/utils/captcha.ts'
+import {SiteKey} from '@/utils/consts.ts'
 
-const E2E_RECAPTCHA_TOKEN = 'e2e-test-token'
-const RECAPTCHA_TEST_SITE_KEY = '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI'
-
-type RecaptchaClient = Pick<IReCaptchaComposition, 'executeRecaptcha' | 'recaptchaLoaded'>
-
-export const isE2EMode = import.meta.env.MODE === 'e2e'
-export const isUsingRecaptchaTestKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY === RECAPTCHA_TEST_SITE_KEY
-const shouldBypassRecaptcha = isE2EMode
-
-export async function ensureRecaptchaReady(recaptcha: RecaptchaClient) {
-    if (shouldBypassRecaptcha) {
-        return
-    }
-
-    await recaptcha.recaptchaLoaded()
+interface Recaptcha {
+    ready(callback: () => void): void;
+    execute(siteKey: string, options: {action: string}): Promise<string>;
 }
 
-export async function getRecaptchaToken(recaptcha: RecaptchaClient, action = 'submit') {
-    if (shouldBypassRecaptcha) {
-        return E2E_RECAPTCHA_TOKEN
+declare global {
+    interface Window {
+        grecaptcha?: Recaptcha;
     }
+}
 
-    await recaptcha.recaptchaLoaded()
-    return await recaptcha.executeRecaptcha(action)
+let loading: Promise<Recaptcha> | null = null
+let attempts = 0
+
+// Share a successful load across forms, but remove failed scripts so retries can start fresh.
+export function loadRecaptcha(): Promise<Recaptcha> {
+    if (!SiteKey) return Promise.reject(new Error('未配置 reCAPTCHA'))
+    if (loading) return loading
+
+    loading = new Promise<Recaptcha>((resolve, reject) => {
+        const script = document.createElement('script')
+        const fail = () => {
+            clearTimeout(timer)
+            script.onload = script.onerror = null
+            script.remove()
+            reject(new Error('验证码加载失败，请重试'))
+        }
+        const timer = setTimeout(fail, CAPTCHA_TIMEOUT_MS)
+        const loaded = () => {
+            const api = window.grecaptcha
+            if (!api) return fail()
+            try {
+                api.ready(() => {
+                    clearTimeout(timer)
+                    script.onload = script.onerror = null
+                    resolve(api)
+                })
+            } catch {
+                fail()
+            }
+        }
+        // A new URL prevents a retry from sharing an earlier stalled browser request.
+        script.src = `https://recaptcha.net/recaptcha/api.js?render=${encodeURIComponent(SiteKey)}&retry=${++attempts}`
+        script.async = true
+        script.onload = loaded
+        script.onerror = fail
+        document.head.appendChild(script)
+    }).catch(error => {
+        loading = null
+        throw error
+    })
+    return loading
+}
+
+export async function executeRecaptcha(action: string): Promise<string> {
+    const api = await loadRecaptcha()
+    let timer: ReturnType<typeof setTimeout> | undefined
+    try {
+        return await Promise.race([
+            api.execute(SiteKey, {action}),
+            new Promise<never>((_, reject) => {
+                timer = setTimeout(() => reject(new Error('验证码获取超时，请重试')), CAPTCHA_TIMEOUT_MS)
+            }),
+        ])
+    } finally {
+        clearTimeout(timer)
+    }
 }

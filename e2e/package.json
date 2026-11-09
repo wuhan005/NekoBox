@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "test": "playwright test",
+    "test:frontend": "playwright test --config playwright.frontend.config.ts",
     "test:ui": "playwright test --ui",
     "test:headed": "playwright test --headed",
     "test:debug": "playwright test --debug",

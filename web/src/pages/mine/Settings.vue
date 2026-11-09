@@ -5,7 +5,12 @@
       @change="handleChangeTab"
   >
     <template #profile>
-      <Form @submit="updateProfile">
+      <p v-if="profileLoading" role="status">正在加载个人信息...</p>
+      <div v-else-if="!profileLoaded" role="alert">
+        个人信息加载失败。
+        <button type="button" class="uk-button uk-button-default" @click="fetchProfile">重新加载</button>
+      </div>
+      <Form v-else @submit="updateProfile">
         <div class="uk-margin">
           <label class="uk-form-label" for="email">电子邮箱</label>
           <input v-model="profile.email" id="email" class="uk-input" type="text" disabled/>
@@ -13,43 +18,48 @@
         <div class="uk-margin">
           <label class="uk-form-label" for="name">昵称</label>
           <Field v-model="updateProfileForm.name" id="name" name="name" class="uk-input" type="text" rules="required"
-                 label="昵称"/>
+                 label="昵称" :disabled="profileSaving"/>
           <ErrorMessage class="field-error-message" name="name"/>
         </div>
         <div class="uk-margin">
           <label class="uk-form-label" for="oldPassword">旧密码</label>
           <Field v-model="updateProfileForm.oldPassword" class="uk-input" id="oldPassword" name="oldPassword"
-                 type="password"
+                 type="password" :disabled="profileSaving"
                  placeholder="修改密码使用，留空则不修改"/>
           <ErrorMessage class="field-error-message" name="oldPassword"/>
         </div>
         <div class="uk-margin">
           <label class="uk-form-label" for="newPassword">新密码</label>
           <Field v-model="updateProfileForm.newPassword" class="uk-input" id="newPassword" name="newPassword"
-                 type="password"
+                 type="password" :disabled="profileSaving"
                  placeholder="修改密码使用，留空则不修改"/>
           <ErrorMessage class="field-error-message" name="newPassword"/>
         </div>
 
         <div class="uk-margin">
-          <button type="submit" class="uk-button uk-button-primary">修改信息</button>
+          <button type="submit" class="uk-button uk-button-primary" :disabled="profileSaving">修改信息</button>
           <button type="button" class="uk-button uk-button-danger" @click="handleSignOut">退出登录</button>
         </div>
       </Form>
     </template>
 
     <template #box>
-      <Form @submit="updateBoxSettings">
+      <p v-if="boxSettingsFetching" role="status">正在加载提问箱设置...</p>
+      <div v-else-if="!boxSettingsLoaded" role="alert">
+        提问箱设置加载失败。
+        <button type="button" class="uk-button uk-button-default" @click="fetchBoxSettings">重新加载</button>
+      </div>
+      <Form v-else @submit="updateBoxSettings">
         <div class="uk-margin">
           <label class="uk-form-label" for="intro">提问箱介绍</label>
-          <input v-model="updateMineBoxSettingsForm.intro" id="intro" name="intro" class="uk-input" type="text">
+          <input v-model="updateMineBoxSettingsForm.intro" id="intro" name="intro" class="uk-input" type="text" :disabled="boxSettingsLoading">
         </div>
         <div class="uk-margin">
           <label class="uk-form-label" for="form-stacked-text">新提问通知方式</label>
           <br/>
           <label class="uk-text-small">
             <input v-model="notifyTypeEmail" name="notifyType" type="checkbox"
-                   class="uk-checkbox"/> 邮件
+                   class="uk-checkbox" :disabled="boxSettingsLoading"/> 邮件
           </label>
         </div>
         <div class="uk-margin">
@@ -57,7 +67,7 @@
           <br/>
           <div uk-form-custom="target: true">
             <input ref="avatarImageUploader" name="avatar" type="file" accept="image/*"
-                   @change="handleSelectAvatarImage">
+                   @change="handleSelectAvatarImage" :disabled="boxSettingsLoading">
             <input class="uk-input uk-form-width-large" type="text" placeholder="点击选择个人提问箱头像" disabled>
           </div>
         </div>
@@ -66,7 +76,7 @@
           <br/>
           <div uk-form-custom="target: true">
             <input ref="backgroundImageUploader" name="avatar" type="file" accept="image/*"
-                   @change="handleSelectBackgroundImage">
+                   @change="handleSelectBackgroundImage" :disabled="boxSettingsLoading">
             <input class="uk-input uk-form-width-large" type="text" placeholder="点击选择提问箱背景" disabled>
           </div>
         </div>
@@ -79,23 +89,28 @@
     </template>
 
     <template #harassment>
-      <div class="uk-margin">
+      <p v-if="harassmentSettingsLoading" role="status">正在加载防骚扰设置...</p>
+      <div v-else-if="!harassmentSettingsLoaded" role="alert">
+        防骚扰设置加载失败。
+        <button type="button" class="uk-button uk-button-default" @click="fetchHarassmentSettings">重新加载</button>
+      </div>
+      <div v-else class="uk-margin">
         <Form @submit="updateHarassmentSettings">
           <div class="uk-margin">
             <label class="uk-form-label" for="form-stacked-text">提问限制</label>
             <br/>
             <label class="uk-text-small">
               <input v-model="harassmentSettingTypeRegisterOnly" name="notifyType" type="checkbox"
-                     class="uk-checkbox"/> 仅允许注册用户向我提问
+                     class="uk-checkbox" :disabled="harassmentSettingsSaving"/> 仅允许注册用户向我提问
             </label>
           </div>
           <div class="uk-margin">
             <label class="uk-form-label">屏蔽词设置（使用半角逗号 <code>,</code> 分隔，最多支持 10 个屏蔽词，每个屏蔽词最大长度为
               10）</label>
-            <input v-model="updateMineHarassmentSettingForm.blockWords" name="blockWords" class="uk-input" type="text"/>
+            <input v-model="updateMineHarassmentSettingForm.blockWords" name="blockWords" class="uk-input" type="text" :disabled="harassmentSettingsSaving"/>
           </div>
           <div class="uk-margin">
-            <button type="submit" class="uk-button uk-button-primary">更新防骚扰设置</button>
+            <button type="submit" class="uk-button uk-button-primary" :disabled="harassmentSettingsSaving">更新防骚扰设置</button>
           </div>
         </Form>
       </div>
@@ -126,18 +141,16 @@
 </template>
 
 <script setup lang="ts">
-import {ref, onMounted} from "vue";
+import {ref, onMounted, onUnmounted} from "vue";
 import UkTabs from "@/components/UkTabs.vue";
-import {
-  getMineBoxSettings,
-  getMineProfile,
-  updateMineProfile,
-  type MineBoxSettings,
-  type MineProfile,
-  type UpdateMineBoxSettingsRequest,
-  type UpdateMineProfileRequest, updateMineBoxSettings, type UpdateMineHarassmentSettingsRequest,
-  getMineHarassmentSettings, updateMineHarassmentSettings, exportData
-} from "@/api/mine.ts";
+import {api} from "@/api/client.ts";
+import type {
+  MineBoxSettings,
+  MineProfile,
+  UpdateHarassmentSettings,
+  UpdateMineBoxSettingsPayload,
+  UpdateProfile,
+} from "@/api/api.ts";
 import {Form, Field, ErrorMessage} from 'vee-validate';
 import {ToastSuccess} from "@/utils/notify.ts";
 import {useAuthStore} from "@/store";
@@ -146,6 +159,8 @@ import {saveAs} from 'file-saver';
 
 const router = useRouter()
 const authStore = useAuthStore();
+let isUnmounted = false
+onUnmounted(() => { isUnmounted = true })
 
 const TABS = [
   {name: 'profile', label: '个人信息'},
@@ -163,25 +178,42 @@ const profile = ref<MineProfile>({
   name: '',
   email: '',
 } as MineProfile)
-const updateProfileForm = ref<UpdateMineProfileRequest>({
+const updateProfileForm = ref<UpdateProfile>({
   name: '',
   oldPassword: '',
   newPassword: '',
 })
+const profileLoading = ref<boolean>(true)
+const profileLoaded = ref<boolean>(false)
+const profileSaving = ref<boolean>(false)
 const fetchProfile = () => {
-  getMineProfile().then(res => {
+  profileLoading.value = true
+  profileLoaded.value = false
+  return api.mine.getMineProfile().then(({data: res}) => {
+    if (isUnmounted) return
     profile.value = res
     updateProfileForm.value.name = res.name
     authStore.setProfileName(res.name)
+    profileLoaded.value = true
+  }).catch(() => {
+    // Keep the form unavailable until its existing settings can be read.
+  }).finally(() => {
+    profileLoading.value = false
   })
 }
 const updateProfile = () => {
-  updateMineProfile(updateProfileForm.value).then(res => {
-    ToastSuccess(res)
-  }).finally(() => {
+  if (!profileLoaded.value || profileSaving.value) return
+  profileSaving.value = true
+  return api.mine.updateMineProfile(updateProfileForm.value).then(res => {
+    if (isUnmounted) return
+    ToastSuccess(res.data)
     updateProfileForm.value.oldPassword = ''
     updateProfileForm.value.newPassword = ''
-    fetchProfile()
+    return fetchProfile()
+  }).catch(() => {
+    // Retain the user's input so a failed save can be retried.
+  }).finally(() => {
+    profileSaving.value = false
   })
 }
 const handleSignOut = () => {
@@ -200,23 +232,32 @@ const boxSettings = ref<MineBoxSettings>({
   backgroundURL: '',
 } as MineBoxSettings)
 const notifyTypeEmail = ref<boolean>(false)
-const updateMineBoxSettingsForm = ref<UpdateMineBoxSettingsRequest>({
+const updateMineBoxSettingsForm = ref<UpdateMineBoxSettingsPayload>({
   intro: '',
   notifyType: 'none',
-  avatar: null,
-  background: null,
 })
 const boxSettingsLoading = ref<boolean>(false)
+const boxSettingsFetching = ref<boolean>(true)
+const boxSettingsLoaded = ref<boolean>(false)
 const avatarImageUploader = ref<HTMLInputElement | null>(null)
 const backgroundImageUploader = ref<HTMLInputElement | null>(null)
 const fetchBoxSettings = () => {
-  getMineBoxSettings().then(res => {
+  boxSettingsFetching.value = true
+  boxSettingsLoaded.value = false
+  return api.mine.getMineBoxSettings().then(({data: res}) => {
+    if (isUnmounted) return
     boxSettings.value = res
     updateMineBoxSettingsForm.value.intro = res.intro
     notifyTypeEmail.value = res.notifyType === 'email' // TODO: Find a better way to handle this
+    boxSettingsLoaded.value = true
+  }).catch(() => {
+    // Keep the form unavailable until its existing settings can be read.
+  }).finally(() => {
+    boxSettingsFetching.value = false
   })
 }
 const updateBoxSettings = () => {
+  if (!boxSettingsLoaded.value || boxSettingsLoading.value) return
   if (notifyTypeEmail.value) {
     updateMineBoxSettingsForm.value.notifyType = 'email'
   } else {
@@ -224,20 +265,22 @@ const updateBoxSettings = () => {
   }
 
   boxSettingsLoading.value = true
-  updateMineBoxSettings(updateMineBoxSettingsForm.value).then(res => {
-    ToastSuccess(res)
-  }).finally(() => {
-    boxSettingsLoading.value = false
-
-    updateMineBoxSettingsForm.value.avatar = null
-    updateMineBoxSettingsForm.value.background = null
+  return api.mine.updateMineBoxSettings(updateMineBoxSettingsForm.value).then(res => {
+    if (isUnmounted) return
+    ToastSuccess(res.data)
+    updateMineBoxSettingsForm.value.avatar = undefined
+    updateMineBoxSettingsForm.value.background = undefined
     if (avatarImageUploader.value) {
       avatarImageUploader.value.value = ''
     }
     if (backgroundImageUploader.value) {
       backgroundImageUploader.value.value = ''
     }
-    fetchBoxSettings()
+    return fetchBoxSettings()
+  }).catch(() => {
+    // Retain the user's input and files so a failed save can be retried.
+  }).finally(() => {
+    boxSettingsLoading.value = false
   })
 }
 const handleSelectAvatarImage = (event: Event) => {
@@ -245,7 +288,7 @@ const handleSelectAvatarImage = (event: Event) => {
   if (target.files && target.files.length > 0) {
     updateMineBoxSettingsForm.value.avatar = target.files[0]
   } else {
-    updateMineBoxSettingsForm.value.avatar = null
+    updateMineBoxSettingsForm.value.avatar = undefined
   }
 }
 const handleSelectBackgroundImage = (event: Event) => {
@@ -253,42 +296,59 @@ const handleSelectBackgroundImage = (event: Event) => {
   if (target.files && target.files.length > 0) {
     updateMineBoxSettingsForm.value.background = target.files[0]
   } else {
-    updateMineBoxSettingsForm.value.background = null
+    updateMineBoxSettingsForm.value.background = undefined
   }
 }
 
 // ===== HARASSMENT SETTINGS ===== //
-const updateMineHarassmentSettingForm = ref<UpdateMineHarassmentSettingsRequest>({
+const updateMineHarassmentSettingForm = ref<UpdateHarassmentSettings>({
   harassmentSettingType: 'none',
   blockWords: '',
-} as UpdateMineHarassmentSettingsRequest)
+})
 const harassmentSettingTypeRegisterOnly = ref<boolean>(false)
+const harassmentSettingsLoading = ref<boolean>(true)
+const harassmentSettingsLoaded = ref<boolean>(false)
+const harassmentSettingsSaving = ref<boolean>(false)
 const fetchHarassmentSettings = () => {
-  getMineHarassmentSettings().then(res => {
+  harassmentSettingsLoading.value = true
+  harassmentSettingsLoaded.value = false
+  return api.mine.getMineHarassmentSettings().then(({data: res}) => {
+    if (isUnmounted) return
     harassmentSettingTypeRegisterOnly.value = res.harassmentSettingType === 'register_only'
     updateMineHarassmentSettingForm.value.harassmentSettingType = res.harassmentSettingType
     updateMineHarassmentSettingForm.value.blockWords = res.blockWords
+    harassmentSettingsLoaded.value = true
+  }).catch(() => {
+    // Keep the form unavailable until its existing settings can be read.
+  }).finally(() => {
+    harassmentSettingsLoading.value = false
   })
 }
 const updateHarassmentSettings = () => {
+  if (!harassmentSettingsLoaded.value || harassmentSettingsSaving.value) return
   if (harassmentSettingTypeRegisterOnly.value) {
     updateMineHarassmentSettingForm.value.harassmentSettingType = 'register_only'
   } else {
     updateMineHarassmentSettingForm.value.harassmentSettingType = 'none'
   }
 
-  updateMineHarassmentSettings(updateMineHarassmentSettingForm.value).then(res => {
-    ToastSuccess(res)
+  harassmentSettingsSaving.value = true
+  return api.mine.updateMineHarassmentSettings(updateMineHarassmentSettingForm.value).then(res => {
+    if (isUnmounted) return
+    ToastSuccess(res.data)
+    return fetchHarassmentSettings()
+  }).catch(() => {
+    // Retain the user's input so a failed save can be retried.
   }).finally(() => {
-    fetchHarassmentSettings()
+    harassmentSettingsSaving.value = false
   })
 }
 
 const exportDataLoading = ref<boolean>(false)
 const handleExportData = () => {
   exportDataLoading.value = true
-  exportData().then(res => {
-    saveAs(res)
+  api.mine.exportMineData({format: 'blob'}).then(res => {
+    saveAs(res.data)
   }).finally(() => {
     exportDataLoading.value = false
   })

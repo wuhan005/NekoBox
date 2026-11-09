@@ -7,6 +7,7 @@ package conf
 import (
 	"os"
 	"strings"
+	"time"
 
 	"github.com/pkg/errors"
 	"gopkg.in/ini.v1"
@@ -42,8 +43,20 @@ func Init() error {
 		return errors.Wrap(err, "map 'security'")
 	}
 
-	if err := File.Section("server").MapTo(&Server); err != nil {
+	server := File.Section("server")
+	if err := server.MapTo(&Server); err != nil {
 		return errors.Wrap(err, "map 'server'")
+	}
+	Server.DrainDelay, err = time.ParseDuration(server.Key("drain_delay").MustString("5s"))
+	if err != nil {
+		return errors.Wrap(err, "parse server.drain_delay")
+	}
+	Server.ShutdownTimeout, err = time.ParseDuration(server.Key("shutdown_timeout").MustString("30s"))
+	if err != nil {
+		return errors.Wrap(err, "parse server.shutdown_timeout")
+	}
+	if Server.DrainDelay < 0 || Server.ShutdownTimeout <= Server.DrainDelay {
+		return errors.New("server requires 0 <= drain_delay < shutdown_timeout")
 	}
 
 	if err := File.Section("database").MapTo(&Database); err != nil {
@@ -54,12 +67,25 @@ func Init() error {
 		return errors.Wrap(err, "map 'redis'")
 	}
 
+	if err := File.Section("captcha").MapTo(&Captcha); err != nil {
+		return errors.Wrap(err, "map 'captcha'")
+	}
+
 	if err := File.Section("recaptcha").MapTo(&Recaptcha); err != nil {
 		return errors.Wrap(err, "map 'recaptcha'")
 	}
 
-	if err := File.Section("pixel").MapTo(&Pixel); err != nil {
-		return errors.Wrap(err, "map 'pixel'")
+	if err := File.Section("go_captcha").MapTo(&GoCaptcha); err != nil {
+		return errors.Wrap(err, "map 'go_captcha'")
+	}
+	if GoCaptcha.VerifyPadding <= 0 {
+		GoCaptcha.VerifyPadding = 5
+	}
+	if GoCaptcha.ChallengeTTL <= 0 {
+		GoCaptcha.ChallengeTTL = 300
+	}
+	if GoCaptcha.TokenTTL <= 0 {
+		GoCaptcha.TokenTTL = 300
 	}
 
 	if err := File.Section("upload").MapTo(&Upload); err != nil {

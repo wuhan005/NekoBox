@@ -5,10 +5,10 @@
 package form
 
 type SignIn struct {
-	Email     string `json:"email" valid:"required;email;maxlen:100" label:"电子邮箱"`
-	Password  string `json:"password" valid:"required" label:"密码"`
-	Recaptcha string `json:"recaptcha" valid:"required" label:"无感验证码" msg:"无感验证码加载错误，请尝试刷新页面重试。"`
-}
+	Email    string `json:"email" valid:"required;email;maxlen:100" label:"电子邮箱"`
+	Password string `json:"password" valid:"required" label:"密码"`
+	Captcha  string `json:"captcha" valid:"required" label:"验证码" msg:"验证码加载错误，请尝试刷新页面重试。"`
+} // @name SignIn
 
 type SignUp struct {
 	Email          string `json:"email" valid:"required;email;maxlen:100" label:"电子邮箱"`
@@ -16,16 +16,16 @@ type SignUp struct {
 	Name           string `json:"name" valid:"required;maxlen:20" label:"昵称"`
 	Password       string `json:"password" valid:"required;minlen:8;maxlen:30" label:"密码"`
 	RepeatPassword string `json:"repeatPassword" valid:"required;equal:Password" label:"重复密码"`
-	Recaptcha      string `json:"recaptcha" valid:"required" label:"无感验证码" msg:"无感验证码加载错误，请尝试刷新页面重试。"`
-}
+	Captcha        string `json:"captcha" valid:"required" label:"验证码" msg:"验证码加载错误，请尝试刷新页面重试。"`
+} // @name SignUp
 
 type ForgotPassword struct {
-	Email     string `json:"email" valid:"required;email;maxlen:100" label:"电子邮箱"`
-	Recaptcha string `json:"recaptcha" valid:"required" label:"无感验证码" msg:"无感验证码加载错误，请尝试刷新页面重试。"`
-}
+	Email   string `json:"email" valid:"required;email;maxlen:100" label:"电子邮箱"`
+	Captcha string `json:"captcha" valid:"required" label:"验证码" msg:"验证码加载错误，请尝试刷新页面重试。"`
+} // @name ForgotPassword
 
 type RecoverPassword struct {
 	NewPassword    string `json:"newPassword" valid:"required;minlen:8;maxlen:30" label:"新密码"`
 	RepeatPassword string `json:"repeatPassword" valid:"required;equal:NewPassword" label:"重复密码"`
 	Code           string `json:"code" valid:"required" label:"恢复码"`
-}
+} // @name RecoverPassword

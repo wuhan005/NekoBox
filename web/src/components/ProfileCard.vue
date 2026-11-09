@@ -1,8 +1,8 @@
 <template>
   <div class="uk-card uk-card-default uk-text-center">
-    <div class="uk-height-medium uk-flex uk-flex-center uk-flex-middle uk-background-cover uk-light"
+    <div class="profile-background uk-flex uk-flex-center uk-flex-middle uk-background-cover uk-light"
          :style="{backgroundImage: `url(${props.background})`}">
-      <div class="uk-card-body">
+      <div class="uk-card-body uk-width-1-1 uk-text-break">
         <img alt="avatar" class="uk-border-circle uk-box-shadow-large" :src="props.avatar" width="100" height="100"/>
         <h3>
           <Skeleton>{{ props.name }}</Skeleton>
@@ -27,5 +27,10 @@ const props = defineProps({
 </script>
 
 <style scoped>
-
+.profile-background {
+  min-height: 300px;
+}
+.uk-card-body {
+  min-width: 0;
+}
 </style>

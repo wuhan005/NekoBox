@@ -34,6 +34,7 @@ func TestQuestions(t *testing.T) {
 		{"DeleteByID", testQuestionsDeleteByID},
 		{"UpdateCensor", testQuestionsUpdateCensor},
 		{"Count", testQuestionsCount},
+		{"CountByAskUserID", testQuestionsCountByAskUserID},
 		{"SetPrivate", testQuestionsSetPrivate},
 		{"SetPublic", testQuestionsSetPublic},
 	} {
@@ -481,6 +482,71 @@ func testQuestionsCount(t *testing.T, ctx context.Context, db *questions) {
 		require.Nil(t, err)
 
 		want := int64(0)
+		require.Equal(t, want, got)
+	})
+}
+
+func testQuestionsCountByAskUserID(t *testing.T, ctx context.Context, db *questions) {
+	_, err := db.Create(ctx, CreateQuestionOptions{
+		FromIP:            "114.5.1.4",
+		UserID:            1,
+		Content:           "Content - 1",
+		ReceiveReplyEmail: "i@github.red",
+		AskerUserID:       9,
+	})
+	require.Nil(t, err)
+
+	_, err = db.Create(ctx, CreateQuestionOptions{
+		FromIP:            "114.5.1.4",
+		UserID:            2,
+		Content:           "Content - 2",
+		ReceiveReplyEmail: "i@github.red",
+		AskerUserID:       9,
+		IsPrivate:         true,
+	})
+	require.Nil(t, err)
+
+	_, err = db.Create(ctx, CreateQuestionOptions{
+		FromIP:            "114.5.1.4",
+		UserID:            1,
+		Content:           "Content - 3",
+		ReceiveReplyEmail: "i@github.red",
+		AskerUserID:       3,
+	})
+	require.Nil(t, err)
+
+	err = db.AnswerByID(ctx, 1, "Answer - 1")
+	require.Nil(t, err)
+
+	t.Run("normal", func(t *testing.T) {
+		got, err := db.CountByAskUserID(ctx, 9, GetQuestionsCountOptions{})
+		require.Nil(t, err)
+
+		want := int64(1)
+		require.Equal(t, want, got)
+	})
+
+	t.Run("filter answered", func(t *testing.T) {
+		got, err := db.CountByAskUserID(ctx, 9, GetQuestionsCountOptions{FilterAnswered: true})
+		require.Nil(t, err)
+
+		want := int64(1)
+		require.Equal(t, want, got)
+	})
+
+	t.Run("show private", func(t *testing.T) {
+		got, err := db.CountByAskUserID(ctx, 9, GetQuestionsCountOptions{ShowPrivate: true})
+		require.Nil(t, err)
+
+		want := int64(2)
+		require.Equal(t, want, got)
+	})
+
+	t.Run("hide private", func(t *testing.T) {
+		got, err := db.CountByAskUserID(ctx, 9, GetQuestionsCountOptions{ShowPrivate: false})
+		require.Nil(t, err)
+
+		want := int64(1)
 		require.Equal(t, want, got)
 	})
 }

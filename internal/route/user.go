@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -16,13 +17,14 @@ import (
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
-	"github.com/flamego/recaptcha"
+	"github.com/flamego/cache"
 	"github.com/pkg/errors"
 	"github.com/samber/lo"
 	"github.com/sirupsen/logrus"
 	"github.com/wuhan005/govalid"
 	"gorm.io/gorm"
 
+	"github.com/wuhan005/NekoBox/internal/captcha"
 	"github.com/wuhan005/NekoBox/internal/conf"
 	"github.com/wuhan005/NekoBox/internal/context"
 	"github.com/wuhan005/NekoBox/internal/db"
@@ -33,10 +35,8 @@ import (
 	"github.com/wuhan005/NekoBox/internal/security/censor"
 )
 
-type UserHandler struct{}
-
-func NewUserHandler() *UserHandler {
-	return &UserHandler{}
+type UserHandler struct {
+	notifications *sync.WaitGroup
 }
 
 func (*UserHandler) Domainer(ctx context.Context) error {
@@ -62,6 +62,16 @@ func (*UserHandler) OwnerRequired(ctx context.Context, pageUser *db.User) error 
 	return ctx.Error(http.StatusForbidden, "无权访问")
 }
 
+// Profile
+// @Summary Get the profile of a question box
+// @Tags Question Box
+// @Produce json
+// @Param domain path string true "Domain of the question box"
+// @Success 200 {object} response.UserProfile
+// @Failure 404 {string} string "The question box does not exist"
+// @Failure 500 {string} string "Internal server error"
+// @ID getUserProfile
+// @Router /users/{domain}/profile [get]
 func (*UserHandler) Profile(ctx context.Context, pageUser *db.User) error {
 	return ctx.Success(&response.UserProfile{
 		UID:               pageUser.UID,
@@ -70,10 +80,22 @@ func (*UserHandler) Profile(ctx context.Context, pageUser *db.User) error {
 		Domain:            pageUser.Domain,
 		Background:        pageUser.Background,
 		Intro:             pageUser.Intro,
-		HarassmentSetting: string(pageUser.HarassmentSetting),
+		HarassmentSetting: string(pageUser.EffectiveHarassmentSetting()),
 	})
 }
 
+// ListQuestions
+// @Summary List the answered public questions of a question box
+// @Tags Question Box
+// @Produce json
+// @Param domain path string true "Domain of the question box"
+// @Param cursor query string false "Cursor returned by the previous page, empty for the first page"
+// @Param pageSize query int false "Page size, defaults to 20 and at most 100"
+// @Success 200 {object} response.PageQuestions
+// @Failure 404 {string} string "The question box does not exist"
+// @Failure 500 {string} string "Internal server error"
+// @ID listUserQuestions
+// @Router /users/{domain}/questions [get]
 func (*UserHandler) ListQuestions(ctx context.Context, pageUser *db.User) error {
 	pageSize := ctx.QueryInt("pageSize")
 	cursorValue := ctx.Query("cursor")
@@ -103,7 +125,7 @@ func (*UserHandler) ListQuestions(ctx context.Context, pageUser *db.User) error 
 	respQuestions := lo.Map(questions, func(question *db.Question, _ int) *response.PageQuestionsItem {
 		return &response.PageQuestionsItem{
 			ID:        question.ID,
-			CreatedAt: question.CreatedAt,
+			CreatedAt: response.Time(question.CreatedAt),
 			Content:   question.Content,
 			Answer:    question.Answer,
 		}
@@ -121,7 +143,25 @@ func (*UserHandler) ListQuestions(ctx context.Context, pageUser *db.User) error 
 	})
 }
 
-func (*UserHandler) PostQuestion(ctx context.Context, pageUser *db.User, recaptcha recaptcha.RecaptchaV3, tx dbutil.Transactor, f form.PostQuestion) error {
+// PostQuestion
+// @Summary Ask a question
+// @Tags Question Box
+// @Description Signing in is required if the owner only allows registered users to ask.
+// @Accept multipart/form-data
+// @Produce json
+// @Param domain path string true "Domain of the question box"
+// @Param content formData string true "Content of the question, at most 1000 characters"
+// @Param receiveReplyEmail formData string false "Email to notify when the question is answered"
+// @Param isPrivate formData boolean false "Whether to keep the question private after it is answered"
+// @Param images[] formData file false "Image of the question, at most 5 MiB"
+// @Param captcha formData string true "Captcha token"
+// @Success 200 {string} string "Message with the HTML link to view the question privately"
+// @Failure 400 {string} string "Invalid form, captcha failed, signing in is required, or the content is blocked"
+// @Failure 404 {string} string "The question box does not exist"
+// @Failure 500 {string} string "Internal server error"
+// @ID postQuestion
+// @Router /users/{domain}/questions [post]
+func (h *UserHandler) PostQuestion(ctx context.Context, pageUser *db.User, v captcha.Verifier, c cache.Cache, tx dbutil.Transactor, f form.PostQuestion) error {
 	if !ctx.IsSignedIn && pageUser.HarassmentSetting == db.HarassmentSettingTypeRegisterOnly {
 		return ctx.Error(http.StatusBadRequest, "提问箱的主人设置了仅注册用户才能提问，请先登录。")
 	}
@@ -138,14 +178,9 @@ func (*UserHandler) PostQuestion(ctx context.Context, pageUser *db.User, recaptc
 		}
 	}
 
-	// Check recaptcha code.
-	resp, err := recaptcha.Verify(f.Recaptcha, ctx.IP())
-	if err != nil {
-		logrus.WithContext(ctx.Request().Context()).WithError(err).Error("Failed to check recaptcha")
-		return ctx.Error(http.StatusInternalServerError, "无感验证码请求失败，请稍后再试")
-	}
-	if !resp.Success {
-		return ctx.Error(http.StatusBadRequest, "无感验证码校验失败，请重试")
+	verifyCaptchaToken(ctx, v, c, f.Captcha)
+	if ctx.ResponseWriter().Written() {
+		return nil
 	}
 
 	content := f.Content
@@ -241,14 +276,16 @@ func (*UserHandler) PostQuestion(ctx context.Context, pageUser *db.User, recaptc
 		return ctx.ServerError()
 	}
 
-	go func() {
-		if pageUser.Notify == db.NotifyTypeEmail {
-			// Send notification to page user.
+	if pageUser.Notify == db.NotifyTypeEmail {
+		requestCtx := ctx.Request().Context()
+		h.notifications.Add(1)
+		go func() {
+			defer h.notifications.Done()
 			if err := mail.SendNewQuestionMail(pageUser.Email, pageUser.Domain, question.ID, question.Content); err != nil {
-				logrus.WithContext(ctx.Request().Context()).WithError(err).Error("Failed to send new question mail to user")
+				logrus.WithContext(requestCtx).WithError(err).Error("Failed to send new question mail to user")
 			}
-		}
-	}()
+		}()
+	}
 
 	questionPrivateURL := fmt.Sprintf("/_/%s/%d?t=%s", pageUser.Domain, question.ID, question.Token)
 	questionPrivateAbsURL := fmt.Sprintf("%s%s", strings.TrimRight(conf.App.ExternalURL, "/"), questionPrivateURL)
@@ -326,6 +363,19 @@ func uploadImageFile(ctx context.Context, options uploadImageFileOptions) (*db.U
 	return uploadImage, nil
 }
 
+// GetQuestion
+// @Summary Get a question of a question box
+// @Tags Question Box
+// @Description Unanswered or private questions are only visible to the owner, the asker, or with the token of the private link.
+// @Produce json
+// @Param domain path string true "Domain of the question box"
+// @Param questionID path int true "Question ID"
+// @Param t query string false "Token of the private link"
+// @Success 200 {object} response.PageQuestion
+// @Failure 404 {string} string "The question box or the question does not exist"
+// @Failure 500 {string} string "Internal server error"
+// @ID getUserQuestion
+// @Router /users/{domain}/questions/{questionID} [get]
 func (*UserHandler) GetQuestion(ctx context.Context, pageUser *db.User) error {
 	questionID := uint(ctx.ParamInt("questionID"))
 	questionToken := ctx.Query("t")
@@ -344,9 +394,9 @@ func (*UserHandler) GetQuestion(ctx context.Context, pageUser *db.User) error {
 		return ctx.Error(http.StatusNotFound, "提问不存在")
 	}
 
-	// If the question has not been answered, we should check the question is belongs to the correct page user.
-	// The questioner can use the token to view the question.
-	if (question.Answer == "" || question.IsPrivate) && (!ctx.IsSignedIn || ctx.User.ID != question.UserID) && (question.Token != "" && question.Token != questionToken) {
+	// For unanswered/private questions, only owner, asker, or token holder can view details.
+	canAccessSensitive := ctx.IsSignedIn && (ctx.User.ID == question.UserID || ctx.User.ID == question.AskerUserID)
+	if (question.Answer == "" || question.IsPrivate) && !canAccessSensitive && (question.Token != "" && question.Token != questionToken) {
 		return ctx.Error(http.StatusNotFound, "提问不存在")
 	}
 
@@ -371,8 +421,8 @@ func (*UserHandler) GetQuestion(ctx context.Context, pageUser *db.User) error {
 	return ctx.Success(&response.PageQuestion{
 		ID:                question.ID,
 		IsOwner:           ctx.IsSignedIn && ctx.User.ID == question.UserID,
-		CreatedAt:         question.CreatedAt,
-		AnsweredAt:        question.UpdatedAt,
+		CreatedAt:         response.Time(question.CreatedAt),
+		AnsweredAt:        response.Time(question.UpdatedAt),
 		Content:           question.Content,
 		Answer:            question.Answer,
 		QuestionImageURLs: questionImageURLs,

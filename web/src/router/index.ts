@@ -112,7 +112,7 @@ router.beforeEach((to, _, next) => {
     if (to.meta.signOutRequired && authStore.isSignedIn) {
         next({name: 'home'})
     } else if (to.meta.signInRequired && !authStore.isSignedIn) {
-        next({name: 'sign-in'})
+        next({name: 'sign-in', query: {to: to.fullPath}})
     } else {
         next()
     }
