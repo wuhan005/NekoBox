@@ -30,14 +30,15 @@
 import {ref, onMounted} from 'vue'
 import {ErrorMessage, Field, Form} from "vee-validate";
 import {useRoute, useRouter} from "vue-router";
-import {getRecoverPasswordCode, recoverPassword, type RecoverPasswordRequest} from "@/api/auth.ts";
+import {api} from "@/api/client.ts";
+import type {RecoverPassword} from "@/api/api.ts";
 import {ToastSuccess} from "@/utils/notify.ts";
 
 const route = useRoute()
 const router = useRouter()
 const name = ref<string>('')
 const code = ref<string>(route.query.code as string || '')
-const recoverPasswordForm = ref<RecoverPasswordRequest>({
+const recoverPasswordForm = ref<RecoverPassword>({
   newPassword: '',
   repeatPassword: '',
   code: ''
@@ -46,8 +47,8 @@ const recoverPasswordForm = ref<RecoverPasswordRequest>({
 const handleRecoverPassword = () => {
   recoverPasswordForm.value.code = code.value
 
-  recoverPassword(recoverPasswordForm.value).then(res => {
-    ToastSuccess(res)
+  api.auth.recoverPassword(recoverPasswordForm.value).then(res => {
+    ToastSuccess(res.data)
     router.push({name: 'home'})
   })
 }
@@ -58,8 +59,8 @@ onMounted(() => {
     return
   }
 
-  getRecoverPasswordCode(code.value).then(res => {
-    name.value = res.name
+  api.auth.getRecoverPasswordCode({code: code.value}).then(res => {
+    name.value = res.data.name
   }).catch(() => {
     router.push({name: 'home'})
   })

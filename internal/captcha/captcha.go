@@ -38,7 +38,7 @@ type ChallengeData struct {
 	ThumbY      int    `json:"thumbY"`
 	ThumbWidth  int    `json:"thumbWidth"`
 	ThumbHeight int    `json:"thumbHeight"`
-}
+} // @name CaptchaChallenge
 
 // Verifier validates the token submitted by business endpoints. reCAPTCHA hits the Google API,
 // go-captcha looks up a one-shot token in the cache.

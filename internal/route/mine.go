@@ -30,6 +30,18 @@ type MineHandler struct {
 	notifications *sync.WaitGroup
 }
 
+// ListQuestions
+// @Summary List the questions received by the signed-in user
+// @Tags My Questions
+// @Produce json
+// @Param cursor query string false "Cursor returned by the previous page, empty for the first page"
+// @Param pageSize query int false "Page size, defaults to 20 and at most 100"
+// @Success 200 {object} response.MineQuestions
+// @Failure 401 {string} string "Not signed in"
+// @Failure 500 {string} string "Internal server error"
+// @Security SessionToken
+// @ID listMineQuestions
+// @Router /mine/questions [get]
 func (*MineHandler) ListQuestions(ctx context.Context) error {
 	pageSize := ctx.QueryInt("pageSize")
 	cursorValue := ctx.Query("cursor")
@@ -78,6 +90,18 @@ func (*MineHandler) ListQuestions(ctx context.Context) error {
 	})
 }
 
+// ListSentQuestions
+// @Summary List the questions asked by the signed-in user
+// @Tags My Questions
+// @Produce json
+// @Param cursor query string false "Cursor returned by the previous page, empty for the first page"
+// @Param pageSize query int false "Page size, defaults to 20 and at most 100"
+// @Success 200 {object} response.MineSentQuestions
+// @Failure 401 {string} string "Not signed in"
+// @Failure 500 {string} string "Internal server error"
+// @Security SessionToken
+// @ID listMineSentQuestions
+// @Router /mine/questions/sent [get]
 func (*MineHandler) ListSentQuestions(ctx context.Context) error {
 	pageSize := ctx.QueryInt("pageSize")
 	cursorValue := ctx.Query("cursor")
@@ -166,6 +190,23 @@ func (*MineHandler) Questioner(ctx context.Context) error {
 	return nil
 }
 
+// AnswerQuestion
+// @Summary Answer a received question
+// @Tags My Questions
+// @Description The asker is notified by email on the first answer if they left an email.
+// @Accept multipart/form-data
+// @Produce json
+// @Param questionID path int true "Question ID"
+// @Param answer formData string true "Answer, at most 1000 characters"
+// @Param images[] formData file false "Image of the answer, at most 5 MiB"
+// @Success 200 {string} string "Message of the question answered"
+// @Failure 400 {string} string "Invalid form, the image is too large, or the answer is blocked"
+// @Failure 401 {string} string "Not signed in"
+// @Failure 404 {string} string "The question does not exist"
+// @Failure 500 {string} string "Internal server error"
+// @Security SessionToken
+// @ID answerQuestion
+// @Router /mine/questions/{questionID}/answer [put]
 func (h *MineHandler) AnswerQuestion(ctx context.Context, question *db.Question, tx dbutil.Transactor, f form.AnswerQuestion) error {
 	answer := f.Answer
 
@@ -238,6 +279,18 @@ func (h *MineHandler) AnswerQuestion(ctx context.Context, question *db.Question,
 	return ctx.Success("提问回复成功")
 }
 
+// DeleteQuestion
+// @Summary Delete a received question
+// @Tags My Questions
+// @Produce json
+// @Param questionID path int true "Question ID"
+// @Success 200 {string} string "Message of the question deleted"
+// @Failure 401 {string} string "Not signed in"
+// @Failure 404 {string} string "The question does not exist"
+// @Failure 500 {string} string "Internal server error"
+// @Security SessionToken
+// @ID deleteQuestion
+// @Router /mine/questions/{questionID} [delete]
 func (*MineHandler) DeleteQuestion(ctx context.Context, question *db.Question) error {
 	if err := db.Questions.DeleteByID(ctx.Request().Context(), question.ID); err != nil {
 		logrus.WithContext(ctx.Request().Context()).WithError(err).Error("Failed to delete question")
@@ -246,6 +299,21 @@ func (*MineHandler) DeleteQuestion(ctx context.Context, question *db.Question) e
 	return ctx.Success("提问删除成功")
 }
 
+// SetQuestionVisible
+// @Summary Set whether a received question is public
+// @Tags My Questions
+// @Accept json
+// @Produce json
+// @Param questionID path int true "Question ID"
+// @Param data body form.QuestionVisible true "Visibility"
+// @Success 200 {string} string "Message of the visibility changed"
+// @Failure 400 {string} string "Invalid request body"
+// @Failure 401 {string} string "Not signed in"
+// @Failure 404 {string} string "The question does not exist"
+// @Failure 500 {string} string "Internal server error"
+// @Security SessionToken
+// @ID setQuestionVisible
+// @Router /mine/questions/{questionID}/visible [put]
 func (*MineHandler) SetQuestionVisible(ctx context.Context, question *db.Question, f form.QuestionVisible) error {
 	if f.Visible {
 		if err := db.Questions.SetPublic(ctx.Request().Context(), question.ID); err != nil {
@@ -263,6 +331,15 @@ func (*MineHandler) SetQuestionVisible(ctx context.Context, question *db.Questio
 	}
 }
 
+// Profile
+// @Summary Get the profile settings of the signed-in user
+// @Tags Settings
+// @Produce json
+// @Success 200 {object} response.MineProfile
+// @Failure 401 {string} string "Not signed in"
+// @Security SessionToken
+// @ID getMineProfile
+// @Router /mine/settings/profile [get]
 func (*MineHandler) Profile(ctx context.Context) error {
 	user := ctx.User
 	return ctx.Success(&response.MineProfile{
@@ -271,6 +348,20 @@ func (*MineHandler) Profile(ctx context.Context) error {
 	})
 }
 
+// UpdateProfileSettings
+// @Summary Update the profile settings of the signed-in user
+// @Tags Settings
+// @Description The password is changed only if the new password is not empty.
+// @Accept json
+// @Produce json
+// @Param data body form.UpdateProfile true "Profile"
+// @Success 200 {string} string "Message of the profile updated"
+// @Failure 400 {string} string "Invalid request body or wrong old password"
+// @Failure 401 {string} string "Not signed in"
+// @Failure 500 {string} string "Internal server error"
+// @Security SessionToken
+// @ID updateMineProfile
+// @Router /mine/settings/profile [put]
 func (*MineHandler) UpdateProfileSettings(ctx context.Context, tx dbutil.Transactor, f form.UpdateProfile) error {
 	if err := tx.Transaction(func(tx *gorm.DB) error {
 		usersStore := db.NewUsersStore(tx)
@@ -296,6 +387,15 @@ func (*MineHandler) UpdateProfileSettings(ctx context.Context, tx dbutil.Transac
 	return ctx.Success("个人信息更新成功")
 }
 
+// BoxSettings
+// @Summary Get the question box settings of the signed-in user
+// @Tags Settings
+// @Produce json
+// @Success 200 {object} response.MineBoxSettings
+// @Failure 401 {string} string "Not signed in"
+// @Security SessionToken
+// @ID getMineBoxSettings
+// @Router /mine/settings/box [get]
 func (*MineHandler) BoxSettings(ctx context.Context) error {
 	user := ctx.User
 
@@ -307,6 +407,23 @@ func (*MineHandler) BoxSettings(ctx context.Context) error {
 	})
 }
 
+// UpdateBoxSettings
+// @Summary Update the question box settings of the signed-in user
+// @Tags Settings
+// @Description The avatar and the background are kept if they are not uploaded.
+// @Accept multipart/form-data
+// @Produce json
+// @Param intro formData string true "Introduction, at most 100 characters"
+// @Param notifyType formData string true "Notification of the new questions" Enums(none, email)
+// @Param avatar formData file false "Avatar, at most 5 MiB"
+// @Param background formData file false "Background, at most 5 MiB"
+// @Success 200 {string} string "Message of the settings updated"
+// @Failure 400 {string} string "Invalid form, unknown notification type, or the image is too large"
+// @Failure 401 {string} string "Not signed in"
+// @Failure 500 {string} string "Internal server error"
+// @Security SessionToken
+// @ID updateMineBoxSettings
+// @Router /mine/settings/box [put]
 func (*MineHandler) UpdateBoxSettings(ctx context.Context, f form.UpdateBoxSettings) error {
 	user := ctx.User
 
@@ -363,14 +480,36 @@ func (*MineHandler) UpdateBoxSettings(ctx context.Context, f form.UpdateBoxSetti
 	return ctx.Success("提问箱设置更新成功")
 }
 
+// HarassmentSettings
+// @Summary Get the harassment settings of the signed-in user
+// @Tags Settings
+// @Produce json
+// @Success 200 {object} response.HarassmentSettings
+// @Failure 401 {string} string "Not signed in"
+// @Security SessionToken
+// @ID getMineHarassmentSettings
+// @Router /mine/settings/harassment [get]
 func (*MineHandler) HarassmentSettings(ctx context.Context) error {
 	user := ctx.User
 	return ctx.Success(&response.HarassmentSettings{
-		HarassmentSettingType: user.HarassmentSetting,
+		HarassmentSettingType: user.EffectiveHarassmentSetting(),
 		BlockWords:            user.BlockWords,
 	})
 }
 
+// UpdateHarassmentSettings
+// @Summary Update the harassment settings of the signed-in user
+// @Tags Settings
+// @Accept json
+// @Produce json
+// @Param data body form.UpdateHarassmentSettings true "Harassment settings"
+// @Success 200 {string} string "Message of the settings updated"
+// @Failure 400 {string} string "Invalid request body, or too many or too long block words"
+// @Failure 401 {string} string "Not signed in"
+// @Failure 500 {string} string "Internal server error"
+// @Security SessionToken
+// @ID updateMineHarassmentSettings
+// @Router /mine/settings/harassment [put]
 func (*MineHandler) UpdateHarassmentSettings(ctx context.Context, f form.UpdateHarassmentSettings) error {
 	user := ctx.User
 
@@ -416,6 +555,17 @@ func (*MineHandler) UpdateHarassmentSettings(ctx context.Context, f form.UpdateH
 	return ctx.Success("防骚扰设置更新成功")
 }
 
+// ExportData
+// @Summary Export the data of the signed-in user
+// @Tags Settings
+// @Description Export the profile and the received questions as an Excel workbook.
+// @Produce application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,json
+// @Success 200 {file} file "Excel workbook"
+// @Failure 401 {string} string "Not signed in"
+// @Failure 500 {string} string "Internal server error"
+// @Security SessionToken
+// @ID exportMineData
+// @Router /mine/settings/export-data [post]
 func (*MineHandler) ExportData(ctx context.Context) error {
 	user := ctx.User
 
@@ -445,6 +595,17 @@ func (*MineHandler) ExportData(ctx context.Context) error {
 	return nil
 }
 
+// Deactivate
+// @Summary Deactivate the signed-in user
+// @Tags Settings
+// @Description The account can no longer sign in, its question box is no longer accessible, and the session is signed out.
+// @Produce json
+// @Success 200 {string} string "Farewell message"
+// @Failure 401 {string} string "Not signed in"
+// @Failure 500 {string} string "Internal server error"
+// @Security SessionToken
+// @ID deactivateAccount
+// @Router /mine/settings/deactivate [post]
 func (*MineHandler) Deactivate(ctx context.Context, session session.Session) error {
 	if err := db.Users.Deactivate(ctx.Request().Context(), ctx.User.ID); err != nil {
 		logrus.WithContext(ctx.Request().Context()).WithError(err).Error("Failed to deactivate user")

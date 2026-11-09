@@ -78,6 +78,14 @@ const (
 	HarassmentSettingTypeRegisterOnly HarassmentSettingType = "register_only"
 )
 
+// EffectiveHarassmentSetting returns the harassment setting of the user, which is none if it has never been set.
+func (u *User) EffectiveHarassmentSetting() HarassmentSettingType {
+	if u.HarassmentSetting == "" {
+		return HarassmentSettingNone
+	}
+	return u.HarassmentSetting
+}
+
 func (u *User) EncodePassword() {
 	u.Password = gadget.HmacSha1(u.Password, conf.Server.Salt)
 }

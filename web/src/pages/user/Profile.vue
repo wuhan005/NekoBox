@@ -39,7 +39,8 @@
 
 <script setup lang="ts">
 import {ref, onMounted, onUnmounted} from "vue";
-import {type Profile, getUserProfile} from "@/api/user.ts";
+import {api} from "@/api/client.ts";
+import type {UserProfile} from "@/api/api.ts";
 import {useRoute, useRouter} from "vue-router";
 import {ExternalURL} from "@/utils/consts.ts";
 import PageQuestions from "@/components/PageQuestions.vue";
@@ -53,16 +54,16 @@ const router = useRouter()
 const domain = ref<string>(route.params.domain as string || '')
 
 const isLoading = ref<boolean>(true)
-const profile = ref<Profile | null>(null)
+const profile = ref<UserProfile | null>(null)
 let isUnmounted = false
 onUnmounted(() => { isUnmounted = true })
 
 const fetchProfile = () => {
   isLoading.value = true
-  return getUserProfile(domain.value)
+  return api.users.getUserProfile(domain.value)
       .then(res => {
         if (isUnmounted) return
-        profile.value = res
+        profile.value = res.data
 
         document.title = `${profile.value.name} - NekoBox`
       })

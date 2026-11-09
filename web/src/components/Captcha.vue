@@ -18,9 +18,9 @@
 import {onMounted, onUnmounted, ref, shallowRef} from 'vue'
 import {Slide} from 'go-captcha-vue'
 import 'go-captcha-vue/dist/style.css'
-import {getCaptchaChallenge, verifyCaptchaSlide} from '@/api/captcha.ts'
-import {E2E_BYPASS_TOKEN, isE2EMode, loadCaptchaConfig} from '@/utils/captcha.ts'
-import type {CaptchaConfig} from '@/api/captcha.ts'
+import {api} from '@/api/client.ts'
+import type {CaptchaChallenge, CaptchaConfig} from '@/api/api.ts'
+import {CAPTCHA_TIMEOUT_MS, E2E_BYPASS_TOKEN, isE2EMode, loadCaptchaConfig} from '@/utils/captcha.ts'
 import {executeRecaptcha, loadRecaptcha} from '@/utils/recaptcha.ts'
 
 interface SlidePoint {
@@ -83,9 +83,9 @@ async function initialize() {
 
 async function loadChallenge() {
   const request = ++challengeRequest
-  let data
+  let data: CaptchaChallenge
   try {
-    data = await getCaptchaChallenge()
+    data = (await api.captcha.getCaptchaChallenge({timeout: CAPTCHA_TIMEOUT_MS})).data
   } catch (error) {
     if (isUnmounted || request !== challengeRequest) return
     throw error
@@ -129,11 +129,11 @@ const slideEvents = {
     verifyingKey = key
     void (async () => {
       try {
-        const resp = await verifyCaptchaSlide({key, x: point.x, y: point.y})
+        const {data} = await api.captcha.verifyCaptcha({key, x: point.x, y: point.y}, {timeout: CAPTCHA_TIMEOUT_MS})
         if (pendingResolver !== resolver || challengeKey.value !== key) return
         pendingResolver = null
         popoverVisible.value = false
-        resolver.resolve(resp.token)
+        resolver.resolve(data.token)
       } catch {
         if (pendingResolver === resolver) await refreshChallenge()
       } finally {

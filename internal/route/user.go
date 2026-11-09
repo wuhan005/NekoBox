@@ -62,6 +62,16 @@ func (*UserHandler) OwnerRequired(ctx context.Context, pageUser *db.User) error 
 	return ctx.Error(http.StatusForbidden, "无权访问")
 }
 
+// Profile
+// @Summary Get the profile of a question box
+// @Tags Question Box
+// @Produce json
+// @Param domain path string true "Domain of the question box"
+// @Success 200 {object} response.UserProfile
+// @Failure 404 {string} string "The question box does not exist"
+// @Failure 500 {string} string "Internal server error"
+// @ID getUserProfile
+// @Router /users/{domain}/profile [get]
 func (*UserHandler) Profile(ctx context.Context, pageUser *db.User) error {
 	return ctx.Success(&response.UserProfile{
 		UID:               pageUser.UID,
@@ -70,10 +80,22 @@ func (*UserHandler) Profile(ctx context.Context, pageUser *db.User) error {
 		Domain:            pageUser.Domain,
 		Background:        pageUser.Background,
 		Intro:             pageUser.Intro,
-		HarassmentSetting: string(pageUser.HarassmentSetting),
+		HarassmentSetting: string(pageUser.EffectiveHarassmentSetting()),
 	})
 }
 
+// ListQuestions
+// @Summary List the answered public questions of a question box
+// @Tags Question Box
+// @Produce json
+// @Param domain path string true "Domain of the question box"
+// @Param cursor query string false "Cursor returned by the previous page, empty for the first page"
+// @Param pageSize query int false "Page size, defaults to 20 and at most 100"
+// @Success 200 {object} response.PageQuestions
+// @Failure 404 {string} string "The question box does not exist"
+// @Failure 500 {string} string "Internal server error"
+// @ID listUserQuestions
+// @Router /users/{domain}/questions [get]
 func (*UserHandler) ListQuestions(ctx context.Context, pageUser *db.User) error {
 	pageSize := ctx.QueryInt("pageSize")
 	cursorValue := ctx.Query("cursor")
@@ -121,6 +143,24 @@ func (*UserHandler) ListQuestions(ctx context.Context, pageUser *db.User) error 
 	})
 }
 
+// PostQuestion
+// @Summary Ask a question
+// @Tags Question Box
+// @Description Signing in is required if the owner only allows registered users to ask.
+// @Accept multipart/form-data
+// @Produce json
+// @Param domain path string true "Domain of the question box"
+// @Param content formData string true "Content of the question, at most 1000 characters"
+// @Param receiveReplyEmail formData string false "Email to notify when the question is answered"
+// @Param isPrivate formData boolean false "Whether to keep the question private after it is answered"
+// @Param images[] formData file false "Image of the question, at most 5 MiB"
+// @Param captcha formData string true "Captcha token"
+// @Success 200 {string} string "Message with the HTML link to view the question privately"
+// @Failure 400 {string} string "Invalid form, captcha failed, signing in is required, or the content is blocked"
+// @Failure 404 {string} string "The question box does not exist"
+// @Failure 500 {string} string "Internal server error"
+// @ID postQuestion
+// @Router /users/{domain}/questions [post]
 func (h *UserHandler) PostQuestion(ctx context.Context, pageUser *db.User, v captcha.Verifier, c cache.Cache, tx dbutil.Transactor, f form.PostQuestion) error {
 	if !ctx.IsSignedIn && pageUser.HarassmentSetting == db.HarassmentSettingTypeRegisterOnly {
 		return ctx.Error(http.StatusBadRequest, "提问箱的主人设置了仅注册用户才能提问，请先登录。")
@@ -323,6 +363,19 @@ func uploadImageFile(ctx context.Context, options uploadImageFileOptions) (*db.U
 	return uploadImage, nil
 }
 
+// GetQuestion
+// @Summary Get a question of a question box
+// @Tags Question Box
+// @Description Unanswered or private questions are only visible to the owner, the asker, or with the token of the private link.
+// @Produce json
+// @Param domain path string true "Domain of the question box"
+// @Param questionID path int true "Question ID"
+// @Param t query string false "Token of the private link"
+// @Success 200 {object} response.PageQuestion
+// @Failure 404 {string} string "The question box or the question does not exist"
+// @Failure 500 {string} string "Internal server error"
+// @ID getUserQuestion
+// @Router /users/{domain}/questions/{questionID} [get]
 func (*UserHandler) GetQuestion(ctx context.Context, pageUser *db.User) error {
 	questionID := uint(ctx.ParamInt("questionID"))
 	questionToken := ctx.Query("t")

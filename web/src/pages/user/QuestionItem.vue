@@ -117,11 +117,11 @@
 <script setup lang="ts">
 import {ref, onMounted, onUnmounted, watch} from "vue";
 import PageQuestions from "@/components/PageQuestions.vue";
-import {getUserProfile, getUserQuestion, type PageQuestion, type Profile} from "@/api/user.ts";
+import {api} from "@/api/client.ts";
+import type {PageQuestion, UserProfile} from "@/api/api.ts";
 import {useRoute, useRouter} from "vue-router";
 import {humanizeDate} from "@/utils/humanize.ts";
 import NewQuestion from "@/components/NewQuestion.vue";
-import {answerQuestion, type AnswerQuestionRequest, deleteQuestion, setQuestionVisible} from "@/api/mine.ts";
 import {ToastSuccess} from "@/utils/notify.ts";
 import {Form} from "vee-validate";
 import {Skeleton} from "vue-loading-skeleton";
@@ -133,12 +133,12 @@ const questionID = ref<string>(route.params.questionID as string || '')
 const questionToken = ref<string>(route.query.t as string || '')
 
 const isLoading = ref<boolean>(true)
-const profile = ref<Profile | null>(null)
+const profile = ref<UserProfile | null>(null)
 const EMPTY_QUESTION: PageQuestion = {
   id: 0,
   isOwner: false,
-  createdAt: null,
-  answeredAt: null,
+  createdAt: '',
+  answeredAt: '',
   content: '',
   answer: '',
   questionImageURLs: [],
@@ -151,21 +151,26 @@ let questionRequest = 0
 let isUnmounted = false
 onUnmounted(() => { isUnmounted = true })
 
+interface AnswerQuestionForm {
+  answer: string;
+  images: File[];
+}
+
 const isSubmitting = ref<boolean>(false)
 const isSettingVisible = ref<boolean>(false)
-const answerQuestionForm = ref<AnswerQuestionRequest>({
+const answerQuestionForm = ref<AnswerQuestionForm>({
   answer: '',
   images: [],
 })
 const handleAnswer = () => {
   if (isSubmitting.value || isSettingVisible.value || isLoading.value || !question.value.isOwner) return
   const request = questionRequest
-  const images = answerQuestionForm.value.images
+  const {answer, images} = answerQuestionForm.value
   isSubmitting.value = true
-  answerQuestion(questionID.value, answerQuestionForm.value)
+  api.mine.answerQuestion(Number(questionID.value), {answer, 'images[]': images[0]})
       .then(res => {
         if (isUnmounted || request !== questionRequest) return
-        ToastSuccess(res)
+        ToastSuccess(res.data)
         if (answerQuestionForm.value.images === images) handleRemoveSelectedImage()
         return fetchQuestion()
       })
@@ -193,8 +198,8 @@ const handleRemoveSelectedImage = () => {
 }
 
 const handleDelete = () => {
-  deleteQuestion(questionID.value).then(res => {
-    ToastSuccess(res)
+  api.mine.deleteQuestion(Number(questionID.value)).then(res => {
+    ToastSuccess(res.data)
     router.push({
       name: 'profile',
       params: {
@@ -209,10 +214,10 @@ const handleSetVisible = () => {
   const request = questionRequest
   const visible = question.value.isPrivate
   isSettingVisible.value = true
-  setQuestionVisible(questionID.value, visible).then(res => {
+  api.mine.setQuestionVisible(Number(questionID.value), {visible}).then(res => {
     if (isUnmounted || request !== questionRequest) return
     question.value.isPrivate = !visible
-    ToastSuccess(res)
+    ToastSuccess(res.data)
   }).catch(() => {
     // API errors are displayed by the interceptor.
   }).finally(() => {
@@ -233,8 +238,8 @@ const fetchQuestion = () => {
   isLoading.value = true
   question.value = { ...EMPTY_QUESTION }
 
-  return getUserQuestion(domain.value, questionID.value, questionToken.value)
-      .then(res => {
+  return api.users.getUserQuestion(domain.value, Number(questionID.value), {t: questionToken.value})
+      .then(({data: res}) => {
         if (isUnmounted || request !== questionRequest) return
         question.value = res
         answerQuestionForm.value.answer = res.answer || ''
@@ -255,10 +260,10 @@ const fetchQuestion = () => {
 const isInitalLoading = ref<boolean>(true)
 const fetchProfile = () => {
   isInitalLoading.value = true
-  return getUserProfile(domain.value)
+  return api.users.getUserProfile(domain.value)
       .then(res => {
         if (isUnmounted) return
-        profile.value = res
+        profile.value = res.data
       })
       .catch(err => {
         if (isUnmounted) return

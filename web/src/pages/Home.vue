@@ -23,7 +23,7 @@
 <script setup lang="ts">
 import {ref, onMounted} from "vue";
 import {useRouter} from "vue-router";
-import {type ChangeLogItem, getChangeLogs} from "@/api/general.ts";
+import {type ChangeLogItem, getChangeLogs} from "@/utils/feeds.ts";
 import {humanizeDate} from "@/utils/humanize.ts";
 import {Skeleton} from 'vue-loading-skeleton';
 

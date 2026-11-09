@@ -1,4 +1,4 @@
-import {CAPTCHA_TIMEOUT_MS} from '@/api/captcha.ts'
+import {CAPTCHA_TIMEOUT_MS} from '@/utils/captcha.ts'
 import {SiteKey} from '@/utils/consts.ts'
 
 interface Recaptcha {

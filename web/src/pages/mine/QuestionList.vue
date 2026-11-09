@@ -82,7 +82,8 @@
 
 <script setup lang="ts">
 import {computed, reactive, ref, onMounted} from "vue";
-import {type MineQuestionItem, type MineSentQuestionItem, mineQuestions, mineSentQuestions} from "@/api/mine.ts";
+import {api} from "@/api/client.ts";
+import type {MineQuestionsItem, MineSentQuestionsItem} from "@/api/api.ts";
 import {useRouter} from "vue-router";
 import {humanizeDate} from "@/utils/humanize.ts";
 import {useAuthStore} from "@/store";
@@ -110,7 +111,7 @@ interface ListState<T> {
   questions: T[];
 }
 
-const received = reactive<ListState<MineQuestionItem>>({
+const received = reactive<ListState<MineQuestionsItem>>({
   isInitLoading: true,
   isLoading: false,
   hasMore: true,
@@ -118,7 +119,7 @@ const received = reactive<ListState<MineQuestionItem>>({
   questions: [],
 })
 
-const sent = reactive<ListState<MineSentQuestionItem>>({
+const sent = reactive<ListState<MineSentQuestionsItem>>({
   isInitLoading: true,
   isLoading: false,
   hasMore: true,
@@ -128,8 +129,8 @@ const sent = reactive<ListState<MineSentQuestionItem>>({
 
 const fetchReceivedQuestions = () => {
   received.isLoading = true
-  mineQuestions(received.cursor, PAGE_SIZE)
-      .then(res => {
+  api.mine.listMineQuestions({cursor: received.cursor, pageSize: PAGE_SIZE})
+      .then(({data: res}) => {
         receivedTotal.value = res.total
         received.questions = received.questions.concat(res.questions)
         received.cursor = res.cursor
@@ -145,8 +146,8 @@ const fetchReceivedQuestions = () => {
 
 const fetchSentQuestions = () => {
   sent.isLoading = true
-  mineSentQuestions(sent.cursor, PAGE_SIZE)
-      .then(res => {
+  api.mine.listMineSentQuestions({cursor: sent.cursor, pageSize: PAGE_SIZE})
+      .then(({data: res}) => {
         sentTotal.value = res.total
         sent.questions = sent.questions.concat(res.questions)
         sent.cursor = res.cursor
@@ -160,7 +161,7 @@ const fetchSentQuestions = () => {
       })
 }
 
-const handleViewReceived = (question: MineQuestionItem) => {
+const handleViewReceived = (question: MineQuestionsItem) => {
   router.push({
     name: 'question',
     params: {
@@ -170,7 +171,7 @@ const handleViewReceived = (question: MineQuestionItem) => {
   })
 }
 
-const sentQuestionHref = (question: MineSentQuestionItem) => {
+const sentQuestionHref = (question: MineSentQuestionsItem) => {
   if (!question.targetDomain) {
     return '#'
   }
@@ -184,7 +185,7 @@ const sentQuestionHref = (question: MineSentQuestionItem) => {
   }).href
 }
 
-const handleViewSent = (question: MineSentQuestionItem) => {
+const handleViewSent = (question: MineSentQuestionsItem) => {
   if (!question.targetDomain) {
     return
   }

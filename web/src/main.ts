@@ -3,7 +3,6 @@ import App from './App.vue'
 import './style.less'
 import store from './store'
 import router from './router'
-import '@/api/interceptor.ts'
 import 'vue3-toastify/dist/index.css'
 
 import {configure, defineRule} from "vee-validate";

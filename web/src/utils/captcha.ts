@@ -1,4 +1,7 @@
-import {type CaptchaConfig, getCaptchaConfig} from '@/api/captcha.ts'
+import {api} from '@/api/client.ts'
+import type {CaptchaConfig} from '@/api/api.ts'
+
+export const CAPTCHA_TIMEOUT_MS = 15000
 
 // E2E bypasses the captcha entirely: a fixed token is returned from the frontend, while the
 // backend's e2e config uses reCAPTCHA universal test keys that accept any token.
@@ -16,8 +19,8 @@ export function loadCaptchaConfig(): Promise<CaptchaConfig> {
     if (configPromise) {
         return configPromise
     }
-    configPromise = getCaptchaConfig()
-        .then(config => {
+    configPromise = api.captcha.getCaptchaConfig({timeout: CAPTCHA_TIMEOUT_MS})
+        .then(({data: config}) => {
             if (config?.type !== 'recaptcha' && config?.type !== 'go_captcha') {
                 throw new Error('未知的验证码类型')
             }

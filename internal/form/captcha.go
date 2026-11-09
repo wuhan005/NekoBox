@@ -10,4 +10,4 @@ type VerifyCaptcha struct {
 	Key string `json:"key" valid:"required" label:"验证码 ID"`
 	X   int    `json:"x" label:"X 坐标"`
 	Y   int    `json:"y" label:"Y 坐标"`
-}
+} // @name VerifyCaptcha

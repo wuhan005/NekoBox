@@ -143,16 +143,14 @@
 <script setup lang="ts">
 import {ref, onMounted, onUnmounted} from "vue";
 import UkTabs from "@/components/UkTabs.vue";
-import {
-  getMineBoxSettings,
-  getMineProfile,
-  updateMineProfile,
-  type MineBoxSettings,
-  type MineProfile,
-  type UpdateMineBoxSettingsRequest,
-  type UpdateMineProfileRequest, updateMineBoxSettings, type UpdateMineHarassmentSettingsRequest,
-  getMineHarassmentSettings, updateMineHarassmentSettings, exportData
-} from "@/api/mine.ts";
+import {api} from "@/api/client.ts";
+import type {
+  MineBoxSettings,
+  MineProfile,
+  UpdateHarassmentSettings,
+  UpdateMineBoxSettingsPayload,
+  UpdateProfile,
+} from "@/api/api.ts";
 import {Form, Field, ErrorMessage} from 'vee-validate';
 import {ToastSuccess} from "@/utils/notify.ts";
 import {useAuthStore} from "@/store";
@@ -180,7 +178,7 @@ const profile = ref<MineProfile>({
   name: '',
   email: '',
 } as MineProfile)
-const updateProfileForm = ref<UpdateMineProfileRequest>({
+const updateProfileForm = ref<UpdateProfile>({
   name: '',
   oldPassword: '',
   newPassword: '',
@@ -191,7 +189,7 @@ const profileSaving = ref<boolean>(false)
 const fetchProfile = () => {
   profileLoading.value = true
   profileLoaded.value = false
-  return getMineProfile().then(res => {
+  return api.mine.getMineProfile().then(({data: res}) => {
     if (isUnmounted) return
     profile.value = res
     updateProfileForm.value.name = res.name
@@ -206,9 +204,9 @@ const fetchProfile = () => {
 const updateProfile = () => {
   if (!profileLoaded.value || profileSaving.value) return
   profileSaving.value = true
-  return updateMineProfile(updateProfileForm.value).then(res => {
+  return api.mine.updateMineProfile(updateProfileForm.value).then(res => {
     if (isUnmounted) return
-    ToastSuccess(res)
+    ToastSuccess(res.data)
     updateProfileForm.value.oldPassword = ''
     updateProfileForm.value.newPassword = ''
     return fetchProfile()
@@ -234,11 +232,9 @@ const boxSettings = ref<MineBoxSettings>({
   backgroundURL: '',
 } as MineBoxSettings)
 const notifyTypeEmail = ref<boolean>(false)
-const updateMineBoxSettingsForm = ref<UpdateMineBoxSettingsRequest>({
+const updateMineBoxSettingsForm = ref<UpdateMineBoxSettingsPayload>({
   intro: '',
   notifyType: 'none',
-  avatar: null,
-  background: null,
 })
 const boxSettingsLoading = ref<boolean>(false)
 const boxSettingsFetching = ref<boolean>(true)
@@ -248,7 +244,7 @@ const backgroundImageUploader = ref<HTMLInputElement | null>(null)
 const fetchBoxSettings = () => {
   boxSettingsFetching.value = true
   boxSettingsLoaded.value = false
-  return getMineBoxSettings().then(res => {
+  return api.mine.getMineBoxSettings().then(({data: res}) => {
     if (isUnmounted) return
     boxSettings.value = res
     updateMineBoxSettingsForm.value.intro = res.intro
@@ -269,11 +265,11 @@ const updateBoxSettings = () => {
   }
 
   boxSettingsLoading.value = true
-  return updateMineBoxSettings(updateMineBoxSettingsForm.value).then(res => {
+  return api.mine.updateMineBoxSettings(updateMineBoxSettingsForm.value).then(res => {
     if (isUnmounted) return
-    ToastSuccess(res)
-    updateMineBoxSettingsForm.value.avatar = null
-    updateMineBoxSettingsForm.value.background = null
+    ToastSuccess(res.data)
+    updateMineBoxSettingsForm.value.avatar = undefined
+    updateMineBoxSettingsForm.value.background = undefined
     if (avatarImageUploader.value) {
       avatarImageUploader.value.value = ''
     }
@@ -292,7 +288,7 @@ const handleSelectAvatarImage = (event: Event) => {
   if (target.files && target.files.length > 0) {
     updateMineBoxSettingsForm.value.avatar = target.files[0]
   } else {
-    updateMineBoxSettingsForm.value.avatar = null
+    updateMineBoxSettingsForm.value.avatar = undefined
   }
 }
 const handleSelectBackgroundImage = (event: Event) => {
@@ -300,15 +296,15 @@ const handleSelectBackgroundImage = (event: Event) => {
   if (target.files && target.files.length > 0) {
     updateMineBoxSettingsForm.value.background = target.files[0]
   } else {
-    updateMineBoxSettingsForm.value.background = null
+    updateMineBoxSettingsForm.value.background = undefined
   }
 }
 
 // ===== HARASSMENT SETTINGS ===== //
-const updateMineHarassmentSettingForm = ref<UpdateMineHarassmentSettingsRequest>({
+const updateMineHarassmentSettingForm = ref<UpdateHarassmentSettings>({
   harassmentSettingType: 'none',
   blockWords: '',
-} as UpdateMineHarassmentSettingsRequest)
+})
 const harassmentSettingTypeRegisterOnly = ref<boolean>(false)
 const harassmentSettingsLoading = ref<boolean>(true)
 const harassmentSettingsLoaded = ref<boolean>(false)
@@ -316,7 +312,7 @@ const harassmentSettingsSaving = ref<boolean>(false)
 const fetchHarassmentSettings = () => {
   harassmentSettingsLoading.value = true
   harassmentSettingsLoaded.value = false
-  return getMineHarassmentSettings().then(res => {
+  return api.mine.getMineHarassmentSettings().then(({data: res}) => {
     if (isUnmounted) return
     harassmentSettingTypeRegisterOnly.value = res.harassmentSettingType === 'register_only'
     updateMineHarassmentSettingForm.value.harassmentSettingType = res.harassmentSettingType
@@ -337,9 +333,9 @@ const updateHarassmentSettings = () => {
   }
 
   harassmentSettingsSaving.value = true
-  return updateMineHarassmentSettings(updateMineHarassmentSettingForm.value).then(res => {
+  return api.mine.updateMineHarassmentSettings(updateMineHarassmentSettingForm.value).then(res => {
     if (isUnmounted) return
-    ToastSuccess(res)
+    ToastSuccess(res.data)
     return fetchHarassmentSettings()
   }).catch(() => {
     // Retain the user's input so a failed save can be retried.
@@ -351,8 +347,8 @@ const updateHarassmentSettings = () => {
 const exportDataLoading = ref<boolean>(false)
 const handleExportData = () => {
   exportDataLoading.value = true
-  exportData().then(res => {
-    saveAs(res)
+  api.mine.exportMineData({format: 'blob'}).then(res => {
+    saveAs(res.data)
   }).finally(() => {
     exportDataLoading.value = false
   })
