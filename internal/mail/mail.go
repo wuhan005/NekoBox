@@ -6,7 +6,6 @@ package mail
 
 import (
 	"bytes"
-	"crypto/tls"
 	"embed"
 	"fmt"
 	"html/template"
@@ -79,6 +78,5 @@ func sendMail(to, title, content string) error {
 		conf.Mail.Account,
 		conf.Mail.Password,
 	)
-	d.TLSConfig = &tls.Config{InsecureSkipVerify: true}
 	return d.DialAndSend(m)
 }
