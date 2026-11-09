@@ -7,85 +7,124 @@ NekoBox
 <p align="center">
 匿名提问箱 / Anonymous Question Box
 </p>
-<p align="center">
-<a href="https://goreportcard.com/badge/github.com/wuhan005/NekoBox">
-    <img src="https://github.com/wuhan005/NekoBox/workflows/Go/badge.svg" alt="Go Report Card">
-</a>
-<a href="https://sourcegraph.com/github.com/wuhan005/NekoBox">
-    <img src="https://img.shields.io/badge/view%20on-Sourcegraph-brightgreen.svg?logo=sourcegraph" alt="Sourcegraph">
-</a>
-<a href="https://deepsource.io/gh/wuhan005/NekoBox/?ref=repository-badge">
-    <img src="https://deepsource.io/gh/wuhan005/NekoBox.svg/?label=active+issues&token=7nuU5C-4QG3CP_5g9qFf3Bl9" alt="DeepSource">
-</a>
-<a href="https://goreportcard.com/report/github.com/wuhan005/NekoBox">
-    <img src="https://goreportcard.com/badge/github.com/wuhan005/NekoBox" alt="Go Report Card">
-<a>
-</p>
+
+<div align="center">
+
+[![Go](https://github.com/wuhan005/NekoBox/actions/workflows/go.yml/badge.svg)](https://github.com/wuhan005/NekoBox/actions/workflows/go.yml)
+[![Docker](https://github.com/wuhan005/NekoBox/actions/workflows/docker.yml/badge.svg)](https://github.com/wuhan005/NekoBox/actions/workflows/docker.yml)
+[![codecov](https://codecov.io/gh/wuhan005/NekoBox/graph/badge.svg?token=2w6iV85DSy)](https://codecov.io/gh/wuhan005/NekoBox)
+[![Go Reference](https://pkg.go.dev/badge/github.com/wuhan005/NekoBox.svg)](https://pkg.go.dev/github.com/wuhan005/NekoBox)
+[![DeepSource](https://deepsource.io/gh/wuhan005/NekoBox.svg/?label=active+issues&token=7nuU5C-4QG3CP_5g9qFf3Bl9)](https://deepsource.io/gh/wuhan005/NekoBox/?ref=repository-badge)
+
+</div>
 
 <p align="center">
 <a href="/README.zh-CN.md">简体中文</a> | <a href="/README.md">English</a>
 </p>
 
-![Screenshot](./dev/screenshot.svg)
+## Architecture
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./dev/architecture-dark.svg">
+  <img alt="NekoBox architecture showing the frontend on Cloudflare Pages and the Kubernetes API behind Cloudflare CDN" src="./dev/architecture-light.svg">
+</picture>
 
 ## Deployment
 
-### Docker Deployment
+### Deploy with an Agent
 
-1. Create a Configuration File
+Copy this prompt into an Agent with terminal access to your deployment host.
 
-Create a configuration file `app.ini` based on the template `conf/app.sample.ini`. Adjust the settings as needed by
-referring to the comments in the file.
-
-2. Start the Container
-
-```bash
-# Pull the latest image
-docker pull ghcr.io/wuhan005/nekobox:master
-
-# Start the container (listen on port 80 and mount the configuration file)
-docker run -dt --name NekoBox -p 80:80 -v $(pwd)/app.ini:/app/conf/app.ini ghcr.io/wuhan005/nekobox:master
+```text
+Read the deployment guide at https://github.com/wuhan005/NekoBox/blob/master/README.md
+and deploy NekoBox on the target server. Build and start the Go API, then build and serve the Vue frontend separately.
+Ask me for any missing deployment settings.
+Verify that the frontend loads and GET /api/captcha/config returns HTTP 200 with JSON,
+then report the site URL.
 ```
 
 ### Build from Source
 
-1. Requirements
+| Component    | Build directory | Toolchain                 | Output      |
+|--------------|-----------------|---------------------------|-------------|
+| Go API       | Repository root | Go 1.27+                  | `NekoBox`   |
+| Vue frontend | `web/`          | Node.js 22.12+ and pnpm 9 | `web/dist/` |
 
-* [Go](https://golang.org/dl/) (v1.19 or higher)
-* [MySQL](https://www.mysql.com/downloads/) (v5.7 or higher)
-* [Redis](https://redis.io/download/) (v6.0 or higher)
-
-2. Compile the Source Code
+#### Backend
 
 ```bash
-# Clone the source code
 git clone https://github.com/wuhan005/NekoBox.git
-
-# Enter the project directory
 cd NekoBox
-
-# Build the binary for the current system and architecture
-go build -v -ldflags "-w -s -extldflags '-static'" -o NekoBox ./cmd/
-
-# Build the binary for Linux, AMD64 architecture
-GOOS=linux GOARCH=amd64 go build -v -ldflags "-w -s -extldflags '-static'" -o NekoBox ./cmd/
-```
-
-3. Edit the Configuration File
-
-Create a configuration file based on the template `conf/app.sample.ini`. Adjust the settings as needed by referring to
-the comments in the file.
-
-```bash
+go build -o NekoBox ./cmd
 cp conf/app.sample.ini conf/app.ini
 ```
 
-4. Run
+For Linux AMD64, prefix the build command with `GOOS=linux GOARCH=amd64`.
+
+Edit `conf/app.ini` before starting the API. See the [configuration template](./conf/app.sample.ini) for other settings.
+
+- `[app] external_url` is the public frontend URL.
+- Set `[server] port` to `8080` for the Docker example below.
+- Set `type` (`postgres` or `mysql`), `host`, `port`, `user`, `password`, and `name` under `[database]`. Set `addr`
+  under `[redis]`.
 
 ```bash
 ./NekoBox web
 ```
 
+#### Frontend
+
+Create `web/.env.production.local` with your site's URL and API path.
+
+```dotenv
+VITE_EXTERNAL_URL=https://box.example.com
+VITE_BASE_URL=/api
+```
+
+For reCAPTCHA, set `VITE_RECAPTCHA_SITE_KEY` and the matching backend secret in `[recaptcha] server_key`.
+
+```bash
+cd web
+pnpm install --frozen-lockfile
+pnpm build
+```
+
+### Frontend Hosting
+
+Serve `web/dist/` with an `index.html` fallback for frontend routes.
+
+- **Same origin.** Use `VITE_BASE_URL=/api` and proxy `/api/` and `/service/` to the backend with their paths intact.
+- **Separate origins.** Set `VITE_BASE_URL` to the full API URL (e.g. `https://api.example.com/api`) and add the
+  frontend host (e.g. `box.example.com`) to `[app] cors_allow_domains`.
+
+### Docker Deployment
+
+Images are published for each Git tag.
+
+- API — `ghcr.io/wuhan005/nekobox:<tag>`
+- Frontend — `ghcr.io/wuhan005/nekobox-web:<tag>` (built with `web/.env.production`)
+
+#### Self-Hosting
+
+Build the backend image from the root of a fresh checkout.
+
+```bash
+docker build -t nekobox-api .
+```
+
+Prepare `conf/app.ini` and `web/.env.production.local` as above. Use database and Redis addresses reachable from the
+backend container. Then run from the repository root.
+
+```bash
+docker build -t nekobox-web ./web
+
+docker run -d --name nekobox-api -p 127.0.0.1:8080:8080 \
+  -v "$PWD/conf/app.ini:/home/app/conf/app.ini:ro" nekobox-api
+docker run -d --name nekobox-web -p 127.0.0.1:8081:80 nekobox-web
+```
+
+For same-origin hosting, route `/api/` and `/service/` to `127.0.0.1:8080` and frontend traffic to `127.0.0.1:8081`.
+
 ## License
 
-MIT License
+[MIT License](./LICENSE)

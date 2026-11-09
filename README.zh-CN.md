@@ -7,83 +7,122 @@ NekoBox
 <p align="center">
 匿名提问箱 / Anonymous Question Box
 </p>
-<p align="center">
-<a href="https://goreportcard.com/badge/github.com/wuhan005/NekoBox">
-    <img src="https://github.com/wuhan005/NekoBox/workflows/Go/badge.svg" alt="Go Report Card">
-</a>
-<a href="https://sourcegraph.com/github.com/wuhan005/NekoBox">
-    <img src="https://img.shields.io/badge/view%20on-Sourcegraph-brightgreen.svg?logo=sourcegraph" alt="Sourcegraph">
-</a>
-<a href="https://deepsource.io/gh/wuhan005/NekoBox/?ref=repository-badge">
-    <img src="https://deepsource.io/gh/wuhan005/NekoBox.svg/?label=active+issues&token=7nuU5C-4QG3CP_5g9qFf3Bl9" alt="DeepSource">
-</a>
-<a href="https://goreportcard.com/report/github.com/wuhan005/NekoBox">
-    <img src="https://goreportcard.com/badge/github.com/wuhan005/NekoBox" alt="Go Report Card">
-<a>
-</p>
+
+<div align="center">
+
+[![Go](https://github.com/wuhan005/NekoBox/actions/workflows/go.yml/badge.svg)](https://github.com/wuhan005/NekoBox/actions/workflows/go.yml)
+[![Docker](https://github.com/wuhan005/NekoBox/actions/workflows/docker.yml/badge.svg)](https://github.com/wuhan005/NekoBox/actions/workflows/docker.yml)
+[![codecov](https://codecov.io/gh/wuhan005/NekoBox/graph/badge.svg?token=2w6iV85DSy)](https://codecov.io/gh/wuhan005/NekoBox)
+[![Go Reference](https://pkg.go.dev/badge/github.com/wuhan005/NekoBox.svg)](https://pkg.go.dev/github.com/wuhan005/NekoBox)
+[![DeepSource](https://deepsource.io/gh/wuhan005/NekoBox.svg/?label=active+issues&token=7nuU5C-4QG3CP_5g9qFf3Bl9)](https://deepsource.io/gh/wuhan005/NekoBox/?ref=repository-badge)
+
+</div>
 
 <p align="center">
 <a href="/README.zh-CN.md">简体中文</a> | <a href="/README.md">English</a>
 </p>
 
-![Screenshot](./dev/screenshot.svg)
+## 系统架构
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./dev/architecture-zh-CN-dark.svg">
+  <img alt="NekoBox 系统架构，前端托管在 Cloudflare Pages，API 经 Cloudflare CDN 回源到 Kubernetes 集群" src="./dev/architecture-zh-CN-light.svg">
+</picture>
 
 ## 部署
 
-### Docker 部署
+### 让 Agent 部署
 
-1. 创建配置文件
+把下面的提示词复制给你的 Agent。
 
-基于配置文件模板 `conf/app.sample.ini` 创建配置文件 `app.ini`，相关配置可参考注释进行调整。
-
-2. 启动容器
-
-```bash
-# 拉取最新镜像
-docker pull ghcr.io/wuhan005/nekobox:master
-
-# 启动容器（监听 80 端口并挂载配置文件）
-docker run -dt --name NekoBox -p 80:80 -v $(pwd)/app.ini:/app/conf/app.ini ghcr.io/wuhan005/nekobox:master
+```text
+阅读 https://github.com/wuhan005/NekoBox/blob/master/README.zh-CN.md 的部署说明，
+在目标服务器上部署 NekoBox，编译并启动 Go API，单独构建并托管 Vue 前端。
+缺少部署配置时向我确认。
+验证前端页面能打开，且 GET /api/captcha/config 返回 HTTP 200 和 JSON，再告诉我站点地址。
 ```
 
 ### 从源码构建
 
-1. 环境需求
+| 组件     | 构建目录   | 工具链                     | 产物          |
+|--------|--------|-------------------------|-------------|
+| Go API | 仓库根目录  | Go 1.27+                | `NekoBox`   |
+| Vue 前端 | `web/` | Node.js 22.12+ 和 pnpm 9 | `web/dist/` |
 
-* [Go](https://golang.org/dl/) (v1.19 或更高版本)
-* [MySQL](https://www.mysql.com/downloads/) (v5.7 或更高版本)
-* [Redis](https://redis.io/download/) (v6.0 或更高版本)
-
-2. 编译源码
+#### 后端
 
 ```bash
-# 克隆源码
 git clone https://github.com/wuhan005/NekoBox.git
-
-# 进入项目目录
 cd NekoBox
-
-# 构建当前机器系统与架构的二进制文件
-go build -v -ldflags "-w -s -extldflags '-static'" -o NekoBox ./cmd/
-
-# 构建 Linux、AMD64 架构的二进制文件
-GOOS=linux GOARCH=amd64 go build -v -ldflags "-w -s -extldflags '-static'" -o NekoBox ./cmd/
-```
-
-3. 编辑配置文件
-
-基于配置文件模板 `conf/app.sample.ini` 创建配置文件，相关配置可参考注释进行调整。
-
-```bash
+go build -o NekoBox ./cmd
 cp conf/app.sample.ini conf/app.ini
 ```
 
-4. 运行
+交叉编译 Linux AMD64 时，在构建命令前加上环境变量： `GOOS=linux GOARCH=amd64`。
+
+启动前编辑 `conf/app.ini`。其他选项见[配置模板](./conf/app.sample.ini)。
+
+- `[app] external_url` 填写前端公开访问地址。
+- `[server] port` 填写下方 Docker 示例使用的 `8080`。
+- 在 `[database]` 中填写 `type`（`postgres` 或 `mysql`）、`host`、`port`、`user`、`password` 和 `name`。
+  在 `[redis]` 中填写 `addr`。
 
 ```bash
 ./NekoBox web
 ```
 
+#### 前端
+
+创建 `web/.env.production.local`，填写站点地址和 API 路径。
+
+```dotenv
+VITE_EXTERNAL_URL=https://box.example.com
+VITE_BASE_URL=/api
+```
+
+使用 reCAPTCHA 验证码时，需要设置 `VITE_RECAPTCHA_SITE_KEY` 环境变量，并在后端的 `[recaptcha] server_key` 填写配对的密钥。
+
+```bash
+cd web
+pnpm install --frozen-lockfile
+pnpm build
+```
+
+### 前端托管
+
+托管 `web/dist/`，并为前端页面路由配置 `index.html` 回退。
+
+- **同源部署**。使用 `VITE_BASE_URL=/api`，将 `/api/` 和 `/service/` 按原路径转发给后端。
+- **跨域部署**。将 `VITE_BASE_URL` 设为完整的 API 地址（如 `https://api.example.com/api`），
+  并在 `[app] cors_allow_domains` 中加入前端主机名（如 `box.example.com`）。
+
+### Docker 部署
+
+镜像按 Git 标签发布。
+
+- API — `ghcr.io/wuhan005/nekobox:<tag>`
+- 前端 — `ghcr.io/wuhan005/nekobox-web:<tag>`（使用 `web/.env.production` 构建）
+
+#### 自托管
+
+在新克隆的仓库根目录构建后端镜像。
+
+```bash
+docker build -t nekobox-api .
+```
+
+按上文准备 `conf/app.ini` 和 `web/.env.production.local`，确保后端容器可访问数据库和 Redis。然后在仓库根目录执行以下命令。
+
+```bash
+docker build -t nekobox-web ./web
+
+docker run -d --name nekobox-api -p 127.0.0.1:8080:8080 \
+  -v "$PWD/conf/app.ini:/home/app/conf/app.ini:ro" nekobox-api
+docker run -d --name nekobox-web -p 127.0.0.1:8081:80 nekobox-web
+```
+
+同源部署时，将 `/api/` 和 `/service/` 转发到 `127.0.0.1:8080`，将前端请求转发到 `127.0.0.1:8081`。
+
 ## 开源协议
 
-MIT License
+[MIT 许可证](./LICENSE)
