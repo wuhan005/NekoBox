@@ -21,7 +21,7 @@ import (
 
 func Bind(model interface{}) flamego.Handler {
 	// Ensure not pointer.
-	if reflect.TypeOf(model).Kind() == reflect.Ptr {
+	if reflect.TypeOf(model).Kind() == reflect.Pointer {
 		panic("form: pointer can not be accepted as binding model")
 	}
 
@@ -59,7 +59,7 @@ func Bind(model interface{}) flamego.Handler {
 
 func BindMultipart(model interface{}) flamego.Handler {
 	// Ensure not pointer.
-	if reflect.TypeOf(model).Kind() == reflect.Ptr {
+	if reflect.TypeOf(model).Kind() == reflect.Pointer {
 		panic("form: pointer can not be accepted as binding model")
 	}
 
@@ -85,7 +85,7 @@ func BindMultipart(model interface{}) flamego.Handler {
 		// Bind the form data to the given struct.
 		typ := reflect.TypeOf(obj.Interface())
 		val := reflect.ValueOf(obj.Interface())
-		if typ.Kind() == reflect.Ptr {
+		if typ.Kind() == reflect.Pointer {
 			typ = typ.Elem()
 			val = val.Elem()
 		}

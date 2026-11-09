@@ -54,10 +54,12 @@ func Proxy(ctx context.Context) error {
 	}
 
 	reverseProxy := httputil.ReverseProxy{
-		Director: func(req *http.Request) {
+		Rewrite: func(proxyReq *httputil.ProxyRequest) {
+			req := proxyReq.Out
 			req.URL = forwardURL
 			req.URL.Path = strings.TrimRight(req.URL.Path, "/") + forwardPath
 			req.Host = forwardURL.Host
+			proxyReq.SetXForwarded()
 
 			traceHeaders := http.Header{}
 			otel.GetTextMapPropagator().Inject(ctx.Request().Context(), propagation.HeaderCarrier(traceHeaders))

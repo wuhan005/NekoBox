@@ -4,6 +4,8 @@ on:
     tags:
       - '**'
 
+permissions: {}
+
 jobs:
   build:
     if: github.event.deleted == false
