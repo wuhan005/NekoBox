@@ -122,8 +122,8 @@ test.describe('Box Settings', () => {
 
         // Send a PUT request directly with an invalid notifyType.
         const response = await page.request.put('/api/mine/settings/box', {
-            headers: { 'Content-Type': 'application/json', ...authHeader },
-            data: { intro: 'test', notifyType: 'sms' },
+            headers: authHeader,
+            multipart: { intro: 'test', notifyType: 'sms' },
         });
         // The server should reject unknown notify types.
         expect(response.status()).toBe(400);
