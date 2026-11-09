@@ -26,7 +26,7 @@ import (
 	"github.com/wuhan005/NekoBox/internal/conf"
 	"github.com/wuhan005/NekoBox/internal/context"
 	"github.com/wuhan005/NekoBox/internal/form"
-	"github.com/wuhan005/NekoBox/route/service"
+	"github.com/wuhan005/NekoBox/internal/route/service"
 )
 
 // New creates the router of the application.
