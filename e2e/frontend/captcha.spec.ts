@@ -1,5 +1,5 @@
 import {test, expect, type Page} from '@playwright/test';
-import {avatar, respond, holdNextRequest, mockFrontend} from './helpers';
+import {avatar, globalConfig, respond, holdNextRequest, mockFrontend} from './helpers';
 
 test.beforeEach(mockFrontend);
 
@@ -9,10 +9,13 @@ async function anonymous(page: Page) {
 
 const captchaCalls = (page: Page) => page.evaluate(() => (window as any).__captchaCalls || 0);
 const releaseCaptcha = (page: Page, token = 'fresh-captcha-token') => page.evaluate(token => (window as any).__resolveCaptcha(token), token);
+const configRoute = '**/api/config';
+const scriptRoute = `${globalConfig.captcha.domain}/**`;
+const slideConfig = {...globalConfig, captcha: {type: 'go_captcha'}};
 
-test('a failed captcha configuration can be retried without losing form input', async ({page}) => {
+test('a failed global configuration can be retried without losing form input', async ({page}) => {
     await anonymous(page);
-    const slow = await holdNextRequest(page, '**/api/captcha/config');
+    const slow = await holdNextRequest(page, configRoute);
     await page.goto('/sign-in');
     await page.locator('input[name="email"]').fill('alice@example.com');
     await respond(await slow.request, null, 503);
@@ -24,37 +27,62 @@ test('a failed captcha configuration can be retried without losing form input', 
 
 test('a failed config is not cached as the wrong driver across page navigation', async ({page}) => {
     await anonymous(page);
-    const slow = await holdNextRequest(page, '**/api/captcha/config');
+    const slow = await holdNextRequest(page, configRoute);
     await page.goto('/sign-in');
+    await expect(page.getByRole('button', {name: '加载中...'})).toBeDisabled();
     await respond(await slow.request, null, 503);
     await expect(page.getByRole('button', {name: '重新加载验证码'})).toBeVisible();
-    await page.route('**/api/captcha/config', r => respond(r, {type: 'go_captcha'}));
+    await page.route(configRoute, r => respond(r, slideConfig));
     await page.locator('nav').getByRole('link', {name: '注册', exact: true}).click();
     await expect(page.getByRole('button', {name: '注册', exact: true})).toBeEnabled();
-    expect(await page.locator('script[src*="recaptcha.net"]').count()).toBe(0);
+    await expect(page.locator('script[src*="/recaptcha/api.js"]')).toHaveCount(0);
 });
 
 test('a failed reCAPTCHA script can be loaded again in the same page', async ({page}) => {
     await anonymous(page);
-    await page.route('https://recaptcha.net/**', r => r.abort(), {times: 1});
+    await page.route(scriptRoute, r => r.abort(), {times: 1});
     await page.goto('/sign-in');
     await page.locator('input[name="email"]').fill('alice@example.com');
     await expect(page.getByRole('button', {name: '重新加载验证码'})).toBeVisible();
     await page.getByRole('button', {name: '重新加载验证码'}).click();
     await expect(page.getByRole('button', {name: '登录', exact: true})).toBeEnabled();
     await expect(page.locator('input[name="email"]')).toHaveValue('alice@example.com');
-    expect(await page.locator('script[src*="recaptcha.net"]').count()).toBe(1);
+    await expect(page.locator('script[src*="/recaptcha/api.js"]')).toHaveCount(1);
 });
 
 test('a stalled reCAPTCHA script times out and can be retried', async ({page}) => {
     await anonymous(page);
     await page.clock.install();
-    const slow = await holdNextRequest(page, 'https://recaptcha.net/**');
+    const slow = await holdNextRequest(page, scriptRoute);
     await page.goto('/sign-in');
     await slow.request;
     await page.clock.fastForward(15001);
     await page.getByRole('button', {name: '重新加载验证码'}).click();
     await expect(page.getByRole('button', {name: '登录', exact: true})).toBeEnabled();
+});
+
+test('site details and reCAPTCHA share one configuration across pages', async ({page}) => {
+    await anonymous(page);
+    const requests: string[] = [];
+    page.on('request', request => {
+        if (new URL(request.url()).pathname === '/api/config') requests.push(request.url());
+    });
+    const script = page.waitForRequest(request => request.url().startsWith(globalConfig.captcha.domain));
+    await page.goto('/sign-up');
+    const scriptURL = new URL((await script).url());
+    expect(scriptURL.searchParams.get('render')).toBe(globalConfig.captcha.siteKey);
+    await page.locator('input[name="domain"]').fill('alice');
+    await expect(page.locator('code')).toHaveText(`${globalConfig.externalURL}/_/alice`);
+    await expect(page.getByText(globalConfig.icp)).toBeVisible();
+
+    await page.locator('nav').getByRole('link', {name: '登录', exact: true}).click();
+    const submit = page.getByRole('button', {name: '登录', exact: true});
+    await expect(submit).toBeEnabled();
+    await page.locator('input[name="email"]').fill('alice@example.com');
+    await page.locator('input[name="password"]').fill('Password123!');
+    await submit.click();
+    await expect.poll(() => page.evaluate(() => (window as any).__captchaSiteKey)).toBe(globalConfig.captcha.siteKey);
+    expect(requests).toHaveLength(1);
 });
 
 for (const form of [
@@ -125,7 +153,7 @@ test('a captcha execution timeout restores the button and permits a fresh token'
 
 async function mockSlide(page: Page) {
     let challenge = 0;
-    await page.route('**/api/captcha/config', r => respond(r, {type: 'go_captcha'}));
+    await page.route(configRoute, r => respond(r, slideConfig));
     await page.route('**/api/captcha/challenge', r => respond(r, {
         key: `slide-${++challenge}`, image: avatar, thumb: avatar, thumbX: 0, thumbY: 50, thumbWidth: 40, thumbHeight: 40,
     }));

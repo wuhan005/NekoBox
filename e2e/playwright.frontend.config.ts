@@ -15,8 +15,6 @@ export default defineConfig(base, {
         url: 'http://127.0.0.1:4173',
         env: {
             VITE_BASE_URL: '/api',
-            VITE_EXTERNAL_URL: 'http://127.0.0.1:4173',
-            VITE_RECAPTCHA_SITE_KEY: 'frontend-test-key',
         },
     },
 });

@@ -23,17 +23,6 @@ func NewCaptchaHandler() *CaptchaHandler {
 	return &CaptchaHandler{}
 }
 
-// Config returns the active captcha driver so the frontend can switch UI accordingly.
-// @Summary Get the captcha config
-// @Tags Captcha
-// @Produce json
-// @Success 200 {object} response.CaptchaConfig
-// @ID getCaptchaConfig
-// @Router /captcha/config [get]
-func (*CaptchaHandler) Config(ctx context.Context, v captcha.Verifier) error {
-	return ctx.Success(response.CaptchaConfig{Type: v.Type()})
-}
-
 // Challenge generates a slide challenge image. Only available for the go-captcha driver.
 // @Summary Generate a slide captcha challenge
 // @Tags Captcha

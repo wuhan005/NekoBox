@@ -20,7 +20,8 @@ import {Slide} from 'go-captcha-vue'
 import 'go-captcha-vue/dist/style.css'
 import {api} from '@/api/client.ts'
 import type {CaptchaChallenge, CaptchaConfig} from '@/api/api.ts'
-import {CAPTCHA_TIMEOUT_MS, E2E_BYPASS_TOKEN, isE2EMode, loadCaptchaConfig} from '@/utils/captcha.ts'
+import {CAPTCHA_TIMEOUT_MS, E2E_BYPASS_TOKEN, isE2EMode} from '@/utils/captcha.ts'
+import {loadGlobalConfig} from '@/utils/config.ts'
 import {executeRecaptcha, loadRecaptcha} from '@/utils/recaptcha.ts'
 
 interface SlidePoint {
@@ -71,8 +72,8 @@ async function initialize() {
   ready.value = false
   loadError.value = false
   try {
-    config.value = await loadCaptchaConfig()
-    if (!isE2EMode && config.value.type === 'recaptcha') await loadRecaptcha()
+    config.value = (await loadGlobalConfig()).captcha
+    if (!isE2EMode && config.value.type === 'recaptcha') await loadRecaptcha(config.value)
     if (!isUnmounted) ready.value = true
   } catch {
     if (!isUnmounted) loadError.value = true
@@ -165,7 +166,7 @@ async function acquire(action = 'submit'): Promise<string> {
   if (!ready.value || !config.value) throw new Error('验证码尚未就绪')
 
   if (config.value.type === 'recaptcha') {
-    return await executeRecaptcha(action)
+    return await executeRecaptcha(config.value, action)
   }
 
   // go-captcha mode: open the slide panel and wait for user interaction.

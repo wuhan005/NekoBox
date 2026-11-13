@@ -21,13 +21,22 @@ export interface CaptchaChallenge {
 }
 
 export interface CaptchaConfig {
-  /** Type is the captcha driver in use, the frontend renders the matching UI. */
+  /** Domain is the origin used to load the reCAPTCHA script. */
+  domain?: string;
+  /** SiteKey is the public reCAPTCHA site key. */
+  siteKey?: string;
   type: "recaptcha" | "go_captcha";
 }
 
 export interface ForgotPassword {
   captcha: string;
   email: string;
+}
+
+export interface GlobalConfig {
+  captcha: CaptchaConfig;
+  externalURL: string;
+  icp: string;
 }
 
 export interface HarassmentSettings {
@@ -201,9 +210,9 @@ export type SignUpData = string;
 
 export type GetCaptchaChallengeData = CaptchaChallenge;
 
-export type GetCaptchaConfigData = CaptchaConfig;
-
 export type VerifyCaptchaData = VerifyCaptchaResp;
+
+export type GetGlobalConfigData = GlobalConfig;
 
 export type ListMineQuestionsData = MineQuestions;
 
@@ -577,22 +586,6 @@ export class Api<
       }),
 
     /**
-     * No description
-     *
-     * @tags Captcha
-     * @name GetCaptchaConfig
-     * @summary Get the captcha config
-     * @request GET:/captcha/config
-     */
-    getCaptchaConfig: (params: RequestParams = {}) =>
-      this.request<GetCaptchaConfigData, any>({
-        path: `/captcha/config`,
-        method: "GET",
-        format: "json",
-        ...params,
-      }),
-
-    /**
      * @description Only available for the go-captcha driver. The returned token is passed as the captcha of the business endpoints.
      *
      * @tags Captcha
@@ -606,6 +599,23 @@ export class Api<
         method: "POST",
         body: data,
         type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+  };
+  config = {
+    /**
+     * No description
+     *
+     * @tags Config
+     * @name GetGlobalConfig
+     * @summary Get the public site configuration
+     * @request GET:/config
+     */
+    getGlobalConfig: (params: RequestParams = {}) =>
+      this.request<GetGlobalConfigData, any>({
+        path: `/config`,
+        method: "GET",
         format: "json",
         ...params,
       }),

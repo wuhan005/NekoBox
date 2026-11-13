@@ -164,8 +164,6 @@ jobs:
       - name: Start frontend dev server (port 3000)
         working-directory: web
         run: pnpm dev:e2e &
-        env:
-          VITE_EXTERNAL_URL: http://localhost:3000
 
       - name: Wait for frontend to be ready
         run: |

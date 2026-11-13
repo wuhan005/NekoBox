@@ -11,7 +11,7 @@
       </div>
       <div class="uk-margin">
         <label class="uk-form-label" for="domain">个性域名 (你的问答箱网址将会是：
-          <code>{{ ExternalURL }}/_/{{ signUpForm.domain }}</code>)</label>
+          <code>{{ externalURL }}/_/{{ signUpForm.domain }}</code>)</label>
         <Field v-model="signUpForm.domain" name="domain" class="uk-input" type="text"
                rules="required|alpha_dash|min:3|max:20" label="个性域名"/>
         <ErrorMessage class="field-error-message" name="domain"/>
@@ -52,7 +52,7 @@ import {api} from "@/api/client.ts";
 import type {SignUp} from "@/api/api.ts";
 import {ToastError, ToastSuccess} from "@/utils/notify.ts";
 import {useRouter} from "vue-router";
-import {ExternalURL} from "@/utils/consts.ts";
+import {externalURL} from "@/utils/config.ts";
 import Captcha from "@/components/Captcha.vue";
 
 const router = useRouter()

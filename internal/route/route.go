@@ -120,9 +120,11 @@ func New(db *gorm.DB, notifications *sync.WaitGroup) (*flamego.Flame, error) {
 	reqUserSignIn := context.Toggle(&context.ToggleOptions{UserSignInRequired: true})
 
 	f.Group("/api", func() {
+		configHandler := NewConfigHandler()
+		f.Get("/config", configHandler.Get)
+
 		captchaHandler := NewCaptchaHandler()
 		f.Group("/captcha", func() {
-			f.Get("/config", captchaHandler.Config)
 			f.Get("/challenge", captchaHandler.Challenge)
 			f.Post("/verify", form.Bind(form.VerifyCaptcha{}), captchaHandler.Verify)
 		})

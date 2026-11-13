@@ -27,9 +27,13 @@ definitions:
     type: object
   CaptchaConfig:
     properties:
+      domain:
+        description: Domain is the origin used to load the reCAPTCHA script.
+        type: string
+      siteKey:
+        description: SiteKey is the public reCAPTCHA site key.
+        type: string
       type:
-        description: Type is the captcha driver in use, the frontend renders the matching
-          UI.
         enum:
         - recaptcha
         - go_captcha
@@ -46,6 +50,19 @@ definitions:
     required:
     - captcha
     - email
+    type: object
+  GlobalConfig:
+    properties:
+      captcha:
+        $ref: '#/definitions/CaptchaConfig'
+      externalURL:
+        type: string
+      icp:
+        type: string
+    required:
+    - captcha
+    - externalURL
+    - icp
     type: object
   HarassmentSettings:
     properties:
@@ -629,19 +646,6 @@ paths:
       summary: Generate a slide captcha challenge
       tags:
       - Captcha
-  /captcha/config:
-    get:
-      operationId: getCaptchaConfig
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/CaptchaConfig'
-      summary: Get the captcha config
-      tags:
-      - Captcha
   /captcha/verify:
     post:
       consumes:
@@ -675,6 +679,19 @@ paths:
       summary: Verify a slide captcha challenge
       tags:
       - Captcha
+  /config:
+    get:
+      operationId: getGlobalConfig
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/GlobalConfig'
+      summary: Get the public site configuration
+      tags:
+      - Config
   /mine/questions:
     get:
       operationId: listMineQuestions

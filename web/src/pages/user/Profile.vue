@@ -15,7 +15,7 @@
           <a href="#qrcode-modal" class="uk-icon-button" uk-icon="social" uk-toggle></a>
         </div>
 
-        <ShareQRCode :name="profile.name" :avatar="profile.avatar" :qrcode="`${ExternalURL}/_/${profile.domain}`"/>
+        <ShareQRCode :name="profile.name" :avatar="profile.avatar" :qrcode="`${externalURL}/_/${profile.domain}`"/>
 
         <NewQuestion
             :page-profile-domain="profile.domain"
@@ -42,7 +42,7 @@ import {ref, onMounted, onUnmounted, watchEffect} from "vue";
 import {api} from "@/api/client.ts";
 import type {UserProfile} from "@/api/api.ts";
 import {useRoute, useRouter} from "vue-router";
-import {ExternalURL} from "@/utils/consts.ts";
+import {externalURL} from "@/utils/config.ts";
 import PageQuestions from "@/components/PageQuestions.vue";
 import NewQuestion from "@/components/NewQuestion.vue";
 import ShareQRCode from "@/components/ShareQRCode.vue";

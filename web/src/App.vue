@@ -18,12 +18,18 @@
 </template>
 
 <script setup lang="ts">
+import {onMounted} from "vue";
 import Header from "@/components/Header.vue";
 import Footer from "@/components/Footer.vue";
 import {useAppStore, useAuthStore} from "@/store";
+import {loadGlobalConfig} from "@/utils/config.ts";
 
 const appStore = useAppStore()
 const authStore = useAuthStore()
+
+onMounted(() => {
+  void loadGlobalConfig().catch(() => { /* Configuration-dependent forms can retry the request. */ })
+})
 </script>
 
 <style scoped>

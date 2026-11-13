@@ -12,6 +12,12 @@ export const question = (id: number) => ({
     questionImageURLs: [], answerImageURLs: [], isPrivate: id === 1, hasReplyEmail: false,
 });
 
+export const globalConfig = {
+    externalURL: 'https://box.example.com',
+    icp: 'Example ICP',
+    captcha: {type: 'recaptcha', siteKey: 'frontend-test-key', domain: 'https://captcha.example.com'},
+};
+
 export function respond(route: Route, data: unknown, status = 200) {
     return route.fulfill({ status, json: { data, msg: status >= 400 ? 'Request failed' : '' } });
 }
@@ -25,7 +31,8 @@ export async function holdNextRequest(page: Page, url: string | RegExp) {
 
 export const recaptchaScript = `window.grecaptcha = {
     ready: callback => callback(),
-    execute: () => {
+    execute: siteKey => {
+        window.__captchaSiteKey = siteKey;
         window.__captchaCalls = (window.__captchaCalls || 0) + 1;
         return window.__holdCaptcha
             ? new Promise(resolve => { window.__resolveCaptcha = resolve; })
@@ -43,12 +50,12 @@ export async function mockFrontend({page, baseURL}: {page: Page; baseURL?: strin
         const request = route.request();
         const url = new URL(request.url());
         const path = url.pathname;
-        if (url.hostname === 'recaptcha.net') return route.fulfill({contentType: 'application/javascript', body: recaptchaScript});
+        if (url.origin === globalConfig.captcha.domain) return route.fulfill({contentType: 'application/javascript', body: recaptchaScript});
         if (path.startsWith('/api/')) {
             if (path === '/api/auth/sign-in') return respond(route, {profile: {uid: 'alice', domain: 'alice', name: 'Alice'}, sessionID: 'test-session'});
             if (path === '/api/auth/sign-up' || path === '/api/auth/forgot-password') return respond(route, 'Saved');
             if (path === '/api/mine/questions' || path === '/api/mine/questions/sent') return respond(route, {total: 3, cursor: '1', questions: [3, 2, 1].map(id => ({...question(id), isAnswered: true, targetDomain: 'alice', targetName: 'Alice'}))});
-            if (path === '/api/captcha/config') return respond(route, { type: 'recaptcha' });
+            if (path === '/api/config') return respond(route, globalConfig);
             if (path === '/api/mine/settings/profile') {
                 return respond(route, request.method() === 'GET' ? { name: 'Alice', email: 'alice@example.com' } : 'Saved');
             }
