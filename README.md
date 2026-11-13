@@ -39,7 +39,7 @@ Copy this prompt into an Agent with terminal access to your deployment host.
 Read the deployment guide at https://github.com/wuhan005/NekoBox/blob/master/README.md
 and deploy NekoBox on the target server. Build and start the Go API, then build and serve the Vue frontend separately.
 Ask me for any missing deployment settings.
-Verify that the frontend loads and GET /api/captcha/config returns HTTP 200 with JSON,
+Verify that the frontend loads and GET /api/config returns HTTP 200 with JSON,
 then report the site URL.
 ```
 
@@ -64,6 +64,9 @@ For Linux AMD64, prefix the build command with `GOOS=linux GOARCH=amd64`.
 Edit `conf/app.ini` before starting the API. See the [configuration template](./conf/app.sample.ini) for other settings.
 
 - `[app] external_url` is the public frontend URL.
+- `[app] icp` optionally sets the ICP registration number displayed in the footer.
+- `[captcha] type` selects `recaptcha` or `go_captcha`. For reCAPTCHA, set `[recaptcha] site_key` and its matching
+  `server_key`. Set `domain` to the script origin if you need to override the default `https://recaptcha.net`.
 - Set `[server] port` to `8080` for the Docker example below.
 - Set `type` (`postgres` or `mysql`), `host`, `port`, `user`, `password`, and `name` under `[database]`. Set `addr`
   under `[redis]`.
@@ -74,14 +77,15 @@ Edit `conf/app.ini` before starting the API. See the [configuration template](./
 
 #### Frontend
 
-Create `web/.env.production.local` with your site's URL and API path.
+Create `web/.env.production.local` to point the frontend at your API.
 
 ```dotenv
-VITE_EXTERNAL_URL=https://box.example.com
 VITE_BASE_URL=/api
 ```
 
-For reCAPTCHA, set `VITE_RECAPTCHA_SITE_KEY` and the matching backend secret in `[recaptcha] server_key`.
+The frontend reads the site URL, ICP number, and public captcha settings at runtime from `GET /api/config`.
+This replaces `GET /api/captcha/config`. When upgrading, move any values set only in `VITE_EXTERNAL_URL`,
+`VITE_ICP`, or `VITE_RECAPTCHA_SITE_KEY` into the backend settings above before deploying the new frontend.
 
 ```bash
 cd web

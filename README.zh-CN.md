@@ -39,7 +39,7 @@ NekoBox
 阅读 https://github.com/wuhan005/NekoBox/blob/master/README.zh-CN.md 的部署说明，
 在目标服务器上部署 NekoBox，编译并启动 Go API，单独构建并托管 Vue 前端。
 缺少部署配置时向我确认。
-验证前端页面能打开，且 GET /api/captcha/config 返回 HTTP 200 和 JSON，再告诉我站点地址。
+验证前端页面能打开，且 GET /api/config 返回 HTTP 200 和 JSON，再告诉我站点地址。
 ```
 
 ### 从源码构建
@@ -63,6 +63,9 @@ cp conf/app.sample.ini conf/app.ini
 启动前编辑 `conf/app.ini`。其他选项见[配置模板](./conf/app.sample.ini)。
 
 - `[app] external_url` 填写前端公开访问地址。
+- `[app] icp` 可填写页脚显示的 ICP 备案号。
+- `[captcha] type` 可选 `recaptcha` 或 `go_captcha`。使用 reCAPTCHA 时，在 `[recaptcha]` 中填写配对的
+  `site_key` 和 `server_key`；如需替换默认脚本域名 `https://recaptcha.net`，可设置 `domain`。
 - `[server] port` 填写下方 Docker 示例使用的 `8080`。
 - 在 `[database]` 中填写 `type`（`postgres` 或 `mysql`）、`host`、`port`、`user`、`password` 和 `name`。
   在 `[redis]` 中填写 `addr`。
@@ -73,14 +76,14 @@ cp conf/app.sample.ini conf/app.ini
 
 #### 前端
 
-创建 `web/.env.production.local`，填写站点地址和 API 路径。
+创建 `web/.env.production.local`，填写前端连接的 API 地址。
 
 ```dotenv
-VITE_EXTERNAL_URL=https://box.example.com
 VITE_BASE_URL=/api
 ```
 
-使用 reCAPTCHA 验证码时，需要设置 `VITE_RECAPTCHA_SITE_KEY` 环境变量，并在后端的 `[recaptcha] server_key` 填写配对的密钥。
+前端运行时通过 `GET /api/config` 读取站点地址、备案号和公开验证码配置。这个接口替代了 `GET /api/captcha/config`。
+升级时，如果之前只在 `VITE_EXTERNAL_URL`、`VITE_ICP` 或 `VITE_RECAPTCHA_SITE_KEY` 中填写了这些值，请先迁移到上面的后端配置。
 
 ```bash
 cd web
