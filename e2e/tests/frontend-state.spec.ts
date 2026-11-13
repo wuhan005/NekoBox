@@ -5,6 +5,136 @@ const questionLink = (page: import('@playwright/test').Page, id: number) => page
 
 test.beforeEach(mockFrontend);
 
+test('browser back to a question box restores its loaded answers and scroll position', async ({ page }) => {
+    await page.addInitScript(() => localStorage.removeItem('auth'));
+    await page.setViewportSize({ width: 390, height: 844 });
+    const cursors: string[] = [];
+    await page.route('**/api/users/alice/questions?*', route => {
+        const cursor = new URL(route.request().url()).searchParams.get('cursor') ?? '';
+        cursors.push(cursor);
+        const first = cursor ? Number(cursor) - 1 : 45;
+        const questions = Array.from({ length: Math.min(first, 20) }, (_, index) => question(first - index));
+        return respond(route, { total: 45, cursor: String(questions.at(-1)?.id ?? ''), questions });
+    });
+    await page.route(/\/api\/users\/alice\/questions\/7(?:\?|$)/, route =>
+        respond(route, { ...question(7), isOwner: false }));
+
+    await page.goto('/_/alice');
+    await expect(page.getByText('以前回答过的问题', { exact: false })).toBeVisible();
+    await page.getByRole('button', { name: '加载更多' }).click();
+    const answerLink = questionLink(page, 7);
+    await expect(answerLink).toHaveText('查看回答');
+    await answerLink.scrollIntoViewIfNeeded();
+    const scrollY = await page.evaluate(() => window.scrollY);
+    expect(scrollY).toBeGreaterThan(0);
+    await answerLink.click();
+    await expect(page.getByRole('heading', { name: 'Question 7', exact: true })).toBeVisible();
+    await expect(questionLink(page, 45)).toBeVisible();
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+    const cursorsBeforeBack = [...cursors];
+
+    await page.goBack();
+    await expect(page).toHaveURL(/\/_\/alice$/);
+    await expect(page).toHaveTitle('Alice - NekoBox');
+    await expect(answerLink).toBeInViewport();
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(scrollY);
+    expect(cursors).toEqual(cursorsBeforeBack);
+
+    await page.getByRole('button', { name: '加载更多' }).click();
+    await expect(questionLink(page, 1)).toBeVisible();
+    expect(cursors.at(-1)).toBe('6');
+});
+
+test('browser back to a question box omits an answer just made private', async ({ page }) => {
+    let isPrivate = false;
+    await page.route('**/api/users/alice/questions?*', route => respond(route, {
+        total: isPrivate ? 1 : 2,
+        cursor: '2',
+        questions: isPrivate ? [question(2)] : [question(3), question(2)],
+    }));
+    await page.route('**/api/mine/questions/3/visible', route => {
+        isPrivate = true;
+        return respond(route, 'Saved');
+    });
+
+    await page.goto('/_/alice');
+    await questionLink(page, 3).click();
+    await page.getByRole('button', { name: '设为私密', exact: true }).click();
+    await expect(page.getByRole('button', { name: '设为公开', exact: true })).toBeEnabled();
+
+    await page.goBack();
+    await expect(page).toHaveURL(/\/_\/alice$/);
+    await expect(questionLink(page, 2)).toBeVisible();
+    await expect(questionLink(page, 3)).toHaveCount(0);
+});
+
+test('returning from a question restores the selected tab, loaded pages and scroll position', async ({ page }) => {
+    const cursors: string[] = [];
+    let receivedRequests = 0;
+    page.on('request', request => {
+        if (new URL(request.url()).pathname === '/api/mine/questions') receivedRequests++;
+    });
+    await page.route('**/api/mine/questions/sent?*', route => {
+        const cursor = new URL(route.request().url()).searchParams.get('cursor') ?? '';
+        cursors.push(cursor);
+        const first = cursor ? Number(cursor) - 1 : 45;
+        const questions = Array.from({ length: Math.min(first, 20) }, (_, index) => ({
+            ...question(first - index), isAnswered: true, targetDomain: 'alice',
+        }));
+        return respond(route, { total: 45, cursor: String(questions.at(-1)?.id ?? ''), questions });
+    });
+
+    await page.goto('/mine/questions');
+    await page.getByRole('tab', { name: '我的提问 (45)' }).click();
+    await page.getByRole('button', { name: '加载更多' }).click();
+    const loadedQuestion = page.getByRole('link', { name: /Question 7$/ });
+    await loadedQuestion.scrollIntoViewIfNeeded();
+    const scrollY = await page.evaluate(() => window.scrollY);
+    expect(scrollY).toBeGreaterThan(0);
+    for (const returnToList of [
+        () => page.goBack(),
+        () => page.getByRole('navigation').getByRole('link', { name: '提问', exact: true }).click(),
+    ]) {
+        await loadedQuestion.click();
+        await expect(page.getByRole('heading', { name: 'Question 7', exact: true })).toBeVisible();
+        await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+
+        await returnToList();
+        await expect(page).toHaveURL(/\/mine\/questions$/);
+        await expect(page.getByRole('tab', { name: '我的提问 (45)' })).toHaveAttribute('aria-selected', 'true');
+        await expect(loadedQuestion).toBeInViewport();
+        await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(scrollY);
+    }
+    expect(receivedRequests).toBe(1);
+    expect(cursors).toEqual(['', '26']);
+
+    await page.getByRole('button', { name: '加载更多' }).click();
+    await expect(page.getByRole('link', { name: /Question 1$/ })).toBeVisible();
+    expect(cursors).toEqual(['', '26', '6']);
+});
+
+test('back to the question list reflects a visibility change made in the detail page', async ({ page }) => {
+    let isPrivate = true;
+    await page.route('**/api/mine/questions?*', route => respond(route, {
+        total: 1, cursor: '1', questions: [{ ...question(1), isAnswered: true, isPrivate }],
+    }));
+    await page.route('**/api/mine/questions/1/visible', route => {
+        isPrivate = false;
+        return respond(route, 'Saved');
+    });
+
+    await page.goto('/mine/questions');
+    const item = page.getByRole('link', { name: /Question 1$/ });
+    await expect(item.getByText('私密')).toBeVisible();
+    await item.click();
+    await page.getByRole('button', { name: '设为公开', exact: true }).click();
+    await expect(page.getByRole('button', { name: '设为私密', exact: true })).toBeEnabled();
+
+    await page.goBack();
+    await expect(item).toBeVisible();
+    await expect(item.getByText('私密')).toHaveCount(0);
+});
+
 test('switching box owners reloads the recipient and clears the previous draft', async ({ page }) => {
     await page.goto('/_/bob');
     await expect(page.getByRole('heading', { name: 'Bob', exact: true })).toBeVisible();

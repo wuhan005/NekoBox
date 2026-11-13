@@ -1,5 +1,5 @@
 <template>
-  <UkTabs v-model="currentTab" :tabs="TABS">
+  <UkTabs v-model="currentTab" :tabs="TABS" class="question-tabs">
     <template #received>
       <Skeleton :count="3" :loading="received.isInitLoading"></Skeleton>
       <div v-if="!received.isInitLoading">
@@ -206,5 +206,7 @@ onMounted(() => {
 </script>
 
 <style scoped>
-
+.question-tabs :deep(.uk-tab-panel) {
+  animation: none;
+}
 </style>

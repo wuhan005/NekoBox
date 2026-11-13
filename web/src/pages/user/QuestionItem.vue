@@ -120,6 +120,7 @@ import PageQuestions from "@/components/PageQuestions.vue";
 import {api} from "@/api/client.ts";
 import type {PageQuestion, UserProfile} from "@/api/api.ts";
 import {useRoute, useRouter} from "vue-router";
+import {useAppStore} from "@/store";
 import {humanizeDate} from "@/utils/humanize.ts";
 import NewQuestion from "@/components/NewQuestion.vue";
 import {ToastSuccess} from "@/utils/notify.ts";
@@ -128,6 +129,7 @@ import {Skeleton} from "vue-loading-skeleton";
 
 const route = useRoute()
 const router = useRouter()
+const appStore = useAppStore()
 const domain = ref<string>(route.params.domain as string || '')
 const questionID = ref<string>(route.params.questionID as string || '')
 const questionToken = ref<string>(route.query.t as string || '')
@@ -169,6 +171,7 @@ const handleAnswer = () => {
   isSubmitting.value = true
   api.mine.answerQuestion(Number(questionID.value), {answer, 'images[]': images[0]})
       .then(res => {
+        appStore.invalidateAnsweredQuestions()
         if (isUnmounted || request !== questionRequest) return
         ToastSuccess(res.data)
         if (answerQuestionForm.value.images === images) handleRemoveSelectedImage()
@@ -199,6 +202,7 @@ const handleRemoveSelectedImage = () => {
 
 const handleDelete = () => {
   api.mine.deleteQuestion(Number(questionID.value)).then(res => {
+    appStore.invalidateAnsweredQuestions()
     ToastSuccess(res.data)
     router.push({
       name: 'profile',
@@ -215,6 +219,7 @@ const handleSetVisible = () => {
   const visible = question.value.isPrivate
   isSettingVisible.value = true
   api.mine.setQuestionVisible(Number(questionID.value), {visible}).then(res => {
+    appStore.invalidateAnsweredQuestions()
     if (isUnmounted || request !== questionRequest) return
     question.value.isPrivate = !visible
     ToastSuccess(res.data)

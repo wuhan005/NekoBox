@@ -38,7 +38,7 @@
 </template>
 
 <script setup lang="ts">
-import {ref, onMounted, onUnmounted} from "vue";
+import {ref, onMounted, onUnmounted, watchEffect} from "vue";
 import {api} from "@/api/client.ts";
 import type {UserProfile} from "@/api/api.ts";
 import {useRoute, useRouter} from "vue-router";
@@ -51,26 +51,31 @@ import {Skeleton} from 'vue-loading-skeleton';
 
 const route = useRoute()
 const router = useRouter()
-const domain = ref<string>(route.params.domain as string || '')
+const domain = route.params.domain as string
 
 const isLoading = ref<boolean>(true)
 const profile = ref<UserProfile | null>(null)
 let isUnmounted = false
 onUnmounted(() => { isUnmounted = true })
+const isCurrentProfile = () => route.name === 'profile' && route.params.domain === domain
+
+watchEffect(() => {
+  if (isCurrentProfile() && profile.value) {
+    document.title = `${profile.value.name} - NekoBox`
+  }
+})
 
 const fetchProfile = () => {
   isLoading.value = true
-  return api.users.getUserProfile(domain.value)
+  return api.users.getUserProfile(domain)
       .then(res => {
         if (isUnmounted) return
         profile.value = res.data
-
-        document.title = `${profile.value.name} - NekoBox`
       })
       .catch(err => {
         if (isUnmounted) return
         const statusCode = err.response?.status
-        if (statusCode === 404) {
+        if (statusCode === 404 && isCurrentProfile()) {
           router.push({name: 'home'})
         }
       })

@@ -99,10 +99,19 @@ const allRoutes: Array<RouteRecordRaw> = [
     }
 ]
 
+let questionListPosition: {left: number; top: number} | undefined
+
 const router = createRouter({
     history: createWebHistory(),
     routes: allRoutes,
-    scrollBehavior() {
+    scrollBehavior(to, from, savedPosition) {
+        if (from.name === 'question' && to.name === 'my-questions') {
+            const position = savedPosition ?? questionListPosition
+            if (position) return {...position, behavior: 'instant'}
+        }
+        if (from.name === 'question' && to.name === 'profile' && savedPosition) {
+            return {...savedPosition, behavior: 'instant'}
+        }
         return {el: '#app', top: 0, behavior: 'smooth'}
     },
 })
@@ -118,7 +127,13 @@ router.beforeEach((to, _, next) => {
     }
 })
 
-router.afterEach((to, _from, _next) => {
+router.afterEach((to, from, failure) => {
+    if (failure) return
+    if (from.name === 'my-questions' && to.name === 'question') {
+        questionListPosition = {left: window.scrollX, top: window.scrollY}
+    } else if (to.name !== 'question' && to.name !== 'my-questions') {
+        questionListPosition = undefined
+    }
     document.title = to.meta.title ? `${to.meta.title} - NekoBox` : 'NekoBox'
 })
 

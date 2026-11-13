@@ -65,7 +65,7 @@
 
 <script setup lang="ts">
 import {ref, computed, defineProps} from "vue";
-import {useAuthStore} from "@/store";
+import {useAppStore, useAuthStore} from "@/store";
 import {api} from "@/api/client.ts";
 import {Form} from "vee-validate";
 import {ToastError} from "@/utils/notify.ts";
@@ -75,6 +75,7 @@ import Captcha from "@/components/Captcha.vue";
 const route = useRoute();
 
 const authStore = useAuthStore()
+const appStore = useAppStore()
 
 const captchaRef = ref<InstanceType<typeof Captcha> | null>(null)
 const captchaReady = computed(() => captchaRef.value?.ready ?? false)
@@ -141,6 +142,7 @@ const handleSubmit = async () => {
       captcha,
       'images[]': images[0],
     })
+    appStore.invalidateQuestions()
     successMessage.value = data
     successMessageVisible.value = true
     if (imageUploader.value) imageUploader.value.value = ''
