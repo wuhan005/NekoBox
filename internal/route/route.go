@@ -19,7 +19,6 @@ import (
 	"github.com/flamego/session/mysql"
 	"github.com/flamego/session/postgres"
 	sessionRedis "github.com/flamego/session/redis"
-	"github.com/wuhan005/NekoBox/internal/tracing"
 	"gorm.io/gorm"
 
 	"github.com/wuhan005/NekoBox/internal/captcha"
@@ -27,6 +26,7 @@ import (
 	"github.com/wuhan005/NekoBox/internal/context"
 	"github.com/wuhan005/NekoBox/internal/form"
 	"github.com/wuhan005/NekoBox/internal/route/service"
+	"github.com/wuhan005/NekoBox/internal/tracing"
 )
 
 // New creates the router of the application.
