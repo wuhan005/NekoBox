@@ -5,6 +5,7 @@
 package censor
 
 import (
+	"cmp"
 	"context"
 	"encoding/json"
 
@@ -13,11 +14,13 @@ import (
 )
 
 type AliyunTextCensor struct {
+	region                     string
 	accessKey, accessKeySecret string
 }
 
-func NewAliyunTextCensor(accessKey, accessKeySecret string) *AliyunTextCensor {
+func NewAliyunTextCensor(region, accessKey, accessKeySecret string) *AliyunTextCensor {
 	return &AliyunTextCensor{
+		region:          cmp.Or(region, "cn-shanghai"),
 		accessKey:       accessKey,
 		accessKeySecret: accessKeySecret,
 	}
@@ -67,7 +70,7 @@ func (r *AliyunTextCensorResponse) IsPass() bool {
 // Censor censors text with Aliyun API.
 // https://developer.qiniu.com/censor/7260/api-text-censor
 func (c *AliyunTextCensor) Censor(_ context.Context, text string) (*TextCensorResponse, error) {
-	client, err := green.NewClientWithAccessKey("cn-shanghai", c.accessKey, c.accessKeySecret)
+	client, err := green.NewClientWithAccessKey(c.region, c.accessKey, c.accessKeySecret)
 	if err != nil {
 		return nil, errors.Wrap(err, "new client with access key")
 	}
