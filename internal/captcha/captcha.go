@@ -8,9 +8,9 @@ package captcha
 import (
 	"context"
 
+	"github.com/cockroachdb/errors"
 	"github.com/flamego/cache"
 	"github.com/flamego/flamego"
-	"github.com/pkg/errors"
 )
 
 // Type identifies the captcha driver currently in use; the frontend uses it to pick the matching UI.

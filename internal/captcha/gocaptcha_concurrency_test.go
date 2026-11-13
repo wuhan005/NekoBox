@@ -7,10 +7,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/flamego/cache"
 	cacheRedis "github.com/flamego/cache/redis"
 	"github.com/go-redis/redis/v8"
-	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 	"github.com/thanhpk/randstr"
 )

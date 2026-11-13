@@ -12,8 +12,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/flamego/cache"
-	"github.com/pkg/errors"
 
 	"github.com/wuhan005/NekoBox/internal/conf"
 )

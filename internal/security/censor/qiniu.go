@@ -11,7 +11,7 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 	"github.com/qiniu/go-sdk/v7/auth"
 	"github.com/samber/lo"
 )

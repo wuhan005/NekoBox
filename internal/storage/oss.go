@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 	"github.com/thanhpk/randstr"
 	"github.com/wuhan005/gadget"
 

@@ -9,8 +9,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/flamego/cache"
-	"github.com/pkg/errors"
 )
 
 const (

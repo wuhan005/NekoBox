@@ -3,7 +3,7 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 	"github.com/rs/xid"
 	"github.com/urfave/cli/v2"
 

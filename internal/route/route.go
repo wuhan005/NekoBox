@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/flamego/cache"
 	cacheRedis "github.com/flamego/cache/redis"
 	"github.com/flamego/cors"
@@ -18,7 +19,6 @@ import (
 	"github.com/flamego/session/mysql"
 	"github.com/flamego/session/postgres"
 	sessionRedis "github.com/flamego/session/redis"
-	"github.com/pkg/errors"
 	"github.com/wuhan005/NekoBox/internal/tracing"
 	"gorm.io/gorm"
 

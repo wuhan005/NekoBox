@@ -10,7 +10,7 @@ import (
 	"encoding/json"
 
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/green"
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 )
 
 type AliyunTextCensor struct {

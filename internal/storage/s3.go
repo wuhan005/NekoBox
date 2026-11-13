@@ -14,7 +14,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 	"github.com/thanhpk/randstr"
 	"github.com/wuhan005/gadget"
 

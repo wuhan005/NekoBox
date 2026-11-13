@@ -16,8 +16,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/go-redis/redis/v8"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/uptrace/opentelemetry-go-extra/otellogrus"
 	"github.com/uptrace/uptrace-go/uptrace"

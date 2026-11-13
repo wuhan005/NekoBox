@@ -7,8 +7,8 @@ package route
 import (
 	"net/http"
 
+	"github.com/cockroachdb/errors"
 	"github.com/flamego/cache"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
 	"github.com/wuhan005/NekoBox/internal/captcha"

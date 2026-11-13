@@ -11,8 +11,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/flamego/cache"
-	"github.com/pkg/errors"
 	"github.com/thanhpk/randstr"
 	gocaptchaImagesV2 "github.com/wenlng/go-captcha-assets/resources/imagesv2"
 	gocaptchaTiles "github.com/wenlng/go-captcha-assets/resources/tiles"

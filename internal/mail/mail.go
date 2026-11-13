@@ -11,7 +11,7 @@ import (
 	"html/template"
 	"time"
 
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 	"gopkg.in/gomail.v2"
 
 	"github.com/wuhan005/NekoBox/internal/conf"

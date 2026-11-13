@@ -10,7 +10,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 	"github.com/thanhpk/randstr"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"

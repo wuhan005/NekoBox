@@ -10,9 +10,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/flamego/cache"
 	"github.com/go-redis/redis/v8"
-	"github.com/pkg/errors"
 
 	"github.com/wuhan005/NekoBox/internal/conf"
 )

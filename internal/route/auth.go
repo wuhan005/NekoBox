@@ -7,9 +7,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/flamego/cache"
 	"github.com/flamego/session"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/thanhpk/randstr"
 

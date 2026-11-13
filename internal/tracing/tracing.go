@@ -5,7 +5,7 @@
 package tracing
 
 import (
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 	"go.opentelemetry.io/otel"
 	stdout "go.opentelemetry.io/otel/exporters/stdout/stdouttrace"
 	"go.opentelemetry.io/otel/propagation"

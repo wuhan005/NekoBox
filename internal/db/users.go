@@ -8,7 +8,7 @@ import (
 	"context"
 	"strings"
 
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 	"github.com/rs/xid"
 	"github.com/samber/lo"
 	"github.com/wuhan005/gadget"
