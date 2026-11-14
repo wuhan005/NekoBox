@@ -46,9 +46,9 @@ interface MailhogResponse {
  * Polls the MailHog HTTP API until an email addressed to `to` appears,
  * or the timeout is reached.
  *
- * @returns true if the email was found within the timeout.
+ * @returns the email body if it was found within the timeout.
  */
-export async function waitForMailhogEmail(to: string, timeoutMs = 15_000): Promise<boolean> {
+export async function waitForMailhogEmail(to: string, timeoutMs = 15_000): Promise<string | undefined> {
     const deadline = Date.now() + timeoutMs;
 
     while (Date.now() < deadline) {
@@ -59,7 +59,7 @@ export async function waitForMailhogEmail(to: string, timeoutMs = 15_000): Promi
                 for (const item of data.items) {
                     const toHeaders = item.Content?.Headers?.['To'] ?? [];
                     if (toHeaders.some(addr => addr.includes(to))) {
-                        return true;
+                        return item.Content.Body;
                     }
                 }
             }
@@ -68,7 +68,6 @@ export async function waitForMailhogEmail(to: string, timeoutMs = 15_000): Promi
         }
         await new Promise(r => setTimeout(r, 500));
     }
-    return false;
 }
 
 // ─── Auth flow helper ─────────────────────────────────────────────────────────

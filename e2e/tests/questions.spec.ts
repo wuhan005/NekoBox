@@ -208,7 +208,7 @@ test('owner receives a "new question" email when someone posts a question', asyn
 
     // MailHog should receive the "new question" notification.
     const received = await waitForMailhogEmail(owner.email, 30_000);
-    expect(received).toBe(true);
+    expect(received).toBeDefined();
 });
 
 test('questioner receives a reply email when their question is answered', async ({ page }) => {
@@ -228,7 +228,7 @@ test('questioner receives a reply email when their question is answered', async 
 
     // 2. Open the question from the mine list.
     await page.goto('/mine/questions');
-    await page.locator('p.uk-text-small').first().click();
+    await page.getByRole('link', { name: /Will I get a reply notification\?/ }).click();
     await expect(page).toHaveURL(new RegExp(`/_/${owner.domain}/\\d+`));
 
     // 3. Answer the question – this triggers the reply email.
@@ -243,7 +243,7 @@ test('questioner receives a reply email when their question is answered', async 
 
     // 4. MailHog must have delivered the reply notification to replyEmail.
     const received = await waitForMailhogEmail(replyEmail, 30_000);
-    expect(received).toBe(true);
+    expect(received).toBeDefined();
 });
 
 // ─── Image upload (S3) ────────────────────────────────────────────────────────
