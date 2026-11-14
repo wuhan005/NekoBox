@@ -14,12 +14,12 @@ import (
 	"github.com/thanhpk/randstr"
 
 	"github.com/wuhan005/NekoBox/internal/captcha"
-	"github.com/wuhan005/NekoBox/internal/conf"
 	"github.com/wuhan005/NekoBox/internal/context"
 	"github.com/wuhan005/NekoBox/internal/db"
 	"github.com/wuhan005/NekoBox/internal/form"
 	"github.com/wuhan005/NekoBox/internal/mail"
 	"github.com/wuhan005/NekoBox/internal/response"
+	"github.com/wuhan005/NekoBox/internal/settings"
 )
 
 type AuthHandler struct{}
@@ -62,13 +62,24 @@ func (*AuthHandler) SignUp(ctx context.Context, v captcha.Verifier, c cache.Cach
 		return nil
 	}
 
+	avatar, err := settings.GetString(ctx.Request().Context(), settings.KeyDefaultAvatar)
+	if err != nil {
+		logrus.WithContext(ctx.Request().Context()).WithError(err).Error("Failed to get default avatar setting")
+		return ctx.ServerError()
+	}
+	background, err := settings.GetString(ctx.Request().Context(), settings.KeyDefaultBackground)
+	if err != nil {
+		logrus.WithContext(ctx.Request().Context()).WithError(err).Error("Failed to get default background setting")
+		return ctx.ServerError()
+	}
+
 	if err := db.Users.Create(ctx.Request().Context(), db.CreateUserOptions{
 		Name:       f.Name,
 		Password:   f.Password,
 		Email:      f.Email,
-		Avatar:     conf.Upload.DefaultAvatarURL,
+		Avatar:     avatar,
 		Domain:     f.Domain,
-		Background: conf.Upload.DefaultBackground,
+		Background: background,
 		Intro:      "问你想问的",
 	}); err != nil {
 		switch {

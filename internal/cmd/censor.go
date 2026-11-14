@@ -12,6 +12,7 @@ import (
 	"github.com/wuhan005/NekoBox/internal/conf"
 	"github.com/wuhan005/NekoBox/internal/db"
 	"github.com/wuhan005/NekoBox/internal/security/censor"
+	"github.com/wuhan005/NekoBox/internal/settings"
 )
 
 var Censor = &cli.Command{
@@ -25,16 +26,20 @@ func runCensor(ctx *cli.Context) error {
 		return errors.Wrap(err, "load configuration")
 	}
 
-	if !conf.Security.EnableTextCensor {
-		return errors.New("text censor is disabled")
-	}
-
 	dbType := "mysql"
 	conf.Database.DSN = conf.MySQLDsn()
 
 	database, err := db.Init(dbType, conf.Database.DSN)
 	if err != nil {
 		return errors.Wrap(err, "connect to database")
+	}
+
+	enabled, err := settings.GetBool(ctx.Context, settings.KeyEnableTextCensor)
+	if err != nil {
+		return errors.Wrap(err, "get text censor setting")
+	}
+	if !enabled {
+		return errors.New("text censor is disabled")
 	}
 
 	// Check all the unprocessed questions.

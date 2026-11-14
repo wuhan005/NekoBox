@@ -26,6 +26,7 @@ import (
 	"github.com/wuhan005/NekoBox/internal/conf"
 	"github.com/wuhan005/NekoBox/internal/db"
 	"github.com/wuhan005/NekoBox/internal/route"
+	"github.com/wuhan005/NekoBox/internal/settings"
 )
 
 var Web = &cli.Command{
@@ -84,6 +85,19 @@ func runWeb(ctx *cli.Context) error {
 		return errors.Wrap(err, "get database connection pool")
 	}
 	defer func() { _ = sqlDB.Close() }()
+
+	var settingsRedis *redis.Client
+	if conf.Redis.Addr != "" {
+		settingsRedis = redis.NewClient(&redis.Options{
+			Addr:     conf.Redis.Addr,
+			Password: conf.Redis.Password,
+			DB:       0,
+		})
+		defer func() { _ = settingsRedis.Close() }()
+	}
+	if err := settings.Init(ctx.Context, settingsRedis); err != nil {
+		return errors.Wrap(err, "init system settings")
+	}
 
 	var notifications sync.WaitGroup
 	r, err := route.New(database, &notifications)

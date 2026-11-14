@@ -1,10 +1,13 @@
 package route
 
 import (
+	"github.com/sirupsen/logrus"
+
 	"github.com/wuhan005/NekoBox/internal/captcha"
 	"github.com/wuhan005/NekoBox/internal/conf"
 	"github.com/wuhan005/NekoBox/internal/context"
 	"github.com/wuhan005/NekoBox/internal/response"
+	"github.com/wuhan005/NekoBox/internal/settings"
 )
 
 type ConfigHandler struct{}
@@ -21,9 +24,15 @@ func NewConfigHandler() *ConfigHandler {
 // @ID getGlobalConfig
 // @Router /config [get]
 func (*ConfigHandler) Get(ctx context.Context, v captcha.Verifier) error {
+	icp, err := settings.GetString(ctx.Request().Context(), settings.KeyICP)
+	if err != nil {
+		logrus.WithContext(ctx.Request().Context()).WithError(err).Error("Failed to get ICP setting")
+		return ctx.ServerError()
+	}
+
 	config := response.GlobalConfig{
 		ExternalURL: conf.App.ExternalURL,
-		ICP:         conf.App.ICP,
+		ICP:         icp,
 		Captcha:     response.CaptchaConfig{Type: v.Type()},
 	}
 	if config.Captcha.Type == captcha.TypeRecaptcha {

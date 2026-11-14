@@ -13,6 +13,7 @@ import (
 
 	"github.com/wuhan005/NekoBox/internal/conf"
 	"github.com/wuhan005/NekoBox/internal/db"
+	"github.com/wuhan005/NekoBox/internal/settings"
 )
 
 var (
@@ -22,7 +23,11 @@ var (
 // Text checks the text for sensitive content.
 // It will save the censor log to the database and invoke the callback function.
 func Text(ctx context.Context, text string) (*TextCensorResponse, error) {
-	if !conf.Security.EnableTextCensor {
+	enabled, err := settings.GetBool(ctx, settings.KeyEnableTextCensor)
+	if err != nil {
+		return nil, errors.Wrap(err, "get text censor setting")
+	}
+	if !enabled {
 		return &TextCensorResponse{Pass: true}, nil
 	}
 
