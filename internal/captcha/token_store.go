@@ -12,6 +12,7 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/flamego/cache"
+	"github.com/go-redis/redis/extra/redisotel/v8"
 	"github.com/go-redis/redis/v8"
 
 	"github.com/wuhan005/NekoBox/internal/conf"
@@ -33,6 +34,7 @@ func newTokenStore() *tokenStore {
 			Password: conf.Redis.Password,
 			DB:       0,
 		})
+		ts.redis.AddHook(redisotel.NewTracingHook())
 	}
 	return ts
 }

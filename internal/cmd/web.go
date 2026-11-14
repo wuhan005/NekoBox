@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
+	"github.com/go-redis/redis/extra/redisotel/v8"
 	"github.com/go-redis/redis/v8"
 	"github.com/sirupsen/logrus"
 	"github.com/uptrace/opentelemetry-go-extra/otellogrus"
@@ -93,6 +94,7 @@ func runWeb(ctx *cli.Context) error {
 			Password: conf.Redis.Password,
 			DB:       0,
 		})
+		settingsRedis.AddHook(redisotel.NewTracingHook())
 		defer func() { _ = settingsRedis.Close() }()
 	}
 	if err := settings.Init(ctx.Context, settingsRedis); err != nil {

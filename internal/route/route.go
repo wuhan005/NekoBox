@@ -19,6 +19,7 @@ import (
 	"github.com/flamego/session/mysql"
 	"github.com/flamego/session/postgres"
 	sessionRedis "github.com/flamego/session/redis"
+	semconv "go.opentelemetry.io/otel/semconv/v1.12.0"
 	"gorm.io/gorm"
 
 	"github.com/wuhan005/NekoBox/internal/captcha"
@@ -70,7 +71,7 @@ func New(db *gorm.DB, notifications *sync.WaitGroup) (*flamego.Flame, error) {
 		}
 	}
 	if conf.Redis.Addr != "" {
-		initer = sessionRedis.Initer()
+		initer = tracing.SessionIniter(sessionRedis.Initer(), semconv.DBSystemRedis)
 		sessionStorage = sessionRedis.Config{
 			Options: &cacheRedis.Options{
 				Addr:     conf.Redis.Addr,
@@ -95,6 +96,7 @@ func New(db *gorm.DB, notifications *sync.WaitGroup) (*flamego.Flame, error) {
 	})
 
 	f.Use(
+		tracing.Middleware("NekoBox"),
 		cors.CORS(cors.Options{
 			Scheme:      "*",
 			AllowDomain: conf.App.CorsAllowDomains,
@@ -102,7 +104,7 @@ func New(db *gorm.DB, notifications *sync.WaitGroup) (*flamego.Flame, error) {
 		}),
 		sessioner,
 		cache.Cacher(cache.Options{
-			Initer: cacheRedis.Initer(),
+			Initer: tracing.CacheIniter(cacheRedis.Initer(), semconv.DBSystemRedis),
 			Config: cacheRedis.Config{
 				Options: &cacheRedis.Options{
 					Addr:     conf.Redis.Addr,
@@ -111,7 +113,6 @@ func New(db *gorm.DB, notifications *sync.WaitGroup) (*flamego.Flame, error) {
 				},
 			},
 		}),
-		tracing.Middleware("NekoBox"),
 		captcha.Provider(captchaService),
 		context.Contexter(db),
 	)
