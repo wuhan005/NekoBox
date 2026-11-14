@@ -1,4 +1,5 @@
-import { test, expect } from '@playwright/test';
+import { expect } from '@playwright/test';
+import { test } from '../frontend/coverage';
 import { image, question, respond, holdNextRequest, mockFrontend } from '../frontend/helpers';
 
 const questionLink = (page: import('@playwright/test').Page, id: number) => page.locator(`#question-list a[href="/_/alice/${id}"]`);

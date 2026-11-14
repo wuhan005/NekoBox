@@ -54,6 +54,15 @@ jobs:
             e2e/test-results/frontend/
           retention-days: 30
 
+      - name: Upload frontend coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: e2e/test-results/frontend/coverage/lcov.info
+          flags: frontend
+          disable_search: true
+          fail_ci_if_error: true
+
   e2e:
     name: Run E2E Tests
     runs-on: ubuntu-24.04

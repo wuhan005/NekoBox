@@ -12,7 +12,7 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.49.1",
-    "@types/node": "^22.10.2"
+    "@types/node": "^22.10.2",
+    "monocart-coverage-reports": "^3.2.1"
   }
 }
-

@@ -1,4 +1,5 @@
-import {test, expect} from '@playwright/test';
+import {expect} from '@playwright/test';
+import {test} from './coverage';
 import {avatar, image, profile, question, respond, holdNextRequest, mockFrontend} from './helpers';
 
 test.beforeEach(mockFrontend);

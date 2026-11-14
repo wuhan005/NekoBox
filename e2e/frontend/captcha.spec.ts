@@ -1,4 +1,5 @@
-import {test, expect, type Page} from '@playwright/test';
+import {expect, type Page} from '@playwright/test';
+import {test} from './coverage';
 import {avatar, globalConfig, respond, holdNextRequest, mockFrontend} from './helpers';
 
 test.beforeEach(mockFrontend);
