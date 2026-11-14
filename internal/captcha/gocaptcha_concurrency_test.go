@@ -33,9 +33,9 @@ func TestGoCaptcha_VerifyChallenge_Concurrent(t *testing.T) {
 			c := newMemoryCache(t)
 			services := []*goCaptchaService{{tokens: &tokenStore{}, verifyPadding: 5, tokenTTL: time.Minute}}
 			if backend == "redis" {
-				addr := os.Getenv("NEKOBOX_TEST_REDIS_ADDR")
+				addr := os.Getenv("REDIS_ADDR")
 				if addr == "" {
-					t.Skip("NEKOBOX_TEST_REDIS_ADDR is not set")
+					t.Skip("REDIS_ADDR is not set")
 				}
 				var err error
 				c, err = cacheRedis.Initer()(ctx, cacheRedis.Config{Options: &cacheRedis.Options{Addr: addr}})

@@ -214,8 +214,7 @@ func (h *MineHandler) AnswerQuestion(ctx context.Context, question *db.Question,
 	censorResponse, err := censor.Text(ctx.Request().Context(), answer)
 	if err != nil {
 		logrus.WithContext(ctx.Request().Context()).WithError(err).Error("Failed to censor text")
-	}
-	if err == nil && !censorResponse.Pass {
+	} else if !censorResponse.Pass {
 		errorMessage := censorResponse.ErrorMessage()
 		return ctx.Error(http.StatusBadRequest, "%s", errorMessage)
 	}

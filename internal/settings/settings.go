@@ -84,41 +84,18 @@ func initDefaults(ctx context.Context, store db.SystemSettingsStore, opts []db.S
 
 // GetString returns the value of the string setting with the given key.
 func GetString(ctx context.Context, key string) (string, error) {
-	setting, err := get(ctx, Store(), key)
+	setting, err := Store().Get(ctx, key)
 	if err != nil {
-		return "", err
+		return "", errors.Wrapf(err, "get system setting %q", key)
 	}
 	return setting.AsString()
 }
 
 // GetBool returns the value of the bool setting with the given key.
 func GetBool(ctx context.Context, key string) (bool, error) {
-	setting, err := get(ctx, Store(), key)
+	setting, err := Store().Get(ctx, key)
 	if err != nil {
-		return false, err
+		return false, errors.Wrapf(err, "get system setting %q", key)
 	}
 	return setting.AsBool()
-}
-
-// get falls back to the predefined default when the key is missing in the database, e.g. in CLI commands that skip Init.
-func get(ctx context.Context, store db.SystemSettingsStore, key string) (*db.SystemSetting, error) {
-	setting, err := store.Get(ctx, key)
-	if err == nil {
-		return setting, nil
-	}
-	if !errors.Is(err, db.ErrSystemSettingNotExist) {
-		return nil, errors.Wrapf(err, "get system setting %q", key)
-	}
-
-	for _, opt := range defaults() {
-		if opt.Key == key {
-			return &db.SystemSetting{
-				Key:         opt.Key,
-				Type:        opt.Type,
-				Value:       opt.Value,
-				Description: opt.Description,
-			}, nil
-		}
-	}
-	return nil, errors.Wrapf(err, "%q", key)
 }

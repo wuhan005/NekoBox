@@ -198,8 +198,7 @@ func (h *UserHandler) PostQuestion(ctx context.Context, pageUser *db.User, v cap
 	censorResponse, err := censor.Text(ctx.Request().Context(), content)
 	if err != nil {
 		logrus.WithContext(ctx.Request().Context()).WithError(err).Error("Failed to censor text")
-	}
-	if err == nil && !censorResponse.Pass {
+	} else if !censorResponse.Pass {
 		errorMessage := censorResponse.ErrorMessage()
 		return ctx.Error(http.StatusBadRequest, "%s", errorMessage)
 	}

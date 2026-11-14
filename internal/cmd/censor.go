@@ -5,9 +5,12 @@
 package cmd
 
 import (
+	"context"
+
 	"github.com/cockroachdb/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli/v2"
+	"gorm.io/gorm"
 
 	"github.com/wuhan005/NekoBox/internal/conf"
 	"github.com/wuhan005/NekoBox/internal/db"
@@ -33,8 +36,11 @@ func runCensor(ctx *cli.Context) error {
 	if err != nil {
 		return errors.Wrap(err, "connect to database")
 	}
+	return censorQuestions(ctx.Context, database)
+}
 
-	enabled, err := settings.GetBool(ctx.Context, settings.KeyEnableTextCensor)
+func censorQuestions(ctx context.Context, database *gorm.DB) error {
+	enabled, err := settings.GetBool(ctx, settings.KeyEnableTextCensor)
 	if err != nil {
 		return errors.Wrap(err, "get text censor setting")
 	}
@@ -44,44 +50,44 @@ func runCensor(ctx *cli.Context) error {
 
 	// Check all the unprocessed questions.
 	var questions []db.Question
+	database = database.WithContext(ctx)
 	if err := database.Raw(`SELECT * FROM questions WHERE content_censor_metadata IS NULL`).Find(&questions).Error; err != nil {
 		return errors.Wrap(err, "query questions")
 	}
 
-	logrus.WithContext(ctx.Context).WithField("count", len(questions)).Info("Found un-censor questions")
+	logrus.WithContext(ctx).WithField("count", len(questions)).Info("Found un-censor questions")
 
+	// The entire batch uses the startup setting so only real scan results are saved.
 	for i, question := range questions {
-		question := question
-
 		content := question.Content
 		answer := question.Answer
-		contentCensorResponse, err := censor.Text(ctx.Context, content)
+		contentCensorResponse, err := censor.ScanText(ctx, content)
 		if err != nil {
-			logrus.WithContext(ctx.Context).WithField("question_id", question.ID).WithError(err).Error("Failed to censor content")
+			logrus.WithContext(ctx).WithField("question_id", question.ID).WithError(err).Error("Failed to censor content")
 		} else {
 			// We don't want to update the `updated_at` field, so just execute the raw SQL.
 			if err := database.Debug().Exec(`UPDATE questions SET content_censor_metadata = ? WHERE id = ?`, contentCensorResponse.ToJSON(), question.ID).Error; err != nil {
-				logrus.WithContext(ctx.Context).WithField("question_id", question.ID).WithError(err).Error("Failed to update content censor metadata")
+				logrus.WithContext(ctx).WithField("question_id", question.ID).WithError(err).Error("Failed to update content censor metadata")
 			}
 		}
 
 		if answer != "" && question.AnswerCensorMetadata == nil {
-			answerCensorResponse, err := censor.Text(ctx.Context, answer)
+			answerCensorResponse, err := censor.ScanText(ctx, answer)
 			if err != nil {
-				logrus.WithContext(ctx.Context).WithField("question_id", question.ID).WithError(err).Error("Failed to censor answer")
+				logrus.WithContext(ctx).WithField("question_id", question.ID).WithError(err).Error("Failed to censor answer")
 			} else {
 				// We don't want to update the `updated_at` field, so just execute the raw SQL.
 				if err := database.Exec(`UPDATE questions SET answer_censor_metadata = ? WHERE id = ?`, answerCensorResponse.ToJSON(), question.ID).Error; err != nil {
-					logrus.WithContext(ctx.Context).WithField("question_id", question.ID).WithError(err).Error("Failed to update answer censor metadata")
+					logrus.WithContext(ctx).WithField("question_id", question.ID).WithError(err).Error("Failed to update answer censor metadata")
 				}
 			}
 		}
 
 		if i%1000 == 0 {
-			logrus.WithContext(ctx.Context).WithField("count", i).Trace("Processed questions")
+			logrus.WithContext(ctx).WithField("count", i).Trace("Processed questions")
 		}
 	}
 
-	logrus.WithContext(ctx.Context).WithField("count", len(questions)).Info("Processed all questions")
+	logrus.WithContext(ctx).WithField("count", len(questions)).Info("Processed all questions")
 	return nil
 }

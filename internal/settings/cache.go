@@ -40,7 +40,7 @@ func newCachedStore(store db.SystemSettingsStore, client *redis.Client, ttl time
 	}
 }
 
-// cacheEntry caches a missing key as a nil setting, so that falling back to the default value does not hit the database either.
+// cacheEntry caches a missing key as a nil setting to avoid repeated database lookups.
 type cacheEntry struct {
 	Setting *db.SystemSetting `json:"setting"`
 }

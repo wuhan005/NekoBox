@@ -6,15 +6,13 @@ package dbutil
 
 import (
 	"context"
+	"crypto/rand"
 	"flag"
-	"math/rand"
 	"net/url"
 	"os"
-	"strconv"
 	"strings"
 	"sync"
 	"testing"
-	"time"
 
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
@@ -49,8 +47,7 @@ func NewTestDB(t *testing.T, migrationTables ...interface{}) (testDB *gorm.DB, c
 	}
 
 	ctx := context.Background()
-	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
-	dbname := "nekobox-test-" + strconv.FormatUint(rng.Uint64(), 10)
+	dbname := "nekobox-test-" + rand.Text()
 
 	err = db.WithContext(ctx).Exec(`CREATE DATABASE ` + QuoteIdentifier(dbType, dbname)).Error
 	if err != nil {

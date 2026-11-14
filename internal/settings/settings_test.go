@@ -8,7 +8,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/cockroachdb/errors"
 	"github.com/stretchr/testify/require"
 
 	"github.com/wuhan005/NekoBox/internal/conf"
@@ -32,6 +31,9 @@ func TestSettings(t *testing.T) {
 	ctx := context.Background()
 
 	store := db.NewSystemSettingsStore(testDB)
+	previousStore := db.SystemSettings
+	db.SystemSettings = store
+	t.Cleanup(func() { db.SystemSettings = previousStore })
 
 	for _, tc := range []struct {
 		name string
@@ -84,34 +86,30 @@ func testSettingsInit(t *testing.T, ctx context.Context, store db.SystemSettings
 		err = initDefaults(ctx, store, defaults())
 		require.Nil(t, err)
 
-		icp, err := get(ctx, store, KeyICP)
+		icp, err := GetString(ctx, KeyICP)
 		require.Nil(t, err)
-		require.Equal(t, "Example ICP", icp.Value)
+		require.Equal(t, "Example ICP", icp)
 
-		enableTextCensor, err := get(ctx, store, KeyEnableTextCensor)
+		enableTextCensor, err := GetBool(ctx, KeyEnableTextCensor)
 		require.Nil(t, err)
-		require.Equal(t, "false", enableTextCensor.Value)
+		require.False(t, enableTextCensor)
 	})
 }
 
 func testSettingsGet(t *testing.T, ctx context.Context, store db.SystemSettingsStore) {
 	setStaticConf(t, "Static ICP", true)
 
-	t.Run("fall back to default", func(t *testing.T) {
-		got, err := get(ctx, store, KeyICP)
-		require.Nil(t, err)
-		v, err := got.AsString()
-		require.Nil(t, err)
-		require.Equal(t, "Static ICP", v)
+	t.Run("missing keys return an error", func(t *testing.T) {
+		v, err := GetString(ctx, KeyICP)
+		require.ErrorIs(t, err, db.ErrSystemSettingNotExist)
+		require.Empty(t, v)
 
-		got, err = get(ctx, store, KeyEnableTextCensor)
-		require.Nil(t, err)
-		enabled, err := got.AsBool()
-		require.Nil(t, err)
-		require.True(t, enabled)
+		enabled, err := GetBool(ctx, KeyEnableTextCensor)
+		require.ErrorIs(t, err, db.ErrSystemSettingNotExist)
+		require.False(t, enabled)
 	})
 
-	t.Run("database takes precedence", func(t *testing.T) {
+	t.Run("read the database value", func(t *testing.T) {
 		err := store.Set(ctx, db.SetSystemSettingOptions{
 			Key:   KeyICP,
 			Type:  db.SystemSettingTypeString,
@@ -119,13 +117,8 @@ func testSettingsGet(t *testing.T, ctx context.Context, store db.SystemSettingsS
 		})
 		require.Nil(t, err)
 
-		got, err := get(ctx, store, KeyICP)
+		got, err := GetString(ctx, KeyICP)
 		require.Nil(t, err)
-		require.Equal(t, "Dynamic ICP", got.Value)
-	})
-
-	t.Run("unknown key", func(t *testing.T) {
-		_, err := get(ctx, store, "app.not_exist")
-		require.True(t, errors.Is(err, db.ErrSystemSettingNotExist))
+		require.Equal(t, "Dynamic ICP", got)
 	})
 }

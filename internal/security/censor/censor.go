@@ -16,12 +16,9 @@ import (
 	"github.com/wuhan005/NekoBox/internal/settings"
 )
 
-var (
-	censorCacheNoMoreThan = 31 * 24 * time.Hour // 1 month
-)
+const censorCacheNoMoreThan = 31 * 24 * time.Hour // 1 month
 
-// Text checks the text for sensitive content.
-// It will save the censor log to the database and invoke the callback function.
+// Text checks the text for sensitive content when the runtime setting is enabled.
 func Text(ctx context.Context, text string) (*TextCensorResponse, error) {
 	enabled, err := settings.GetBool(ctx, settings.KeyEnableTextCensor)
 	if err != nil {
@@ -30,7 +27,11 @@ func Text(ctx context.Context, text string) (*TextCensorResponse, error) {
 	if !enabled {
 		return &TextCensorResponse{Pass: true}, nil
 	}
+	return ScanText(ctx, text)
+}
 
+// ScanText checks the text and saves the censor log. The caller must check whether text censorship is enabled.
+func ScanText(ctx context.Context, text string) (*TextCensorResponse, error) {
 	var responses []*TextCensorResponse
 
 	for _, censor := range []TextCensor{

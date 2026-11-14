@@ -94,9 +94,9 @@ func (s *memoryStore) CreateIfNotExist(_ context.Context, opts []db.SetSystemSet
 }
 
 func newTestRedisClient(t *testing.T) *redis.Client {
-	addr := os.Getenv("NEKOBOX_TEST_REDIS_ADDR")
+	addr := os.Getenv("REDIS_ADDR")
 	if addr == "" {
-		t.Skip("NEKOBOX_TEST_REDIS_ADDR is not set")
+		t.Skip("REDIS_ADDR is not set")
 	}
 	client := redis.NewClient(&redis.Options{Addr: addr})
 	t.Cleanup(func() { _ = client.Close() })

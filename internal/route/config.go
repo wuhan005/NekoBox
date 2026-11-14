@@ -27,7 +27,6 @@ func (*ConfigHandler) Get(ctx context.Context, v captcha.Verifier) error {
 	icp, err := settings.GetString(ctx.Request().Context(), settings.KeyICP)
 	if err != nil {
 		logrus.WithContext(ctx.Request().Context()).WithError(err).Error("Failed to get ICP setting")
-		return ctx.ServerError()
 	}
 
 	config := response.GlobalConfig{

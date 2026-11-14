@@ -111,8 +111,8 @@ func AliyunTextCensorParser(raw []byte) (*TextCensorResponse, error) {
 		return nil, errors.Wrap(err, "unmarshal response")
 	}
 
-	if len(responseJSON.Data) == 0 {
-		return nil, errors.New("response data is empty")
+	if len(responseJSON.Data) == 0 || len(responseJSON.Data[0].Results) == 0 {
+		return nil, errors.New("response has no text censor result")
 	}
 
 	var hint string
