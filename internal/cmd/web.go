@@ -20,14 +20,15 @@ import (
 	"github.com/go-redis/redis/extra/redisotel/v8"
 	"github.com/go-redis/redis/v8"
 	"github.com/sirupsen/logrus"
-	"github.com/uptrace/opentelemetry-go-extra/otellogrus"
 	"github.com/uptrace/uptrace-go/uptrace"
 	"github.com/urfave/cli/v2"
+	"go.opentelemetry.io/otel"
 
 	"github.com/wuhan005/NekoBox/internal/conf"
 	"github.com/wuhan005/NekoBox/internal/db"
 	"github.com/wuhan005/NekoBox/internal/route"
 	"github.com/wuhan005/NekoBox/internal/settings"
+	"github.com/wuhan005/NekoBox/internal/tracing"
 )
 
 var Web = &cli.Command{
@@ -47,6 +48,11 @@ func runWeb(ctx *cli.Context) error {
 			uptrace.WithServiceName("nekobox"),
 			uptrace.WithServiceVersion(conf.BuildCommit),
 		)
+
+		if provider := uptrace.TracerProvider(); provider != nil {
+			otel.SetTracerProvider(tracing.FilterRequestCancellations(provider))
+		}
+
 		defer func() {
 			flush, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 			defer cancel()
@@ -54,15 +60,11 @@ func runWeb(ctx *cli.Context) error {
 				logrus.WithError(err).Warn("Failed to shut down Uptrace")
 			}
 		}()
+
 		logrus.WithContext(ctx.Context).Debug("Tracing enabled.")
 	}
 
-	logrus.AddHook(otellogrus.NewHook(otellogrus.WithLevels(
-		logrus.PanicLevel,
-		logrus.FatalLevel,
-		logrus.ErrorLevel,
-		logrus.WarnLevel,
-	)))
+	logrus.AddHook(tracing.LogHook())
 
 	dbType := conf.Database.Type
 

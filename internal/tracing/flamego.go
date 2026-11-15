@@ -5,10 +5,12 @@
 package tracing
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
 	"github.com/flamego/flamego"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/propagation"
 	semconv "go.opentelemetry.io/otel/semconv/v1.12.0"
 	oteltrace "go.opentelemetry.io/otel/trace"
@@ -30,13 +32,17 @@ func Middleware(service string, opts ...Option) flamego.Handler {
 			c.Request().Request = c.Request().WithContext(savedCtx)
 		}()
 
+		request := &requestTrace{ctx: savedCtx}
 		ctx := cfg.Propagators.Extract(savedCtx, propagation.HeaderCarrier(c.Request().Header))
+		ctx = context.WithValue(ctx, requestTraceKey{}, request)
+
 		opts := []oteltrace.SpanStartOption{
 			oteltrace.WithAttributes(semconv.NetAttributesFromHTTPRequest("tcp", c.Request().Request)...),
 			oteltrace.WithAttributes(semconv.EndUserAttributesFromHTTPRequest(c.Request().Request)...),
 			oteltrace.WithAttributes(semconv.HTTPServerAttributesFromHTTPRequest(service, "", c.Request().Request)...),
 			oteltrace.WithSpanKind(oteltrace.SpanKindServer),
 		}
+
 		// TODO: span name should be router template not the actual request path, eg /user/:id vs /user/123
 		spanName := c.Request().RequestURI
 		if spanName == "" {
@@ -52,6 +58,13 @@ func Middleware(service string, opts ...Option) flamego.Handler {
 		c.Next()
 
 		status := c.ResponseWriter().Status()
+		canceledBeforeResponse := status == 0 && savedCtx.Err() == context.Canceled
+		cancellationFailure := status >= 500 && request.canceled.Load() && !request.failed.Load()
+		if canceledBeforeResponse || cancellationFailure {
+			span.SetAttributes(attribute.Bool("http.request.canceled", true))
+			return
+		}
+
 		attrs := semconv.HTTPAttributesFromHTTPStatusCode(status)
 		spanStatus, spanMessage := semconv.SpanStatusFromHTTPStatusCodeAndSpanKind(status, oteltrace.SpanKindServer)
 		span.SetAttributes(attrs...)
