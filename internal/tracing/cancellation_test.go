@@ -66,7 +66,7 @@ func TestRequestCancellation(t *testing.T) {
 
 			require.NoError(t, database.Use(otelgorm.NewPlugin(otelgorm.WithTracerProvider(provider), otelgorm.WithoutMetrics())))
 			require.NoError(t, database.Callback().Query().Before("gorm:query").Register("test:query-error", func(tx *gorm.DB) {
-				tx.AddError(fmt.Errorf("timeout: %w", tt.queryErr))
+				_ = tx.AddError(fmt.Errorf("timeout: %w", tt.queryErr))
 			}))
 
 			request := httptest.NewRequest(http.MethodGet, "/questions/1", nil)
