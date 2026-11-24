@@ -15,14 +15,21 @@ test.describe('Authentication', () => {
         await clickSubmitWhenReady(page);
         await expect(page).toHaveURL('/sign-in');
 
-        await page.goto('/forgot-password');
-        const email = page.locator('input[name="email"]');
-        await email.fill(`missing-${user.email}`);
-        await clickSubmitWhenReady(page);
-        await expect(page.getByText('用户邮箱不存在')).toBeVisible();
-        await email.fill(user.email);
-        await clickSubmitWhenReady(page);
-        await expect(page).toHaveURL('/');
+        const requestReset = async (email: string) => {
+            await page.goto('/forgot-password');
+            await page.locator('input[name="email"]').fill(email);
+            const response = page.waitForResponse(resp =>
+                new URL(resp.url()).pathname === '/api/auth/forgot-password' && resp.request().method() === 'POST',
+            );
+            await clickSubmitWhenReady(page);
+            const result = await response;
+            expect(result.status()).toBe(200);
+            expect(await result.json()).toEqual({data: '若该邮箱已注册，我们已向其发送了重置密码邮件，请前往查收。'});
+            await expect(page).toHaveURL('/');
+        };
+
+        await requestReset(`missing-${user.email}`);
+        await requestReset(user.email);
 
         const mail = await waitForMailhogEmail(user.email, 30_000);
         const recoveryURL = mail?.replace(/=\r?\n/g, '').match(/https?:\/\/[^"\s]+\/recover-password\?code(?:=3D|=)[a-zA-Z0-9]+/)?.[0];
@@ -31,10 +38,7 @@ test.describe('Authentication', () => {
         const code = link.searchParams.get('code');
         expect(code).toHaveLength(64);
 
-        await page.goto('/forgot-password');
-        await page.locator('input[name="email"]').fill(user.email);
-        await clickSubmitWhenReady(page);
-        await expect(page.getByText('邮件发送太频繁，请稍后再试')).toBeVisible();
+        await requestReset(user.email);
 
         await page.goto(link.pathname + link.search);
         await expect(page.getByText(`${user.name}，您正在重置您的密码：`)).toBeVisible();

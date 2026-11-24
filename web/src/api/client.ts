@@ -73,7 +73,7 @@ api.instance.interceptors.response.use(
 
         // GET 404s are page-level (e.g. profile/question pages) and the calling component
         // redirects on its own, so we suppress the toast there. For mutating requests a 404
-        // means the business operation failed (e.g. forgot-password with an unknown email),
+        // means the business operation failed,
         // which the user must be told about.
         const isGetRequest = (error.config?.method ?? '').toLowerCase() === 'get'
         if (error.response.status !== 404 || !isGetRequest) {

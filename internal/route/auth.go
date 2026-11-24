@@ -1,7 +1,6 @@
 package route
 
 import (
-	"fmt"
 	"net/http"
 	"os"
 	"strings"
@@ -142,12 +141,10 @@ func (*AuthHandler) SignIn(ctx context.Context, sess session.Session, v captcha.
 // @Accept json
 // @Produce json
 // @Param data body form.ForgotPassword true "Email of the account"
-// @Success 200 {string} string "Message of the email sent"
+// @Success 200 {string} string "Recovery request acknowledged"
 // @Failure 400 {string} string "Invalid request body or captcha failed"
 // @Failure 403 {string} string "Already signed in"
-// @Failure 404 {string} string "The email is not registered"
-// @Failure 429 {string} string "The email was sent too recently"
-// @Failure 500 {string} string "Internal server error"
+// @Failure 500 {string} string "Captcha verification service failed"
 // @ID forgotPassword
 // @Router /auth/forgot-password [post]
 func (*AuthHandler) ForgotPassword(ctx context.Context, v captcha.Verifier, cache cache.Cache, f form.ForgotPassword) error {
@@ -156,44 +153,43 @@ func (*AuthHandler) ForgotPassword(ctx context.Context, v captcha.Verifier, cach
 		return nil
 	}
 
-	email := strings.TrimSpace(f.Email)
+	const message = "若该邮箱已注册，我们已向其发送了重置密码邮件，请前往查收。"
+	requestCtx := ctx.Request().Context()
 
-	user, err := db.Users.GetByEmail(ctx.Request().Context(), email)
+	user, err := db.Users.GetByEmail(requestCtx, strings.TrimSpace(f.Email))
 	if err != nil {
-		if errors.Is(err, db.ErrUserNotExists) {
-			return ctx.Error(http.StatusNotFound, "用户邮箱不存在")
-		} else {
-			logrus.WithContext(ctx.Request().Context()).WithError(err).Error("Failed to get user by email")
-			return ctx.ServerError()
+		if !errors.Is(err, db.ErrUserNotExists) {
+			logrus.WithContext(requestCtx).WithError(err).Error("Failed to get user by email")
 		}
+		return ctx.Success(message)
 	}
 
 	emailSentCacheKey := "forgot-password-email-sent:" + user.Email
-	_, err = cache.Get(ctx.Request().Context(), emailSentCacheKey)
-	if err != nil {
-		if !errors.Is(err, os.ErrNotExist) {
-			logrus.WithContext(ctx.Request().Context()).WithError(err).Error("Failed to read password recovery email sent cache")
-		}
-	} else {
-		return ctx.Error(http.StatusTooManyRequests, "邮件发送太频繁，请稍后再试")
+	_, err = cache.Get(requestCtx, emailSentCacheKey)
+	if err == nil {
+		return ctx.Success(message)
+	}
+	if !errors.Is(err, os.ErrNotExist) {
+		logrus.WithContext(requestCtx).WithError(err).Error("Failed to read password recovery email sent cache")
 	}
 
 	code := randstr.String(64)
 	recoveryCodeCacheKey := "forgot-password-recovery-code:" + code
-	if err := cache.Set(ctx.Request().Context(), recoveryCodeCacheKey, user.ID, 24*time.Hour); err != nil {
-		logrus.WithContext(ctx.Request().Context()).WithError(err).Error("Failed to set password recovery code cache")
-		return ctx.ServerError()
+	if err := cache.Set(requestCtx, recoveryCodeCacheKey, user.ID, 24*time.Hour); err != nil {
+		logrus.WithContext(requestCtx).WithError(err).Error("Failed to set password recovery code cache")
+		return ctx.Success(message)
 	}
 
 	if err := mail.SendPasswordRecoveryMail(user.Email, code); err != nil {
-		return ctx.Error(http.StatusInternalServerError, "邮件发送失败，请稍后再试")
+		logrus.WithContext(requestCtx).WithError(err).Error("Failed to send password recovery email")
+		return ctx.Success(message)
 	}
 
-	if err := cache.Set(ctx.Request().Context(), emailSentCacheKey, true, 2*time.Minute); err != nil {
-		logrus.WithContext(ctx.Request().Context()).WithError(err).Error("Failed to set password recovery email cache")
+	if err := cache.Set(requestCtx, emailSentCacheKey, true, 2*time.Minute); err != nil {
+		logrus.WithContext(requestCtx).WithError(err).Error("Failed to set password recovery email cache")
 	}
 
-	return ctx.Success(fmt.Sprintf("邮件已发送至 %s，请查收。", user.Email))
+	return ctx.Success(message)
 }
 
 // GetRecoverPasswordCode

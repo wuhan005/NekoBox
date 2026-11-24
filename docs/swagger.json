@@ -35,7 +35,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Message of the email sent",
+                        "description": "Recovery request acknowledged",
                         "schema": {
                             "type": "string"
                         }
@@ -52,20 +52,8 @@
                             "type": "string"
                         }
                     },
-                    "404": {
-                        "description": "The email is not registered",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "429": {
-                        "description": "The email was sent too recently",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
                     "500": {
-                        "description": "Internal server error",
+                        "description": "Captcha verification service failed",
                         "schema": {
                             "type": "string"
                         }
