@@ -20,7 +20,7 @@
 <script setup lang="ts">
 import {computed} from "vue";
 import {useAppStore} from "@/store";
-import {normalizeThemePreference, THEME_LABELS, THEME_PREFERENCES} from "@/utils/theme.ts";
+import {normalizeThemePreference, setThemePreference, THEME_LABELS, THEME_PREFERENCES} from "@/utils/theme.ts";
 
 const appStore = useAppStore()
 
@@ -29,6 +29,6 @@ const title = computed(() => `主题：${THEME_LABELS[preference.value]}（点�
 
 const handleToggle = () => {
   const index = THEME_PREFERENCES.indexOf(preference.value)
-  appStore.setTheme(THEME_PREFERENCES[(index + 1) % THEME_PREFERENCES.length])
+  setThemePreference(THEME_PREFERENCES[(index + 1) % THEME_PREFERENCES.length])
 }
 </script>

@@ -33,6 +33,7 @@ func TestUsers(t *testing.T) {
 		{"Update", testUsersUpdate},
 		{"SetName", testUsersSetName},
 		{"UpdateHarassmentSetting", testUsersUpdateHarassmentSetting},
+		{"SetTheme", testUsersSetTheme},
 		{"Authenticate", testUsersAuthenticate},
 		{"ChangePassword", testUsersChangePassword},
 		{"UpdatePassword", testUsersUpdatePassword},
@@ -368,6 +369,41 @@ func testUsersUpdateHarassmentSetting(t *testing.T, ctx context.Context, db *use
 			Type: "not found",
 		})
 		require.NotNil(t, err)
+	})
+}
+
+func testUsersSetTheme(t *testing.T, ctx context.Context, db *users) {
+	err := db.Create(ctx, CreateUserOptions{
+		Name:       "E99p1ant",
+		Password:   "super_secret",
+		Email:      "i@github.red",
+		Avatar:     "avater.png",
+		Domain:     "e99",
+		Background: "background.png",
+		Intro:      "Be cool, but also be warm.",
+	})
+	require.Nil(t, err)
+
+	got, err := db.GetByID(ctx, 1)
+	require.Nil(t, err)
+	require.Equal(t, ThemeType(""), got.Theme)
+
+	t.Run("normal", func(t *testing.T) {
+		err := db.SetTheme(ctx, 1, ThemeDark)
+		require.Nil(t, err)
+
+		got, err := db.GetByID(ctx, 1)
+		require.Nil(t, err)
+		require.Equal(t, ThemeDark, got.Theme)
+	})
+
+	t.Run("unexpected theme", func(t *testing.T) {
+		err := db.SetTheme(ctx, 1, "sepia")
+		require.EqualError(t, err, `unexpected theme: "sepia"`)
+
+		got, err := db.GetByID(ctx, 1)
+		require.Nil(t, err)
+		require.Equal(t, ThemeDark, got.Theme)
 	})
 }
 

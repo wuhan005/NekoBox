@@ -209,6 +209,67 @@ test.describe('Harassment Settings', () => {
     });
 });
 
+// ─── Theme settings ───────────────────────────────────────────────────────────
+
+test.describe('Theme Settings', () => {
+
+    test('a new account has no theme and unknown themes are rejected', async ({ page }) => {
+        await registerAndLogin(page, 'themeapi');
+        const authHeader = await authHeaderFromPage(page);
+
+        const unset = await page.request.get('/api/mine/settings/theme', { headers: authHeader });
+        expect(unset.status()).toBe(200);
+        expect((await unset.json()).data).toEqual({});
+
+        const unknown = await page.request.put('/api/mine/settings/theme', {
+            headers: { 'Content-Type': 'application/json', ...authHeader },
+            data: { theme: 'sepia' },
+        });
+        expect(unknown.status()).toBe(400);
+    });
+
+    test('toggling the theme while signed in saves it to the account', async ({ page }) => {
+        await registerAndLogin(page, 'themetoggle');
+        const authHeader = await authHeaderFromPage(page);
+
+        const saveResponsePromise = page.waitForResponse(resp =>
+            resp.url().includes('/api/mine/settings/theme') && resp.request().method() === 'PUT'
+        );
+        // A fresh browser follows the system, so the next theme is light.
+        await page.locator('.theme-toggle').click();
+        const saveResponse = await saveResponsePromise;
+        expect(saveResponse.status()).toBe(200);
+        expect(saveResponse.request().postDataJSON()).toEqual({ theme: 'light' });
+        await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+
+        const saved = await page.request.get('/api/mine/settings/theme', { headers: authHeader });
+        expect((await saved.json()).data).toEqual({ theme: 'light' });
+    });
+
+    test('the account theme is applied after signing in on another browser', async ({ page, browser }) => {
+        const user = await registerAndLogin(page, 'themeapply');
+        const authHeader = await authHeaderFromPage(page);
+        const update = await page.request.put('/api/mine/settings/theme', {
+            headers: { 'Content-Type': 'application/json', ...authHeader },
+            data: { theme: 'dark' },
+        });
+        expect(update.status()).toBe(200);
+
+        const otherContext = await browser.newContext({ colorScheme: 'light' });
+        const otherPage = await otherContext.newPage();
+        await otherPage.goto('/sign-in');
+        await expect(otherPage.locator('html')).toHaveAttribute('data-theme', 'light');
+
+        await otherPage.locator('input[name="email"]').fill(user.email);
+        await otherPage.locator('input[name="password"]').fill(user.password);
+        await clickSubmitWhenReady(otherPage);
+        await expect(otherPage).toHaveURL(new RegExp(`/_/${user.domain}$`));
+        await expect(otherPage.locator('html')).toHaveAttribute('data-theme', 'dark');
+
+        await otherContext.close();
+    });
+});
+
 // ─── Account deactivation ─────────────────────────────────────────────────────
 
 test.describe('Account Deactivation', () => {

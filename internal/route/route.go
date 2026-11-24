@@ -166,6 +166,7 @@ func New(db *gorm.DB, notifications *sync.WaitGroup) (*flamego.Flame, error) {
 				f.Combo("/profile").Get(mineHandler.Profile).Put(form.Bind(form.UpdateProfile{}), mineHandler.UpdateProfileSettings)
 				f.Combo("/box").Get(mineHandler.BoxSettings).Put(form.BindMultipart(form.UpdateBoxSettings{}), mineHandler.UpdateBoxSettings)
 				f.Combo("/harassment").Get(mineHandler.HarassmentSettings).Put(form.Bind(form.UpdateHarassmentSettings{}), mineHandler.UpdateHarassmentSettings)
+				f.Combo("/theme").Get(mineHandler.ThemeSettings).Put(form.Bind(form.UpdateThemeSettings{}), mineHandler.UpdateThemeSettings)
 				f.Post("/export-data", mineHandler.ExportData)
 				f.Post("/deactivate", mineHandler.Deactivate)
 			})

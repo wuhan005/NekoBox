@@ -1064,6 +1064,92 @@
                 }
             }
         },
+        "/mine/settings/theme": {
+            "get": {
+                "security": [
+                    {
+                        "SessionToken": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Settings"
+                ],
+                "summary": "Get the color theme of the signed-in user",
+                "operationId": "getMineThemeSettings",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/ThemeSettings"
+                        }
+                    },
+                    "401": {
+                        "description": "Not signed in",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "SessionToken": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Settings"
+                ],
+                "summary": "Update the color theme of the signed-in user",
+                "operationId": "updateMineThemeSettings",
+                "parameters": [
+                    {
+                        "description": "Color theme",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/UpdateThemeSettings"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Message of the theme updated",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request body or unknown theme",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "401": {
+                        "description": "Not signed in",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/users/{domain}/profile": {
             "get": {
                 "produces": [
@@ -1788,6 +1874,20 @@
                 }
             }
         },
+        "ThemeSettings": {
+            "type": "object",
+            "properties": {
+                "theme": {
+                    "description": "Theme is absent if the user has never chosen one.",
+                    "type": "string",
+                    "enum": [
+                        "auto",
+                        "light",
+                        "dark"
+                    ]
+                }
+            }
+        },
         "UpdateHarassmentSettings": {
             "type": "object",
             "required": [
@@ -1825,6 +1925,22 @@
                 "oldPassword": {
                     "description": "OldPassword is required only when changing the password.",
                     "type": "string"
+                }
+            }
+        },
+        "UpdateThemeSettings": {
+            "type": "object",
+            "required": [
+                "theme"
+            ],
+            "properties": {
+                "theme": {
+                    "type": "string",
+                    "enum": [
+                        "auto",
+                        "light",
+                        "dark"
+                    ]
                 }
             }
         },

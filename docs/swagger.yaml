@@ -349,6 +349,16 @@ definitions:
     - password
     - repeatPassword
     type: object
+  ThemeSettings:
+    properties:
+      theme:
+        description: Theme is absent if the user has never chosen one.
+        enum:
+        - auto
+        - light
+        - dark
+        type: string
+    type: object
   UpdateHarassmentSettings:
     properties:
       blockWords:
@@ -377,6 +387,17 @@ definitions:
         type: string
     required:
     - name
+    type: object
+  UpdateThemeSettings:
+    properties:
+      theme:
+        enum:
+        - auto
+        - light
+        - dark
+        type: string
+    required:
+    - theme
     type: object
   UserProfile:
     properties:
@@ -1123,6 +1144,60 @@ paths:
       security:
       - SessionToken: []
       summary: Update the profile settings of the signed-in user
+      tags:
+      - Settings
+  /mine/settings/theme:
+    get:
+      operationId: getMineThemeSettings
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ThemeSettings'
+        "401":
+          description: Not signed in
+          schema:
+            type: string
+      security:
+      - SessionToken: []
+      summary: Get the color theme of the signed-in user
+      tags:
+      - Settings
+    put:
+      consumes:
+      - application/json
+      operationId: updateMineThemeSettings
+      parameters:
+      - description: Color theme
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/UpdateThemeSettings'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Message of the theme updated
+          schema:
+            type: string
+        "400":
+          description: Invalid request body or unknown theme
+          schema:
+            type: string
+        "401":
+          description: Not signed in
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      security:
+      - SessionToken: []
+      summary: Update the color theme of the signed-in user
       tags:
       - Settings
   /users/{domain}/profile:

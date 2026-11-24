@@ -9,6 +9,13 @@ interface ErrorResponse {
     msg: string;
 }
 
+declare module 'axios' {
+    interface AxiosRequestConfig {
+        // Silent requests are neither toasted nor redirected on errors, but an expired session is still signed out.
+        silent?: boolean;
+    }
+}
+
 class ApiClient extends Api<unknown> {
     // The generated client would send the absent values as "undefined" or "null" strings in the form data.
     protected override createFormData(input: Record<string, unknown>): FormData {
@@ -56,8 +63,9 @@ api.instance.interceptors.response.use(
         return response.data as AxiosResponse
     },
     async (error: unknown) => {
+        const silent = axios.isAxiosError(error) && error.config?.silent === true
         if (!axios.isAxiosError(error) || !error.response) {
-            ToastError('网络错误，请检查网络连接')
+            if (!silent) ToastError('网络错误，请检查网络连接')
             return Promise.reject(error)
         }
 
@@ -65,9 +73,13 @@ api.instance.interceptors.response.use(
             const authStore = useAuthStore()
             authStore.signOut()
 
-            if (router.currentRoute.value.name !== 'sign-in') {
+            if (!silent && router.currentRoute.value.name !== 'sign-in') {
                 router.push({name: 'sign-in', query: {to: router.currentRoute.value.fullPath}})
             }
+            return Promise.reject(error)
+        }
+
+        if (silent) {
             return Promise.reject(error)
         }
 

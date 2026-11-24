@@ -53,3 +53,8 @@ type HarassmentSettings struct {
 	HarassmentSettingType db.HarassmentSettingType `json:"harassmentSettingType" swaggertype:"string" enums:"none,register_only"`
 	BlockWords            string                   `json:"blockWords"`
 } // @name HarassmentSettings
+
+type ThemeSettings struct {
+	// Theme is absent if the user has never chosen one.
+	Theme db.ThemeType `json:"theme,omitempty" swaggertype:"string" enums:"auto,light,dark"`
+} // @name ThemeSettings

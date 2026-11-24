@@ -564,6 +564,49 @@ func (*MineHandler) UpdateHarassmentSettings(ctx context.Context, f form.UpdateH
 	return ctx.Success("防骚扰设置更新成功")
 }
 
+// ThemeSettings
+// @Summary Get the color theme of the signed-in user
+// @Tags Settings
+// @Produce json
+// @Success 200 {object} response.ThemeSettings
+// @Failure 401 {string} string "Not signed in"
+// @Security SessionToken
+// @ID getMineThemeSettings
+// @Router /mine/settings/theme [get]
+func (*MineHandler) ThemeSettings(ctx context.Context) error {
+	return ctx.Success(&response.ThemeSettings{
+		Theme: ctx.User.Theme,
+	})
+}
+
+// UpdateThemeSettings
+// @Summary Update the color theme of the signed-in user
+// @Tags Settings
+// @Accept json
+// @Produce json
+// @Param data body form.UpdateThemeSettings true "Color theme"
+// @Success 200 {string} string "Message of the theme updated"
+// @Failure 400 {string} string "Invalid request body or unknown theme"
+// @Failure 401 {string} string "Not signed in"
+// @Failure 500 {string} string "Internal server error"
+// @Security SessionToken
+// @ID updateMineThemeSettings
+// @Router /mine/settings/theme [put]
+func (*MineHandler) UpdateThemeSettings(ctx context.Context, f form.UpdateThemeSettings) error {
+	theme := db.ThemeType(f.Theme)
+	switch theme {
+	case db.ThemeAuto, db.ThemeLight, db.ThemeDark:
+	default:
+		return ctx.Error(http.StatusBadRequest, "未知的主题")
+	}
+
+	if err := db.Users.SetTheme(ctx.Request().Context(), ctx.User.ID, theme); err != nil {
+		logrus.WithContext(ctx.Request().Context()).WithError(err).Error("Failed to update theme")
+		return ctx.ServerError()
+	}
+	return ctx.Success("主题设置更新成功")
+}
+
 // ExportData
 // @Summary Export the data of the signed-in user
 // @Tags Settings

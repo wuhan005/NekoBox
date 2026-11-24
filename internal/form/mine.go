@@ -34,3 +34,7 @@ type UpdateHarassmentSettings struct {
 	// BlockWords are at most 10 words separated by commas, each of them is at most 10 bytes.
 	BlockWords string `json:"blockWords"`
 } // @name UpdateHarassmentSettings
+
+type UpdateThemeSettings struct {
+	Theme string `json:"theme" enums:"auto,light,dark"`
+} // @name UpdateThemeSettings

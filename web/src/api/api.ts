@@ -162,6 +162,11 @@ export interface SignUp {
   repeatPassword: string;
 }
 
+export interface ThemeSettings {
+  /** Theme is absent if the user has never chosen one. */
+  theme?: "auto" | "light" | "dark";
+}
+
 export interface UpdateHarassmentSettings {
   /** BlockWords are at most 10 words separated by commas, each of them is at most 10 bytes. */
   blockWords: string;
@@ -175,6 +180,10 @@ export interface UpdateProfile {
   newPassword?: string;
   /** OldPassword is required only when changing the password. */
   oldPassword?: string;
+}
+
+export interface UpdateThemeSettings {
+  theme: "auto" | "light" | "dark";
 }
 
 export interface UserProfile {
@@ -266,6 +275,10 @@ export type UpdateMineHarassmentSettingsData = string;
 export type GetMineProfileData = MineProfile;
 
 export type UpdateMineProfileData = string;
+
+export type GetMineThemeSettingsData = ThemeSettings;
+
+export type UpdateMineThemeSettingsData = string;
 
 export type GetUserProfileData = UserProfile;
 
@@ -909,6 +922,47 @@ export class Api<
     updateMineProfile: (data: UpdateProfile, params: RequestParams = {}) =>
       this.request<UpdateMineProfileData, string>({
         path: `/mine/settings/profile`,
+        method: "PUT",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Settings
+     * @name GetMineThemeSettings
+     * @summary Get the color theme of the signed-in user
+     * @request GET:/mine/settings/theme
+     * @secure
+     */
+    getMineThemeSettings: (params: RequestParams = {}) =>
+      this.request<GetMineThemeSettingsData, string>({
+        path: `/mine/settings/theme`,
+        method: "GET",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Settings
+     * @name UpdateMineThemeSettings
+     * @summary Update the color theme of the signed-in user
+     * @request PUT:/mine/settings/theme
+     * @secure
+     */
+    updateMineThemeSettings: (
+      data: UpdateThemeSettings,
+      params: RequestParams = {},
+    ) =>
+      this.request<UpdateMineThemeSettingsData, string>({
+        path: `/mine/settings/theme`,
         method: "PUT",
         body: data,
         secure: true,

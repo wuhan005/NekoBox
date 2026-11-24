@@ -30,6 +30,7 @@ type UsersStore interface {
 	Update(ctx context.Context, id uint, opts UpdateUserOptions) error
 	SetName(ctx context.Context, id uint, name string) error
 	UpdateHarassmentSetting(ctx context.Context, id uint, options HarassmentSettingOptions) error
+	SetTheme(ctx context.Context, id uint, theme ThemeType) error
 	Authenticate(ctx context.Context, email, password string) (*User, error)
 	ChangePassword(ctx context.Context, id uint, oldPassword, newPassword string) error
 	UpdatePassword(ctx context.Context, id uint, newPassword string) error
@@ -57,6 +58,7 @@ type User struct {
 	Notify            NotifyType            `json:"notify"`
 	HarassmentSetting HarassmentSettingType `json:"harassment_setting"`
 	BlockWords        string                `json:"-"`
+	Theme             ThemeType             `json:"theme"`
 	SessionVersion    uint                  `json:"-" gorm:"not null;default:0"`
 }
 
@@ -77,6 +79,14 @@ type HarassmentSettingType string
 const (
 	HarassmentSettingNone             HarassmentSettingType = "none"
 	HarassmentSettingTypeRegisterOnly HarassmentSettingType = "register_only"
+)
+
+type ThemeType string
+
+const (
+	ThemeAuto  ThemeType = "auto"
+	ThemeLight ThemeType = "light"
+	ThemeDark  ThemeType = "dark"
 )
 
 // EffectiveHarassmentSetting returns the harassment setting of the user, which is none if it has never been set.
@@ -234,6 +244,19 @@ func (db *users) UpdateHarassmentSetting(ctx context.Context, id uint, options H
 		"BlockWords":        options.BlockWords,
 	}).Error; err != nil {
 		return errors.Wrap(err, "update user")
+	}
+	return nil
+}
+
+func (db *users) SetTheme(ctx context.Context, id uint, theme ThemeType) error {
+	switch theme {
+	case ThemeAuto, ThemeLight, ThemeDark:
+	default:
+		return errors.Errorf("unexpected theme: %q", theme)
+	}
+
+	if err := db.WithContext(ctx).Model(&User{}).Where("id = ?", id).Update("theme", theme).Error; err != nil {
+		return errors.Wrap(err, "update user theme")
 	}
 	return nil
 }

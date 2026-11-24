@@ -17,6 +17,64 @@ import (
 	"github.com/wuhan005/NekoBox/internal/response"
 )
 
+func TestThemeSettings(t *testing.T) {
+	database, _ := dbutil.NewTestDB(t, &db.User{})
+	users := db.Users
+	captchaConfig, recaptchaConfig, redisConfig := conf.Captcha, conf.Recaptcha, conf.Redis
+	t.Cleanup(func() {
+		db.Users = users
+		conf.Captcha, conf.Recaptcha, conf.Redis = captchaConfig, recaptchaConfig, redisConfig
+	})
+	db.Users = db.NewUsersStore(database)
+	verifier := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte(`{"success":true}`))
+	}))
+	t.Cleanup(verifier.Close)
+	conf.Captcha.Type, conf.Recaptcha.VerifyURL, conf.Redis.Addr = "recaptcha", verifier.URL, ""
+
+	user := db.User{Domain: "theme-user", Name: "Theme Owner", Email: "theme@example.com", Password: "test-password"}
+	user.EncodePassword()
+	require.NoError(t, database.Create(&user).Error)
+
+	router, err := New(database, nil)
+	require.NoError(t, err)
+	const themePath = "/api/mine/settings/theme"
+	do := func(method, sessionID, body string) *httptest.ResponseRecorder {
+		recorder := httptest.NewRecorder()
+		request := httptest.NewRequest(method, themePath, strings.NewReader(body))
+		if sessionID != "" {
+			request.Header.Set("Authorization", "Token "+sessionID)
+		}
+		router.ServeHTTP(recorder, request)
+		return recorder
+	}
+	require.Equal(t, http.StatusUnauthorized, do(http.MethodGet, "", "").Code)
+	require.Equal(t, http.StatusUnauthorized, do(http.MethodPut, "", `{"theme":"dark"}`).Code)
+
+	signIn := httptest.NewRecorder()
+	router.ServeHTTP(signIn, httptest.NewRequest(http.MethodPost, "/api/auth/sign-in", strings.NewReader(
+		`{"email":"theme@example.com","password":"test-password","captcha":"test"}`,
+	)))
+	require.Equal(t, http.StatusOK, signIn.Code, signIn.Body.String())
+	var auth struct{ Data response.SignIn }
+	require.NoError(t, json.Unmarshal(signIn.Body.Bytes(), &auth))
+	sessionID := auth.Data.SessionID
+
+	unset := do(http.MethodGet, sessionID, "")
+	require.Equal(t, http.StatusOK, unset.Code, unset.Body.String())
+	require.JSONEq(t, `{"data":{}}`, unset.Body.String())
+
+	unknown := do(http.MethodPut, sessionID, `{"theme":"sepia"}`)
+	require.Equal(t, http.StatusBadRequest, unknown.Code, unknown.Body.String())
+
+	updated := do(http.MethodPut, sessionID, `{"theme":"dark"}`)
+	require.Equal(t, http.StatusOK, updated.Code, updated.Body.String())
+
+	got := do(http.MethodGet, sessionID, "")
+	require.Equal(t, http.StatusOK, got.Code, got.Body.String())
+	require.JSONEq(t, `{"data":{"theme":"dark"}}`, got.Body.String())
+}
+
 func TestExportAccountData(t *testing.T) {
 	database, _ := dbutil.NewTestDB(t, &db.User{}, &db.Question{})
 	users, questions := db.Users, db.Questions
