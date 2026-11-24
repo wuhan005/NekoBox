@@ -3,6 +3,7 @@ import App from './App.vue'
 import './style.less'
 import store from './store'
 import router from './router'
+import {setupTheme} from './utils/theme'
 import 'vue3-toastify/dist/index.css'
 
 import {configure, defineRule} from "vee-validate";
@@ -31,5 +32,6 @@ setLocale('zh_CN')
 const app = createApp(App)
 app.use(store)
 app.use(router)
+setupTheme()
 
 app.mount('#app')

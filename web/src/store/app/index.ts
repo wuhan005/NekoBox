@@ -1,17 +1,18 @@
 import {defineStore} from "pinia";
 import {type AppState} from "./types";
+import {type ThemePreference} from "@/utils/theme.ts";
 
 const useAppStore = defineStore('app', {
     persist: {pick: ['theme']},
 
     state: (): AppState => ({
-        theme: '',
+        theme: 'auto',
         questionsRevision: 0,
         publicQuestionsRevision: 0,
     }),
 
     actions: {
-        setTheme(theme: string) {
+        setTheme(theme: ThemePreference) {
             this.theme = theme;
         },
         invalidateQuestions() {

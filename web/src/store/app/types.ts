@@ -1,5 +1,7 @@
+import type {ThemePreference} from "@/utils/theme.ts";
+
 export interface AppState {
-    theme: string;
+    theme: ThemePreference;
     questionsRevision: number;
     publicQuestionsRevision: number;
 }

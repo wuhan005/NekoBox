@@ -1,0 +1,305 @@
+// Dark theme. UIkit's Less variables are compiled into constants and cannot be switched at runtime,
+// so the components used by this project are overridden under html[data-theme="dark"].
+// Keep @dark-background in sync with the inline style in index.html.
+
+@dark-background: #16171b;
+@dark-surface: #1f2127;
+@dark-surface-muted: #282a31;
+@dark-input-background: #18191d;
+@dark-border: #33363e;
+@dark-border-strong: #4a4e58;
+@dark-color: #b4b8c2;
+@dark-emphasis-color: #e6e8ec;
+@dark-muted-color: #828793;
+@dark-link-color: #4ea1f3;
+@dark-link-hover-color: #7ab8f7;
+
+html[data-theme="dark"] {
+  color-scheme: dark;
+  background: @dark-background;
+  color: @dark-color;
+
+  // ===== 基础排版 ===== //
+  a,
+  .uk-link {
+    color: @dark-link-color;
+  }
+
+  a:hover,
+  .uk-link:hover {
+    color: @dark-link-hover-color;
+  }
+
+  h1, .uk-h1,
+  h2, .uk-h2,
+  h3, .uk-h3,
+  h4, .uk-h4,
+  h5, .uk-h5,
+  h6, .uk-h6,
+  .uk-heading-small,
+  .uk-logo,
+  .uk-logo:hover {
+    color: @dark-emphasis-color;
+  }
+
+  :not(pre) > code,
+  :not(pre) > kbd,
+  :not(pre) > samp {
+    background: @dark-surface-muted;
+  }
+
+  hr,
+  .uk-hr {
+    border-top-color: @dark-border;
+  }
+
+  .uk-text-muted {
+    color: @dark-muted-color !important;
+  }
+
+  .uk-text-meta,
+  .uk-article-meta {
+    color: @dark-muted-color;
+  }
+
+  a.uk-link-text,
+  .uk-link-text a {
+    color: inherit;
+  }
+
+  .uk-divider-icon {
+    .svg-fill(@internal-divider-icon-image, "#000", @dark-border-strong);
+
+    &::before,
+    &::after {
+      border-bottom-color: @dark-border;
+    }
+  }
+
+  // ===== 导航栏 ===== //
+  .uk-navbar-container:not(.uk-navbar-transparent) {
+    background: @dark-surface;
+  }
+
+  .uk-navbar-nav > li > a {
+    color: @dark-muted-color;
+  }
+
+  .uk-navbar-nav > li:hover > a,
+  .uk-navbar-nav > li > a[aria-expanded="true"] {
+    color: @dark-color;
+  }
+
+  .uk-navbar-nav > li > a:active,
+  .uk-navbar-nav > li.uk-active > a {
+    color: @dark-emphasis-color;
+  }
+  // ===== 卡片、弹层 ===== //
+  .uk-card-default,
+  .uk-dropbar,
+  .uk-dropdown,
+  .uk-modal-dialog {
+    background-color: @dark-surface;
+    color: @dark-color;
+  }
+
+  .uk-card-default {
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.35);
+
+    .uk-card-title {
+      color: @dark-emphasis-color;
+    }
+
+    .uk-card-header {
+      border-bottom-color: @dark-border;
+    }
+
+    .uk-card-footer {
+      border-top-color: @dark-border;
+    }
+  }
+
+  .uk-dropdown {
+    box-shadow: 0 5px 12px rgba(0, 0, 0, 0.45);
+  }
+
+  .uk-close {
+    color: @dark-muted-color;
+
+    &:hover {
+      color: @dark-color;
+    }
+  }
+
+  // ===== 按钮、图标 ===== //
+  .uk-button-default {
+    color: @dark-emphasis-color;
+    border-color: @dark-border-strong;
+
+    &:hover {
+      color: @dark-emphasis-color;
+      border-color: lighten(@dark-border-strong, 15%);
+    }
+
+    &:active,
+    &.uk-active {
+      color: @dark-emphasis-color;
+      border-color: lighten(@dark-border-strong, 25%);
+    }
+  }
+
+  .uk-button-default:disabled,
+  .uk-button-primary:disabled,
+  .uk-button-secondary:disabled,
+  .uk-button-danger:disabled {
+    background-color: transparent;
+    color: @dark-muted-color;
+    border-color: @dark-border;
+  }
+
+  .uk-icon-link {
+    color: @dark-muted-color;
+
+    &:hover {
+      color: @dark-color;
+    }
+  }
+
+  .uk-icon-button {
+    background: @dark-surface-muted;
+    color: @dark-muted-color;
+
+    &:hover {
+      background-color: lighten(@dark-surface-muted, 6%);
+      color: @dark-color;
+    }
+  }
+
+  // ===== 表单 ===== //
+  .uk-input,
+  .uk-select,
+  .uk-textarea {
+    background-color: @dark-input-background;
+    color: @dark-color;
+    border-color: @dark-border;
+
+    &:focus {
+      background-color: @dark-input-background;
+      color: @dark-emphasis-color;
+      border-color: @global-primary-background;
+    }
+
+    &:disabled {
+      background-color: @dark-surface-muted;
+      color: @dark-muted-color;
+      border-color: @dark-border;
+    }
+
+    &::placeholder {
+      color: @dark-muted-color;
+    }
+  }
+
+  .uk-checkbox,
+  .uk-radio {
+    border-color: @dark-border-strong;
+
+    &:focus {
+      border-color: @global-primary-background;
+    }
+
+    &:checked,
+    &:indeterminate {
+      border-color: transparent;
+    }
+
+    &:disabled {
+      background-color: @dark-surface-muted;
+      border-color: @dark-border;
+    }
+  }
+
+  .uk-form-label,
+  .uk-description-list > dt {
+    color: @dark-emphasis-color;
+  }
+
+  .upload-toolbar {
+    background-color: @dark-surface-muted;
+  }
+
+  // ===== 提示 ===== //
+  .uk-alert {
+    background: @dark-surface-muted;
+    color: @dark-color;
+  }
+
+  .uk-alert-primary {
+    background: fade(@global-primary-background, 15%);
+    color: lighten(@global-primary-background, 15%);
+  }
+
+  .uk-alert-success {
+    background: fade(@global-success-background, 12%);
+    color: lighten(@global-success-background, 8%);
+  }
+
+  .uk-alert-warning {
+    background: fade(@global-warning-background, 12%);
+    color: lighten(@global-warning-background, 8%);
+  }
+
+  .uk-alert-danger {
+    background: fade(@global-danger-background, 12%);
+    color: lighten(@global-danger-background, 8%);
+  }
+
+  // ===== 标签页、表格、列表 ===== //
+  .uk-tab::before {
+    border-bottom-color: @dark-border;
+  }
+
+  .uk-tab > * > a {
+    color: @dark-muted-color;
+  }
+
+  .uk-tab > * > a:hover {
+    color: @dark-color;
+  }
+
+  .uk-tab > .uk-active > a {
+    color: @dark-emphasis-color;
+    border-color: @global-primary-background;
+  }
+
+  .uk-tab > .uk-disabled > a {
+    color: @dark-muted-color;
+  }
+
+  .uk-table th {
+    color: @dark-muted-color;
+  }
+
+  .uk-table-divider > tr:not(:first-child),
+  .uk-table-divider > :not(:first-child) > tr,
+  .uk-table-divider > :first-child > tr:not(:first-child),
+  .uk-description-list-divider > dt:nth-child(n+2) {
+    border-top-color: @dark-border;
+  }
+
+  // ===== 第三方组件 ===== //
+  // vue-loading-skeleton sets its colors via inline styles, so !important is required.
+  .pu-skeleton {
+    background-color: @dark-surface-muted !important;
+    background-image: linear-gradient(90deg, @dark-surface-muted, lighten(@dark-surface-muted, 6%), @dark-surface-muted) !important;
+  }
+
+  --go-captcha-theme-bg-color: @dark-surface;
+  --go-captcha-theme-text-color: @dark-emphasis-color;
+  --go-captcha-theme-icon-color: @dark-color;
+  --go-captcha-theme-border-color: @dark-border;
+  --go-captcha-theme-drag-bar-color: @dark-surface-muted;
+  --go-captcha-theme-round-color: @dark-surface-muted;
+  --go-captcha-theme-default-bg-color: fade(@global-primary-background, 15%);
+  --go-captcha-theme-default-hover-color: fade(@global-primary-background, 25%);
+}

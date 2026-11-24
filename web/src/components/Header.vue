@@ -22,6 +22,9 @@
           <li><a :href="router.resolve({name: 'settings'}).href"
                  @click.prevent="router.push({name: 'settings'})">设置</a></li>
         </ul>
+        <ul class="uk-navbar-nav">
+          <li><ThemeToggle/></li>
+        </ul>
       </div>
 
       <div v-else class="uk-navbar-center-right">
@@ -33,6 +36,9 @@
           <li><a :href="router.resolve({name: 'sign-in'}).href"
                  @click.prevent="router.push({name: 'sign-in'})">登录</a></li>
         </ul>
+        <ul class="uk-navbar-nav">
+          <li><ThemeToggle/></li>
+        </ul>
       </div>
     </div>
   </nav>
@@ -41,6 +47,7 @@
 <script setup lang="ts">
 import {useRouter} from "vue-router";
 import {useAuthStore} from "@/store";
+import ThemeToggle from "@/components/ThemeToggle.vue";
 
 const authStore = useAuthStore()
 const router = useRouter()
@@ -51,7 +58,8 @@ const router = useRouter()
   .uk-navbar-center {
     width: 100%;
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    /* The right column grows to fit its menu when space is tight, shrinking the (ellipsized) profile name instead of overlapping the logo. */
+    grid-template-columns: minmax(0, 1fr) auto minmax(max-content, 1fr);
     gap: 0;
     padding: 0 10px;
     box-sizing: border-box;
@@ -66,6 +74,7 @@ const router = useRouter()
     grid-column: 3;
     grid-row: 1;
     justify-self: end;
+    gap: 0;
   }
   .uk-navbar-center-left {
     grid-column: 1;

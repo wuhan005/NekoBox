@@ -10,6 +10,26 @@
     <link rel="icon" sizes="192x192" href="https://box-user-assets.n3ko.cc/public/Neko.png">
     <meta name="twitter:image:src" content="https://box-user-assets.n3ko.cc/public/Neko.png"/>
     <title>NekoBox</title>
+    <script>
+        // Apply the persisted theme (pinia "app" store) before styles load to avoid a white flash in dark mode.
+        (function () {
+            var theme = 'auto';
+            try {
+                theme = JSON.parse(localStorage.getItem('app') || '{}').theme;
+            } catch (e) {
+            }
+            if (theme !== 'light' && theme !== 'dark') {
+                theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+            }
+            document.documentElement.setAttribute('data-theme', theme);
+        })();
+    </script>
+    <style>
+        html[data-theme="dark"] {
+            background: #16171b;
+            color-scheme: dark;
+        }
+    </style>
 </head>
 <body>
 <div id="app"></div>

@@ -55,8 +55,7 @@
                         placeholder="在此处撰写你的回答...">
               </textarea>
 
-              <div
-                  style="width: 100%; background-color: #f8f8f8; display: flex; padding-top: 5px; padding-bottom: 5px; align-items: center; justify-content: start;gap: 5px">
+              <div class="upload-toolbar">
                 <div class="uk-form-custom">
                   <a href="#" class="uk-icon-link" uk-icon="image" style="margin-left: 10px"></a>
                   <span style="font-size: 12px; margin-left: 5px">
