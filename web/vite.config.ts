@@ -13,10 +13,18 @@ function getCommitSHA() {
     }
 }
 
+const commitSHA = process.env.VITE_COMMIT_SHA || getCommitSHA()
+
 // https://vite.dev/config/
 export default defineConfig({
     plugins: [
-        vue()
+        vue(),
+        {
+            name: 'inject-commit-sha',
+            transformIndexHtml: () => [
+                {tag: 'meta', attrs: {name: 'commit-sha', content: commitSHA}, injectTo: 'head'},
+            ],
+        },
     ],
 
     resolve: {
@@ -27,7 +35,7 @@ export default defineConfig({
 
     // Define environment variables at build time
     define: {
-        'import.meta.env.VITE_COMMIT_SHA': JSON.stringify(process.env.VITE_COMMIT_SHA || getCommitSHA()),
+        'import.meta.env.VITE_COMMIT_SHA': JSON.stringify(commitSHA),
     },
 
     server: {
