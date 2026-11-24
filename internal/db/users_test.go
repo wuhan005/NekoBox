@@ -422,11 +422,20 @@ func testUsersChangePassword(t *testing.T, ctx context.Context, db *users) {
 	t.Run("normal", func(t *testing.T) {
 		err := db.ChangePassword(ctx, 1, "super_secret", "new_password")
 		require.Nil(t, err)
+
+		got, err := db.GetByID(ctx, 1)
+		require.Nil(t, err)
+		require.True(t, got.Authenticate("new_password"))
+		require.Equal(t, uint(1), got.SessionVersion)
 	})
 
 	t.Run("wrong password", func(t *testing.T) {
 		err := db.ChangePassword(ctx, 1, "wrong_password", "new_password")
 		require.Equal(t, ErrBadCredential, err)
+
+		got, err := db.GetByID(ctx, 1)
+		require.Nil(t, err)
+		require.Equal(t, uint(1), got.SessionVersion)
 	})
 }
 
@@ -445,6 +454,11 @@ func testUsersUpdatePassword(t *testing.T, ctx context.Context, db *users) {
 	t.Run("normal", func(t *testing.T) {
 		err := db.UpdatePassword(ctx, 1, "new_password")
 		require.Nil(t, err)
+
+		got, err := db.GetByID(ctx, 1)
+		require.Nil(t, err)
+		require.True(t, got.Authenticate("new_password"))
+		require.Equal(t, uint(1), got.SessionVersion)
 	})
 }
 

@@ -509,6 +509,7 @@ paths:
     post:
       consumes:
       - application/json
+      description: All the existing sessions of the user are signed out.
       operationId: recoverPassword
       parameters:
       - description: New password and recovery code
@@ -575,6 +576,23 @@ paths:
           schema:
             type: string
       summary: Sign in with email and password
+      tags:
+      - Authentication
+  /auth/sign-out:
+    post:
+      description: The session ID can no longer be used. It succeeds even if the session
+        has expired or is not signed in.
+      operationId: signOut
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Message of the signed out
+          schema:
+            type: string
+      security:
+      - SessionToken: []
+      summary: Sign out the current session
       tags:
       - Authentication
   /auth/sign-up:
@@ -1073,7 +1091,8 @@ paths:
     put:
       consumes:
       - application/json
-      description: The password is changed only if the new password is not empty.
+      description: The password is changed only if the new password is not empty,
+        which signs out all the other sessions of the user.
       operationId: updateMineProfile
       parameters:
       - description: Profile

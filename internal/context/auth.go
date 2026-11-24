@@ -13,7 +13,16 @@ import (
 	"github.com/wuhan005/NekoBox/internal/db"
 )
 
-const SessionKeyUserID = "nekobox:auth:user-id"
+const (
+	SessionKeyUserID         = "nekobox:auth:user-id"
+	SessionKeySessionVersion = "nekobox:auth:session-version"
+)
+
+// SignInSession signs the user in the session, which is invalidated once the session version of the user changes.
+func SignInSession(sess session.Session, user *db.User) {
+	sess.Set(SessionKeyUserID, user.ID)
+	sess.Set(SessionKeySessionVersion, user.SessionVersion)
+}
 
 // authenticatedUser returns the user object of the authenticated user.
 func authenticatedUser(ctx flamego.Context, sess session.Session) *db.User {
@@ -22,7 +31,17 @@ func authenticatedUser(ctx flamego.Context, sess session.Session) *db.User {
 		return nil
 	}
 
-	user, _ := db.Users.GetByID(ctx.Request().Context(), uid)
+	user, err := db.Users.GetByID(ctx.Request().Context(), uid)
+	if err != nil {
+		return nil
+	}
+
+	// Sessions without a version are treated as version 0, so they are kept until the next password change.
+	version, _ := sess.Get(SessionKeySessionVersion).(uint)
+	if version != user.SessionVersion {
+		sess.Flush()
+		return nil
+	}
 	return user
 }
 

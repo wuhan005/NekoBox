@@ -122,7 +122,7 @@ func (*AuthHandler) SignIn(ctx context.Context, sess session.Session, v captcha.
 		return ctx.ServerError()
 	}
 
-	sess.Set(context.SessionKeyUserID, user.ID)
+	context.SignInSession(sess, user)
 
 	return ctx.Success(response.SignIn{
 		Profile: &response.SignInUserProfile{
@@ -132,6 +132,20 @@ func (*AuthHandler) SignIn(ctx context.Context, sess session.Session, v captcha.
 		},
 		SessionID: sess.ID(),
 	})
+}
+
+// SignOut
+// @Summary Sign out the current session
+// @Tags Authentication
+// @Description The session ID can no longer be used. It succeeds even if the session has expired or is not signed in.
+// @Produce json
+// @Success 200 {string} string "Message of the signed out"
+// @Security SessionToken
+// @ID signOut
+// @Router /auth/sign-out [post]
+func (*AuthHandler) SignOut(ctx context.Context, sess session.Session) error {
+	sess.Flush()
+	return ctx.Success("已退出登录")
 }
 
 // ForgotPassword
@@ -219,6 +233,7 @@ func (*AuthHandler) GetRecoverPasswordCode(ctx context.Context, cache cache.Cach
 // RecoverPassword
 // @Summary Reset the password with a recovery code
 // @Tags Authentication
+// @Description All the existing sessions of the user are signed out.
 // @Accept json
 // @Produce json
 // @Param data body form.RecoverPassword true "New password and recovery code"

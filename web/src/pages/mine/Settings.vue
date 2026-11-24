@@ -217,10 +217,14 @@ const updateProfile = () => {
   })
 }
 const handleSignOut = () => {
-  authStore.signOut()
-  ToastSuccess('账号已退出登录')
-  router.push({
-    name: 'home'
+  // The local state is cleared even if signing out on the server fails.
+  return api.auth.signOut().catch(() => {
+  }).finally(() => {
+    authStore.signOut()
+    ToastSuccess('账号已退出登录')
+    router.push({
+      name: 'home'
+    })
   })
 }
 

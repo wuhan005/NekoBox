@@ -57,6 +57,7 @@ type User struct {
 	Notify            NotifyType            `json:"notify"`
 	HarassmentSetting HarassmentSettingType `json:"harassment_setting"`
 	BlockWords        string                `json:"-"`
+	SessionVersion    uint                  `json:"-" gorm:"not null;default:0"`
 }
 
 func (u *User) BeforeCreate(_ *gorm.DB) error {
@@ -260,13 +261,7 @@ func (db *users) ChangePassword(ctx context.Context, id uint, oldPassword, newPa
 		return ErrBadCredential
 	}
 
-	u.Password = newPassword
-	u.EncodePassword()
-
-	if err := db.WithContext(ctx).Model(&User{}).Where("id = ?", u.ID).Update("password", u.Password).Error; err != nil {
-		return errors.Wrap(err, "change password")
-	}
-	return nil
+	return db.setPassword(ctx, u, newPassword)
 }
 
 func (db *users) UpdatePassword(ctx context.Context, id uint, newPassword string) error {
@@ -275,10 +270,18 @@ func (db *users) UpdatePassword(ctx context.Context, id uint, newPassword string
 		return errors.Wrap(err, "get user by id")
 	}
 
+	return db.setPassword(ctx, u, newPassword)
+}
+
+// setPassword updates the password and bumps the session version to sign out all the existing sessions.
+func (db *users) setPassword(ctx context.Context, u *User, newPassword string) error {
 	u.Password = newPassword
 	u.EncodePassword()
 
-	if err := db.WithContext(ctx).Model(&User{}).Where("id = ?", u.ID).Update("password", u.Password).Error; err != nil {
+	if err := db.WithContext(ctx).Model(&User{}).Where("id = ?", u.ID).Updates(map[string]interface{}{
+		"password":        u.Password,
+		"session_version": gorm.Expr("session_version + 1"),
+	}).Error; err != nil {
 		return errors.Wrap(err, "change password")
 	}
 	return nil

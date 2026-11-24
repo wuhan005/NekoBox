@@ -350,7 +350,7 @@ func (*MineHandler) Profile(ctx context.Context) error {
 // UpdateProfileSettings
 // @Summary Update the profile settings of the signed-in user
 // @Tags Settings
-// @Description The password is changed only if the new password is not empty.
+// @Description The password is changed only if the new password is not empty, which signs out all the other sessions of the user.
 // @Accept json
 // @Produce json
 // @Param data body form.UpdateProfile true "Profile"
@@ -361,7 +361,8 @@ func (*MineHandler) Profile(ctx context.Context) error {
 // @Security SessionToken
 // @ID updateMineProfile
 // @Router /mine/settings/profile [put]
-func (*MineHandler) UpdateProfileSettings(ctx context.Context, tx dbutil.Transactor, f form.UpdateProfile) error {
+func (*MineHandler) UpdateProfileSettings(ctx context.Context, sess session.Session, tx dbutil.Transactor, f form.UpdateProfile) error {
+	var passwordChangedUser *db.User
 	if err := tx.Transaction(func(tx *gorm.DB) error {
 		usersStore := db.NewUsersStore(tx)
 		if err := usersStore.SetName(ctx.Request().Context(), ctx.User.ID, f.Name); err != nil {
@@ -372,6 +373,12 @@ func (*MineHandler) UpdateProfileSettings(ctx context.Context, tx dbutil.Transac
 			if err := usersStore.ChangePassword(ctx.Request().Context(), ctx.User.ID, f.OldPassword, f.NewPassword); err != nil {
 				return errors.Wrap(err, "change password")
 			}
+
+			user, err := usersStore.GetByID(ctx.Request().Context(), ctx.User.ID)
+			if err != nil {
+				return errors.Wrap(err, "get user by id")
+			}
+			passwordChangedUser = user
 		}
 		return nil
 	}); err != nil {
@@ -383,6 +390,9 @@ func (*MineHandler) UpdateProfileSettings(ctx context.Context, tx dbutil.Transac
 		}
 	}
 
+	if passwordChangedUser != nil {
+		context.SignInSession(sess, passwordChangedUser)
+	}
 	return ctx.Success("个人信息更新成功")
 }
 

@@ -114,6 +114,7 @@
                 }
             },
             "post": {
+                "description": "All the existing sessions of the user are signed out.",
                 "consumes": [
                     "application/json"
                 ],
@@ -215,6 +216,32 @@
                     },
                     "500": {
                         "description": "Internal server error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/sign-out": {
+            "post": {
+                "security": [
+                    {
+                        "SessionToken": []
+                    }
+                ],
+                "description": "The session ID can no longer be used. It succeeds even if the session has expired or is not signed in.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Sign out the current session",
+                "operationId": "signOut",
+                "responses": {
+                    "200": {
+                        "description": "Message of the signed out",
                         "schema": {
                             "type": "string"
                         }
@@ -986,7 +1013,7 @@
                         "SessionToken": []
                     }
                 ],
-                "description": "The password is changed only if the new password is not empty.",
+                "description": "The password is changed only if the new password is not empty, which signs out all the other sessions of the user.",
                 "consumes": [
                     "application/json"
                 ],

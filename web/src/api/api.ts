@@ -206,6 +206,8 @@ export type RecoverPasswordData = string;
 
 export type SignInData = SignInResp;
 
+export type SignOutData = string;
+
 export type SignUpData = string;
 
 export type GetCaptchaChallengeData = CaptchaChallenge;
@@ -515,7 +517,7 @@ export class Api<
       }),
 
     /**
-     * No description
+     * @description All the existing sessions of the user are signed out.
      *
      * @tags Authentication
      * @name RecoverPassword
@@ -546,6 +548,24 @@ export class Api<
         method: "POST",
         body: data,
         type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description The session ID can no longer be used. It succeeds even if the session has expired or is not signed in.
+     *
+     * @tags Authentication
+     * @name SignOut
+     * @summary Sign out the current session
+     * @request POST:/auth/sign-out
+     * @secure
+     */
+    signOut: (params: RequestParams = {}) =>
+      this.request<SignOutData, any>({
+        path: `/auth/sign-out`,
+        method: "POST",
+        secure: true,
         format: "json",
         ...params,
       }),
@@ -878,7 +898,7 @@ export class Api<
       }),
 
     /**
-     * @description The password is changed only if the new password is not empty.
+     * @description The password is changed only if the new password is not empty, which signs out all the other sessions of the user.
      *
      * @tags Settings
      * @name UpdateMineProfile

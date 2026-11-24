@@ -137,6 +137,7 @@ func New(db *gorm.DB, notifications *sync.WaitGroup) (*flamego.Flame, error) {
 			f.Post("/forgot-password", form.Bind(form.ForgotPassword{}), authHandler.ForgotPassword)
 			f.Combo("/recover-password").Get(authHandler.GetRecoverPasswordCode).Post(form.Bind(form.RecoverPassword{}), authHandler.RecoverPassword)
 		}, reqUserSignOut)
+		f.Post("/auth/sign-out", authHandler.SignOut)
 
 		userHandler := &UserHandler{notifications: notifications}
 		f.Group("/users/{domain}", func() {
