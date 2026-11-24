@@ -148,6 +148,46 @@ html[data-theme="dark"] {
     }
   }
 
+  // Restore the text color of solid buttons, otherwise <a class="uk-button"> inherits the link color above.
+  .uk-button-primary {
+    color: @button-primary-color;
+
+    &:hover {
+      color: @button-primary-hover-color;
+    }
+
+    &:active,
+    &.uk-active {
+      color: @button-primary-active-color;
+    }
+  }
+
+  .uk-button-secondary {
+    color: @button-secondary-color;
+
+    &:hover {
+      color: @button-secondary-hover-color;
+    }
+
+    &:active,
+    &.uk-active {
+      color: @button-secondary-active-color;
+    }
+  }
+
+  .uk-button-danger {
+    color: @button-danger-color;
+
+    &:hover {
+      color: @button-danger-hover-color;
+    }
+
+    &:active,
+    &.uk-active {
+      color: @button-danger-active-color;
+    }
+  }
+
   .uk-button-default:disabled,
   .uk-button-primary:disabled,
   .uk-button-secondary:disabled,
