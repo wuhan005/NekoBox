@@ -1,6 +1,6 @@
 <template>
   <Header/>
-  <div class="uk-container" :class="$route.name === 'pixel' ? 'uk-container-expand' : 'uk-container-xsmall'">
+  <div class="uk-container" :class="$route.meta.containerClass ?? 'uk-container-xsmall'">
     <RouterView v-slot="{ Component, route }">
       <KeepAlive v-if="authStore.isSignedIn && (route.name === 'my-questions' || route.name === 'question')"
                  :key="appStore.questionsRevision">

@@ -2,6 +2,7 @@ import {resolve} from 'path'
 import {defineConfig} from 'vite'
 import vue from '@vitejs/plugin-vue'
 import {execSync} from 'child_process'
+import {micromark} from 'micromark'
 
 // Get commit SHA at build time
 function getCommitSHA() {
@@ -19,6 +20,14 @@ const commitSHA = process.env.VITE_COMMIT_SHA || getCommitSHA()
 export default defineConfig({
     plugins: [
         vue(),
+        {
+            name: 'compile-markdown',
+            transform(source, id) {
+                if (id.endsWith('.md')) {
+                    return `export default ${JSON.stringify(micromark(source))}`
+                }
+            },
+        },
         {
             name: 'inject-commit-sha',
             transformIndexHtml: () => [

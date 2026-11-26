@@ -85,11 +85,33 @@ const allRoutes: Array<RouteRecordRaw> = [
         path: '/pixel',
         name: 'pixel',
         component: () => import('@/pages/general/Pixel.vue'),
+        meta: {containerClass: 'uk-container-expand'},
     },
     {
         path: '/sponsor',
         name: 'sponsor',
         component: () => import('@/pages/general/Sponsor.vue'),
+    },
+    {
+        path: '/terms',
+        name: 'terms',
+        component: () => import('@/pages/general/LegalDocument.vue'),
+        props: {page: 'terms'},
+        meta: {title: '服务条款', containerClass: 'uk-container-small'},
+    },
+    {
+        path: '/privacy',
+        name: 'privacy',
+        component: () => import('@/pages/general/LegalDocument.vue'),
+        props: {page: 'privacy'},
+        meta: {title: '隐私政策', containerClass: 'uk-container-small'},
+    },
+    {
+        path: '/deactivate-account-terms',
+        name: 'deactivate-account-terms',
+        component: () => import('@/pages/general/LegalDocument.vue'),
+        props: {page: 'deactivationTerms'},
+        meta: {title: '账号注销协议', containerClass: 'uk-container-small'},
     },
 
     {

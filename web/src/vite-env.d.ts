@@ -1,5 +1,10 @@
 /// <reference types="vite/client" />
 
+declare module '*.md' {
+    const html: string
+    export default html
+}
+
 declare module '@e99p1ant/neko-pixel-umd/neko-pixel-app.es.js' {
     export const NekoPixelApp: import('vue').DefineComponent<{ editable?: boolean }>
     export function setAuthToken(token: string): void
